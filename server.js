@@ -1,12 +1,13 @@
 require('dotenv').config();
 const express = require('express');
-const path = require('path');
 const fetch   = require('node-fetch');
 const cors    = require('cors');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+const path = require('path');
 
 // Serve static files (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname)));
