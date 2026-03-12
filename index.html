@@ -1291,8 +1291,8 @@ async function toggleFileSelection(orderId,name,date) {
   if(!tskSummaries[orderId]){
     let summaryText='';
     if(TSK_DEMO_SUMMARIES[orderId]){await new Promise(r=>setTimeout(r,500));summaryText=TSK_DEMO_SUMMARIES[orderId];}
-    else{const key=localStorage.getItem('tnvl_tkey')||(document.getElementById('tsk-apikey-sum')&&document.getElementById('tsk-apikey-sum').value.trim())||'';if(!key){document.getElementById('api-settings-panel').style.display='block';document.getElementById('settings-toggle-btn').textContent='⚙️ Hide Settings';showToast('⚠️ Enter your Transkriptor API key in ⚙️ API Settings','#e05c2a');selectedTskOrderId=null;document.getElementById('tsk-form-selected').style.display='none';renderFileListInForm(allTskFiles);return;}
-      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`http://localhost:3000/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
+    else{const key=localStorage.getItem('tnvl_tkey')||(document.getElementById('tsk-apikey-sum')&&document.getElementById('tsk-apikey-sum').value.trim())||'a4a5dc07173236c5eb303f42fc4af6945569fac88092b771de025ffd36b4512e0a774bfb70985333c5d942659a18e2f8eee65aebb4e3dc1356fd668dfefbd996';
+      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`https://tnvl-call-monitoring-form.onrender.com/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
     }
     const leadMatch=name.match(/(\d+)$/);const leadId=leadMatch?leadMatch[1]:null;
     tskSummaries[orderId]={fileName:name,fileDate:date,text:summaryText,leadId};saveTskSummaries();renderSummaries();
@@ -1500,10 +1500,9 @@ function removeSummaryById(orderId){if(!confirm('Remove this summary?'))return;d
 
 // ═══ TRANSKRIPTOR ═══
 async function tskLoadFilesFromSummary(){
-  const settingsInput=document.getElementById('tsk-apikey-sum'),key=(settingsInput&&settingsInput.value.trim())||localStorage.getItem('tnvl_tkey')||'';
-  if(!key){document.getElementById('api-settings-panel').style.display='block';document.getElementById('settings-toggle-btn').textContent='⚙️ Hide Settings';showToast('⚠️ Please enter your Transkriptor API key in ⚙️ API Settings above','#e05c2a');return;}
+  const settingsInput=document.getElementById('tsk-apikey-sum'),key=(settingsInput&&settingsInput.value.trim())||localStorage.getItem('tnvl_tkey')||'a4a5dc07173236c5eb303f42fc4af6945569fac88092b771de025ffd36b4512e0a774bfb70985333c5d942659a18e2f8eee65aebb4e3dc1356fd668dfefbd996';
   showToast('⏳ Fetching your Transkriptor files…','#1a6bb5');
-  try{const response=await fetch('http://localhost:3000/api/transkriptor/files',{method:'GET',headers:{'x-transkriptor-key':key}});if(!response.ok){const err=await response.json();throw new Error(err.details||err.error||`Error ${response.status}`);}const data=await response.json();const files=data.data||data||[];if(!files.length){showToast('⚠️ No files found in your Transkriptor account','#e05c2a');return;}renderFileListInForm(files);showToast(`✅ ${files.length} files loaded — click a file to select it`,'#27ae60');}catch(err){showToast(`❌ Failed: ${err.message}`,'#e05c2a');}
+  try{const response=await fetch('https://tnvl-call-monitoring-form.onrender.com/api/transkriptor/files',{method:'GET',headers:{'x-transkriptor-key':key}});if(!response.ok){const err=await response.json();throw new Error(err.details||err.error||`Error ${response.status}`);}const data=await response.json();const files=data.data||data||[];if(!files.length){showToast('⚠️ No files found in your Transkriptor account','#e05c2a');return;}renderFileListInForm(files);showToast(`✅ ${files.length} files loaded — click a file to select it`,'#27ae60');}catch(err){showToast(`❌ Failed: ${err.message}`,'#e05c2a');}
 }
 function tskLoadDemoFromSummary(){renderFileListInForm(TSK_DEMO_FILES);showToast('🎭 Demo files loaded — click a file card to select it','#1a6bb5');}
 
