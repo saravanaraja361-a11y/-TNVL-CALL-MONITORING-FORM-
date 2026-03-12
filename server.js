@@ -1,11 +1,20 @@
 require('dotenv').config();
 const express = require('express');
+const path = require('path');
 const fetch   = require('node-fetch');
 const cors    = require('cors');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Serve static files (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname)));
+
+// Root route - serve index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // ── Multi-Key Groq Pool ───────────────────────────────────────────────────────
 const GROQ_KEYS = [

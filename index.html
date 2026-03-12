@@ -1323,7 +1323,7 @@ async function runRealAnalysis(){
   try {
     const flatChecklist=SECTIONS.flatMap((sec,si)=>sec.items.map((item,ii)=>`r_${si}_${ii}: ${item}`)).join('\n');
     let fetchResponse;
-    try{fetchResponse=await fetch('http://localhost:3000/api/analyze-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
+    try{fetchResponse=await fetch('https://tnvl-call-monitoring-form.onrender.com/api/analyze-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
     catch(networkErr){throw new Error('Cannot reach backend server. Open a terminal and run: node server.js');}
     if(!fetchResponse.ok){const errData=await fetchResponse.json().catch(()=>({}));const errMsg=errData?.error||`HTTP ${fetchResponse.status}`;if(fetchResponse.status===429)throw new Error('Rate limit hit. Wait 1 min then try again.');if(errMsg.includes('GEMINI_API_KEY')||errMsg.includes('API key'))throw new Error('Gemini API key missing or invalid. Check .env: GEMINI_API_KEY=AIza...');throw new Error('Backend error: '+errMsg);}
     const data=await fetchResponse.json();const serverRatings=data.ratings||{};
