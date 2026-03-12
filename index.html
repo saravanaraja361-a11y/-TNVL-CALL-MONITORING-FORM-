@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TNVL Call Monitoring Form</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #222; font-size: 15px; }
+
+  .tabs { display: flex; background: #1a3c5e; position: sticky; top: 0; z-index: 100; }
+  .tab-btn { flex: 1; padding: 15px; color: #aac4e0; border: none; background: none;
+    font-size: 16px; font-weight: 600; cursor: pointer; letter-spacing: .4px; }
+  .tab-btn.active { background: #fff; color: #1a3c5e; border-bottom: 3px solid #e05c2a; }
+  .tab-btn:hover:not(.active) { background: #254f7a; color: #fff; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .form-header { background: linear-gradient(135deg,#1a5276,#1a3c5e); color:#fff;
+    text-align:center; padding:22px 10px; }
+  .form-header h1 { font-size:22px; font-weight:700; letter-spacing:1px; }
+  .form-header p  { font-size:13px; opacity:.75; margin-top:5px; }
+
+  .form-wrap { max-width:1050px; margin:24px auto; padding:0 16px 60px; }
+
+  .meta-card { background:#fff; border-radius:10px;
+    box-shadow:0 2px 10px rgba(0,0,0,.08); padding:24px; margin-bottom:24px; }
+  .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .meta-grid label { font-size: 14px; font-weight: 600; color: #555; display:block; margin-bottom:5px; }
+  .meta-grid input, .meta-grid select {
+    width:100%; padding:10px 13px; border:1.5px solid #d0dae5; border-radius:6px;
+    font-size:15px; color:#333; background:#f8fafc; }
+  .meta-grid input:focus, .meta-grid select:focus { border-color:#1a5276; outline:none; background:#fff; }
+
+  .ai-panel {
+    background: linear-gradient(135deg, #0d2137, #1a3c5e);
+    border-radius: 12px; padding: 24px; margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.2); border: 1px solid #2d5a82;
+    position: relative; overflow: hidden;
+  }
+  .ai-panel::before {
+    content: ''; position: absolute; top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(255,255,255,.05) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .ai-panel-title { font-size: 16px; font-weight: 800; color: #fff;
+    display: flex; align-items: center; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+  .ai-badge { background: linear-gradient(90deg, #e05c2a, #f08c1a);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; letter-spacing: .5px; }
+  .gemini-badge {
+    background: linear-gradient(90deg, #4285F4, #34A853, #FBBC05, #EA4335);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; letter-spacing: .5px;
+  }
+  .free-badge {
+    background: linear-gradient(90deg, #27ae60, #1e8449);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; letter-spacing: .5px;
+  }
+  .demo-badge { background: linear-gradient(90deg, #8e44ad, #6c3483);
+    color: #fff; font-size: 11px; font-weight: 700;
+    padding: 2px 10px; border-radius: 20px; letter-spacing: .5px; }
+  .ai-panel-subtitle { font-size: 13px; color: #8ab4d4; margin-bottom: 20px; line-height: 1.5; }
+
+  .gemini-key-section {
+    margin-bottom: 16px; background: rgba(66,133,244,.1);
+    border: 1px solid rgba(66,133,244,.3); border-radius: 8px; padding: 14px 16px;
+  }
+  .gemini-key-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .gemini-key-title {
+    font-size: 12px; font-weight: 700; color: #8ab4d4;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .gemini-key-title .free-label {
+    background: rgba(39,174,96,.25); border: 1px solid rgba(39,174,96,.4);
+    color: #5dde8a; font-size: 10px; font-weight: 700;
+    padding: 1px 7px; border-radius: 10px; letter-spacing: .3px;
+  }
+  .gemini-key-links { display: flex; gap: 12px; flex-wrap: wrap; }
+  .gemini-key-links a {
+    font-size: 11px; color: #4da8e0; text-decoration: none;
+    padding: 2px 8px; border: 1px solid #2d5a82; border-radius: 4px; transition: all .15s;
+  }
+  .gemini-key-links a:hover { background: rgba(77,168,224,.15); }
+  .gemini-key-input-row { display: flex; gap: 8px; }
+  .gemini-key-input {
+    flex: 1; padding: 9px 12px; border-radius: 6px;
+    border: 1.5px solid #2d5a82; background: #0d2137;
+    color: #fff; font-size: 13px; font-family: monospace; transition: border-color .2s;
+  }
+  .gemini-key-input:focus { outline: none; border-color: #4285F4; }
+  .gemini-key-input::placeholder { color: #2a5070; }
+  .gemini-key-toggle {
+    padding: 9px 12px; border-radius: 6px; border: 1px solid #2d5a82;
+    background: rgba(255,255,255,.06); color: #8ab4d4; cursor: pointer;
+    font-size: 13px; transition: background .15s;
+  }
+  .gemini-key-toggle:hover { background: rgba(255,255,255,.12); }
+  .gemini-key-status { font-size: 11px; margin-top: 5px; }
+
+  .ai-analyze-btn {
+    width: 100%; margin-top: 16px; padding: 13px;
+    background: linear-gradient(90deg, #4285F4, #34A853);
+    color: #fff; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 800; cursor: pointer;
+    letter-spacing: .5px; transition: opacity .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .ai-analyze-btn:hover { opacity: .9; }
+  .ai-analyze-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .ai-progress { display: none; margin-top: 18px; background: rgba(255,255,255,.05);
+    border-radius: 8px; padding: 16px 18px; }
+  .ai-progress.show { display: block; }
+  .ai-progress-title { font-size: 13px; font-weight: 700; color: #8ab4d4; margin-bottom: 10px; }
+  .ai-step { display: flex; align-items: center; gap: 10px;
+    padding: 7px 0; font-size: 13px; color: #6a9abf; transition: color .3s; }
+  .ai-step.active { color: #fff; }
+  .ai-step.done { color: #5dde8a; }
+  .ai-step-icon { width: 20px; text-align: center; font-size: 14px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.2);
+    border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .ai-result-bar { display: none; margin-top: 14px; padding: 14px 16px;
+    border-radius: 8px; font-size: 13px; font-weight: 600; line-height: 1.6; }
+  .ai-result-bar.success { display: block; background: rgba(39,174,96,.15);
+    border: 1px solid rgba(39,174,96,.3); color: #5dde8a; }
+  .ai-result-bar.error { display: block; background: rgba(231,76,60,.12);
+    border: 1px solid rgba(231,76,60,.35); color: #e74c3c; }
+
+  .error-help {
+    margin-top: 10px; padding: 10px 14px; background: rgba(255,255,255,.05);
+    border-radius: 6px; font-size: 12px; color: #8ab4d4; line-height: 1.7; display: none;
+  }
+  .error-help.show { display: block; }
+  .error-help a { color: #4da8e0; }
+
+  .transcript-toggle { margin-top: 10px; background: none; border: 1px solid #2d5a82;
+    color: #6a9abf; padding: 5px 14px; border-radius: 5px;
+    font-size: 12px; cursor: pointer; font-weight: 600; display: none; }
+  .transcript-toggle:hover { background: rgba(255,255,255,.05); color: #fff; }
+  .transcript-box { display: none; margin-top: 14px; background: rgba(255,255,255,.05);
+    border: 1px solid #2d5a82; border-radius: 8px; padding: 14px;
+    max-height: 180px; overflow-y: auto; }
+  .transcript-box.show { display: block; }
+  .transcript-box p { font-size: 12px; color: #8ab4d4; line-height: 1.7; white-space: pre-wrap; }
+
+  .score-bar { background:#1a3c5e; color:#fff; padding:16px 20px;
+    display:flex; justify-content:space-between; align-items:center;
+    border-radius:10px; margin:20px 0; flex-wrap:wrap; gap:10px; }
+  .sc-group { text-align:center; }
+  .sc-label { font-size:11px; opacity:.7; text-transform:uppercase; letter-spacing:.5px; }
+  .sc-val   { font-size:26px; font-weight:700; }
+  .sc-pct   { font-size:20px; font-weight:700; padding:6px 22px; border-radius:24px; min-width:90px; text-align:center; }
+
+  .section-header { background:linear-gradient(90deg,#1a5276,#1e6691); color:#fff;
+    padding:12px 18px; border-radius:8px 8px 0 0; font-size:13px; font-weight:700;
+    letter-spacing:.6px; text-transform:uppercase;
+    display:flex; justify-content:space-between; align-items:center; margin-top:20px; }
+  .sec-count { background:rgba(255,255,255,.2); padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+
+  .checklist-card { background:#fff; border-radius:0 0 8px 8px;
+    box-shadow:0 2px 10px rgba(0,0,0,.07); overflow:hidden; }
+  .cl-head { display:grid; grid-template-columns:42px 1fr 180px;
+    background:#eaf0f7; padding:9px 14px; font-size:13px; font-weight:700;
+    color:#1a5276; text-transform:uppercase; letter-spacing:.4px; border-bottom:1px solid #d8e4ef; }
+  .cl-row { display:grid; grid-template-columns:42px 1fr 180px;
+    align-items:center; padding:10px 14px; border-bottom:1px solid #eef2f6; transition:background .15s; }
+  .cl-row:last-child { border-bottom:none; }
+  .cl-row:hover { background:#f6faff; }
+  .cl-row.ai-filled { animation: aiHighlight 2s ease forwards; }
+  @keyframes aiHighlight { 0% { background: rgba(66,133,244,.18); } 100% { background: transparent; } }
+
+  .cl-num  { color:#aab; font-weight:700; font-size:14px; }
+  .cl-text { font-size:14px; color:#334; line-height:1.5; padding-right:14px; }
+
+  .rating-select {
+    width:100%; padding:8px 10px; border-radius:6px; font-size:14px; font-weight:600;
+    border:2px solid #d0dae5; background:#f8fafc; cursor:pointer;
+    transition:border-color .2s, background .2s; appearance:none; -webkit-appearance:none; text-align:center; }
+  .rating-select:focus { outline:none; }
+  .rating-select.blank  { color:#aaa; border-color:#d0dae5; background:#f8fafc; }
+  .rating-select.met    { color:#1e8449; border-color:#27ae60; background:#eafaf1; }
+  .rating-select.notmet { color:#922b21; border-color:#e74c3c; background:#fdf2f2; }
+  .rating-select.ni     { color:#7d6608; border-color:#f0b429; background:#fef9e7; }
+
+  .submit-row { display:flex; gap:12px; justify-content:flex-end; margin-top:28px; flex-wrap:wrap; }
+  .btn { padding:11px 24px; border-radius:7px; border:none; font-size:14px; font-weight:700; cursor:pointer; }
+  .btn-reset   { background:#fff; color:#1a5276; border:2px solid #1a5276; }
+  .btn-reset:hover { background:#eaf0f7; }
+  .btn-preview { background:#1a5276; color:#fff; }
+  .btn-preview:hover { background:#154360; }
+  .btn-submit  { background:#27ae60; color:#fff; }
+  .btn-submit:hover { background:#1e8449; }
+  .btn-submit:disabled { background:#aaa; cursor:not-allowed; }
+
+  .legend { display:flex; gap:18px; flex-wrap:wrap; margin-bottom:16px;
+    background:#fff; padding:13px 16px; border-radius:8px;
+    box-shadow:0 1px 6px rgba(0,0,0,.06); font-size:14px; }
+  .legend-item { display:flex; align-items:center; gap:7px; }
+  .leg-dot { width:13px; height:13px; border-radius:50%; }
+
+  .sub-tabs {
+    display: flex; gap: 0; background: #fff; border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08); margin-bottom: 22px; overflow: hidden;
+    border: 1px solid #d0dae5;
+  }
+  .sub-tab-btn {
+    flex: 1; padding: 13px 18px; border: none; background: #fff;
+    color: #5a7a96; font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all .2s; border-right: 1px solid #d0dae5; letter-spacing: .3px;
+  }
+  .sub-tab-btn:last-child { border-right: none; }
+  .sub-tab-btn.active {
+    background: linear-gradient(135deg, #1a5276, #1a3c5e);
+    color: #fff;
+  }
+  .sub-tab-btn:hover:not(.active) { background: #eaf0f7; color: #1a3c5e; }
+
+  .badge { display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; }
+  .badge-high { background:#d5f5e3; color:#1e8449; }
+  .badge-mid  { background:#fef9e7; color:#b7770d; }
+  .badge-low  { background:#fde8e8; color:#c0392b; }
+
+  .kpi-val   { font-size:32px; font-weight:800; }
+  .kpi-label { font-size:12px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+
+  .dash-wrap { max-width:1300px; margin:24px auto; padding:0 16px 60px; }
+  .dash-title { font-size:20px; font-weight:700; color:#1a3c5e; margin-bottom:16px; }
+
+  .sub-panel { display: none; }
+  .sub-panel.active { display: block; }
+
+  .filter-bar { background:#fff; border-radius:10px; padding:18px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07); margin-bottom:22px;
+    display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
+  .filter-bar label { font-size:14px; font-weight:600; color:#555; display:block; margin-bottom:5px; }
+  .filter-bar input, .filter-bar select { padding:9px 13px; border:1.5px solid #d0dae5; border-radius:6px; font-size:15px; }
+  .btn-filter  { background:#1a5276; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
+  .btn-clear-f { background:#888; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
+
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+  .kpi-card { background:#fff; border-radius:10px; padding:18px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.07); text-align:center; }
+  .kpi-val   { font-size:30px; font-weight:800; }
+  .kpi-label { font-size:11px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+
+  .seg-bar { display:flex; width:100%; height:10px; border-radius:20px; overflow:hidden; margin-top:5px; background:#eef2f6; }
+  .seg-met { background:#27ae60; }
+  .seg-ni  { background:#f0b429; }
+  .seg-nm  { background:#e74c3c; }
+
+  .table-card { background:#fff; border-radius:10px; overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.07); margin-bottom:22px; }
+  .table-card-title { padding:14px 20px; font-weight:700; color:#1a3c5e;
+    background:#eaf0f7; border-bottom:1px solid #d0dae5; font-size:15px; }
+  table { width:100%; border-collapse:collapse; }
+  th { background:#1a5276; color:#fff; padding:12px 14px; font-size:13px;
+    font-weight:700; text-align:left; text-transform:uppercase; letter-spacing:.4px; }
+  td { padding:11px 14px; font-size:14px; border-bottom:1px solid #eef2f6; vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f5f9ff; }
+
+  .charts-section { margin-top: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .viz-card {
+    background: linear-gradient(145deg, #0b1929, #0f2540);
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 8px 32px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .viz-card-header {
+    padding: 16px 22px 14px; border-bottom: 1px solid rgba(255,255,255,.07);
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .viz-card-header-left { display: flex; flex-direction: column; gap: 3px; }
+  .viz-title { font-size: 15px; font-weight: 800; color: #e8f4ff; letter-spacing: .3px; }
+  .viz-sub   { font-size: 11px; color: rgba(160,200,240,.55); font-weight: 500; }
+  .viz-badge { font-size: 10px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase;
+    padding: 3px 10px; border-radius: 20px; border: 1px solid; }
+  .viz-badge-live { color: #4ade80; border-color: rgba(74,222,128,.3); background: rgba(74,222,128,.08); }
+  .viz-body { padding: 18px 20px 20px; }
+  .radar-wrap { position: relative; }
+  .radar-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.06); }
+  .radar-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #c8e0f4; padding: 3px 10px 3px 6px; border-radius: 20px; border: 1px solid rgba(255,255,255,.08); background: rgba(255,255,255,.04); transition: background .15s; }
+  .radar-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .viz-filter-bar { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; padding: 12px 16px; margin-bottom: 12px; background: rgba(0,0,0,.2); border-radius: 10px; border: 1px solid rgba(255,255,255,.06); }
+  .viz-filter-bar label { font-size: 11px; font-weight: 700; color: rgba(160,200,240,.8); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: .5px; }
+  .viz-filter-bar input, .viz-filter-bar select { padding: 8px 12px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; font-size: 13px; background: rgba(0,0,0,.3); color: #e8f4ff; cursor: pointer; }
+  .viz-filter-bar input[type="date"] { min-width: 140px; color-scheme: dark; position: relative; z-index: 10; }
+  .viz-filter-bar .btn-viz-filter { background: linear-gradient(135deg,#1a5276,#254f7a); color:#fff; border:none; padding:8px 18px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer; }
+  .viz-filter-bar .btn-viz-clear { background: rgba(255,255,255,.1); color: rgba(200,230,255,.9); border: 1px solid rgba(255,255,255,.2); padding: 8px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+  .multi-select-wrap { position: relative; }
+  .multi-select-trigger { min-width: 160px; padding: 8px 12px; border: 1px solid rgba(255,255,255,.15); border-radius: 6px; background: rgba(0,0,0,.3); color: #e8f4ff; font-size: 13px; cursor: pointer; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .multi-select-trigger::after { content: '▾'; font-size: 10px; opacity: .7; }
+  .multi-select-dropdown { display: none; position: absolute; top: 100%; left: 0; margin-top: 4px; min-width: 200px; max-height: 240px; overflow-y: auto; background: #0d2137; border: 1px solid rgba(56,189,248,.3); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.5); z-index: 50; padding: 8px; }
+  .multi-select-wrap.open .multi-select-dropdown { display: block; }
+  .multi-select-dropdown label { display: flex; align-items: center; gap: 8px; padding: 6px 10px; cursor: pointer; font-size: 13px; color: #c8e0f4; border-radius: 4px; }
+  .multi-select-dropdown label:hover { background: rgba(56,189,248,.15); }
+  .multi-select-dropdown .ms-actions { display: flex; gap: 6px; padding: 6px 0 0; border-top: 1px solid rgba(255,255,255,.08); margin-top: 6px; }
+  .multi-select-dropdown .ms-actions button { padding: 4px 10px; font-size: 11px; border-radius: 4px; border: none; cursor: pointer; background: rgba(56,189,248,.2); color: #38bdf8; }
+  .heatmap-wrap { overflow-x: auto; }
+  .heatmap-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .heatmap-table th, .heatmap-table td { padding: 10px 12px; text-align: center; border: 1px solid rgba(255,255,255,.08); }
+  .heatmap-table th { background: rgba(0,0,0,.3); color: rgba(160,200,240,.9); font-weight: 700; }
+  .heatmap-table .hm-agent { text-align: left; font-weight: 600; color: #e8f4ff; white-space: nowrap; }
+  .heatmap-cell { min-width: 48px; font-weight: 700; color: #fff; text-shadow: 0 0 1px #000; border-radius: 4px; }
+  .constellation-tooltip { position: absolute; pointer-events: none; z-index: 20; background: rgba(8,24,48,.96); border: 1px solid rgba(56,189,248,.35); border-radius: 10px; padding: 10px 14px; min-width: 140px; box-shadow: 0 8px 32px rgba(0,0,0,.4); font-size: 12px; opacity: 0; transform: translate(-50%,-100%) translateY(-12px); transition: opacity .15s, transform .15s; }
+  .constellation-tooltip.visible { opacity: 1; transform: translate(-50%,-100%) translateY(-8px); }
+  .constellation-tooltip .tt-name { font-weight: 800; color: #fff; margin-bottom: 4px; }
+  .constellation-tooltip .tt-row { display: flex; justify-content: space-between; gap: 16px; color: rgba(200,230,255,.9); }
+  .constellation-tooltip .tt-val { font-weight: 700; color: #38bdf8; }
+  .trend-agent-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.06); }
+  .trend-legend-chip { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; padding: 3px 10px 3px 5px; border-radius: 20px; border: 1px solid; white-space: nowrap; }
+  .trend-legend-line { width: 24px; height: 3px; border-radius: 2px; margin-right: 8px; background: currentColor; box-shadow: 0 0 5px currentColor; }
+  .trend-legend-line.dashed { border-top: 2px dashed currentColor; height: 1px; background: transparent; box-shadow: none; }
+  .ms-search { padding: 8px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .ms-search input { width: 100%; padding: 6px 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; background: rgba(255,255,255,.1); color: #fff; font-size: 12px; outline: none; box-sizing: border-box; }
+  .ms-search input::placeholder { color: rgba(255,255,255,.5); }
+  .ms-search input:focus { border-color: rgba(56,189,248,.5); background: rgba(255,255,255,.15); }
+  .ms-options { max-height: 200px; overflow-y: auto; padding: 4px 0; }
+  .ms-options label { display: block; padding: 6px 12px; cursor: pointer; transition: background-color 0.2s; }
+  .ms-options label:hover { background-color: rgba(255,255,255,.1); }
+  .ms-options label.hidden { display: none; }
+  .ms-actions { padding: 8px; border-top: 1px solid rgba(255,255,255,.1); display: flex; gap: 4px; }
+  .ms-actions button { flex: 1; padding: 4px 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 3px; background: rgba(255,255,255,.1); color: #fff; font-size: 11px; cursor: pointer; transition: all 0.2s; }
+  .ms-actions button:hover { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.3); }
+  .viz-no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; color: rgba(160,200,240,.4); text-align: center; }
+  .viz-no-data .nd-i { font-size: 40px; margin-bottom: 10px; opacity: .6; }
+  .viz-no-data p { font-size: 13px; line-height: 1.7; }
+  .viz-toggle { display: flex; gap: 3px; background: rgba(0,0,0,.3); padding: 3px; border-radius: 8px; }
+  .viz-toggle-btn { padding: 4px 14px; border-radius: 6px; border: none; font-size: 11px; font-weight: 700; cursor: pointer; background: transparent; color: rgba(160,200,240,.6); transition: all .15s; }
+  .viz-toggle-btn.active { background: rgba(255,255,255,.12); color: #e8f4ff; }
+  .viz-toggle-btn:hover:not(.active) { color: #e8f4ff; }
+  .viz-canvas-wrap { position: relative; min-height: 260px; padding: 4px 0 0; }
+  .viz-no-data { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 50px 20px; color: rgba(160,200,240,.4); text-align: center; }
+  .viz-no-data .nd-i { font-size: 38px; margin-bottom: 10px; opacity: .6; }
+  .viz-no-data p { font-size: 12px; line-height: 1.7; }
+  .pct-green  { color: #4ade80; background: rgba(74,222,128,.12); }
+  .pct-amber  { color: #fbbf24; background: rgba(251,191,36,.12);  }
+  .pct-red    { color: #f87171; background: rgba(248,113,113,.12); }
+  .bar-green  { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .bar-amber  { background: linear-gradient(90deg, #b45309, #fbbf24); }
+  .bar-red    { background: linear-gradient(90deg, #991b1b, #f87171); }
+
+  .aoi-header { background: linear-gradient(135deg, #6c0d0d, #9b2a2a); color: #fff; border-radius: 12px; padding: 22px 26px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: 0 4px 18px rgba(180,0,0,.2); }
+  .aoi-header-left h2 { font-size: 20px; font-weight: 800; letter-spacing: .5px; margin-bottom: 4px; }
+  .aoi-header-left p  { font-size: 13px; opacity: .8; line-height: 1.5; }
+  .aoi-kpi-mini { display: flex; gap: 18px; flex-wrap: wrap; }
+  .aoi-kpi { text-align: center; background: rgba(255,255,255,.12); border-radius: 10px; padding: 10px 20px; }
+  .aoi-kpi-val { font-size: 26px; font-weight: 800; }
+  .aoi-kpi-label { font-size: 11px; opacity: .75; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+  .aoi-filter-bar { background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 20px; display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; }
+  .aoi-filter-bar label { font-size: 12px; font-weight: 700; color: #555; display: block; margin-bottom: 4px; }
+  .aoi-filter-bar select { padding: 8px 12px; border: 1.5px solid #d0dae5; border-radius: 6px; font-size: 13px; }
+  .aoi-list-card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 22px; }
+  .aoi-list-header { background: linear-gradient(90deg, #7b1a1a, #a93226); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .aoi-list-header h3 { font-size: 14px; font-weight: 800; letter-spacing: .5px; }
+  .aoi-list-header span { font-size: 12px; opacity: .8; }
+  .aoi-item { display: grid; grid-template-columns: 36px 1fr 90px 180px; align-items: center; padding: 12px 20px; border-bottom: 1px solid #f3f3f3; transition: background .15s; gap: 12px; }
+  .aoi-item:last-child { border-bottom: none; }
+  .aoi-item:hover { background: #fff5f5; }
+  .aoi-rank { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+  .rank-1 { background: linear-gradient(135deg,#c0392b,#e74c3c); box-shadow: 0 2px 8px rgba(192,57,43,.4); }
+  .rank-2 { background: linear-gradient(135deg,#d35400,#e67e22); }
+  .rank-3 { background: linear-gradient(135deg,#d68910,#f39c12); }
+  .rank-other { background: linear-gradient(135deg,#717d7e,#95a5a6); }
+  .aoi-item-label { font-size: 14px; font-weight: 600; color: #2c3e50; line-height: 1.4; margin-bottom: 3px; }
+  .aoi-item-section { font-size: 12px; color: #95a5a6; font-style: italic; }
+  .aoi-count-badge { text-align: center; padding: 5px 10px; border-radius: 20px; background: #fde8e8; color: #c0392b; font-size: 14px; font-weight: 800; border: 1.5px solid #f5b7b1; white-space: nowrap; }
+  .aoi-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .aoi-bar-bg { flex: 1; height: 10px; background: #f5f5f5; border-radius: 20px; overflow: hidden; }
+  .aoi-bar-fill { height: 100%; border-radius: 20px; transition: width .6s ease; background: linear-gradient(90deg,#e74c3c,#c0392b); }
+  .aoi-bar-pct { font-size: 12px; font-weight: 700; color: #888; width: 32px; text-align: right; }
+  .aoi-section-breakdown { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 22px; }
+  .aoi-section-header { background: linear-gradient(90deg, #1a3c5e, #1a5276); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .aoi-section-header h3 { font-size: 14px; font-weight: 800; }
+  .aoi-sec-row { display: grid; grid-template-columns: 1fr 80px 80px 80px 120px; align-items: center; padding: 11px 20px; border-bottom: 1px solid #f3f3f3; font-size: 13px; gap: 10px; }
+  .aoi-sec-row:hover { background: #f8faff; }
+  .aoi-sec-row:last-child { border-bottom: none; }
+  .aoi-sec-name { font-weight: 600; color: #2c3e50; }
+  .aoi-sec-head { display: grid; grid-template-columns: 1fr 80px 80px 80px 120px; padding: 9px 20px; background: #eaf0f7; font-size: 11px; font-weight: 700; color: #1a5276; text-transform: uppercase; letter-spacing: .4px; gap: 10px; border-bottom: 1px solid #d0dae5; }
+  .no-data-aoi { text-align: center; padding: 60px 30px; color: #aaa; }
+  .no-data-aoi .icon { font-size: 48px; margin-bottom: 12px; }
+  .no-data-aoi h3 { font-size: 16px; font-weight: 700; color: #888; margin-bottom: 6px; }
+  .no-data-aoi p { font-size: 13px; }
+
+  .sum3-wrap { max-width: 1200px; margin: 0 auto; padding: 20px 16px 60px; }
+  .sum3-filter-bar { background: #fff; border-radius: 10px; padding: 16px 20px; box-shadow: 0 2px 8px rgba(0,0,0,.07); margin-bottom: 20px; display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; border-left: 4px solid #1a5276; }
+  .sum3-filter-bar label { font-size: 12px; font-weight: 700; color: #555; display: block; margin-bottom: 4px; }
+  .sum3-filter-bar input, .sum3-filter-bar select { padding: 8px 12px; border: 1.5px solid #d0dae5; border-radius: 6px; font-size: 13px; color: #333; background: #f8fafc; min-width: 140px; }
+  .sum3-count-tag { margin-left: auto; background: #eaf0f7; color: #1a5276; font-size: 12px; font-weight: 800; padding: 6px 14px; border-radius: 20px; white-space: nowrap; align-self: center; }
+  .summary-card { background: #fff; border-radius: 10px; margin-bottom: 18px; box-shadow: 0 2px 12px rgba(0,0,0,.08); overflow: hidden; border: 1px solid #d8eaf8; }
+  .summary-card-header { background: linear-gradient(90deg, #1a3c5e, #1a5276); padding: 13px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  .summary-card-title { font-size: 14px; font-weight: 800; color: #fff; }
+  .summary-card-meta { display: flex; gap: 16px; font-size: 12px; color: #8ab4d4; flex-wrap: wrap; }
+  .summary-card-meta span { display: flex; align-items: center; gap: 5px; font-weight: 600; }
+  .summary-card-meta .meta-pill { background: rgba(255,255,255,.12); padding: 2px 10px; border-radius: 12px; color: #c8e0f4; font-size: 11px; font-weight: 700; }
+  .summary-card-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .summary-col { padding: 0; overflow: hidden; }
+  .summary-col-left { border-right: 2px solid #e0ecf8; }
+  .summary-col-label { font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; padding: 10px 18px 9px; display: flex; align-items: center; gap: 7px; border-bottom: 1px solid #e8f0f8; }
+  .summary-col-left .summary-col-label  { background: #f0f7ff; color: #1a6bb5; border-color: #d0e6f8; }
+  .summary-col-right .summary-col-label { background: #f8f5ff; color: #6d4c9e; border-color: #e8e0f8; }
+  .summary-col-scroll { max-height: 400px; overflow-y: auto; padding: 14px 18px; scrollbar-width: thin; scrollbar-color: #c8ddf0 transparent; }
+  .summary-col-content { font-size: 14px; line-height: 1.85; color: #334; white-space: pre-wrap; }
+  .summary-card-footer { padding: 10px 18px; background: #f6faff; border-top: 1px solid #dceaf8; display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+  .sum-action-btn { padding: 7px 16px; border-radius: 6px; border: none; font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s; }
+  .sum-btn-copy   { background: #1a5276; color: #fff; }
+  .sum-btn-remove { background: #fff; color: #c0392b; border: 1.5px solid #f5b7b1; }
+  .sum-btn-remove:hover { background: #fde8e8; }
+  .sum3-empty { background: #fff; border-radius: 10px; padding: 60px 30px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.06); color: #999; }
+  .sum3-empty .e-icon { font-size: 48px; margin-bottom: 12px; }
+  .sum3-empty h3 { font-size: 16px; font-weight: 700; color: #666; margin-bottom: 6px; }
+
+  .modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:1000; justify-content:center; align-items:flex-start; padding:40px 16px; overflow-y:auto; }
+  .modal-bg.open { display:flex; }
+  .modal { background:#fff; border-radius:12px; width:100%; max-width:760px; max-height:82vh; overflow-y:auto; box-shadow:0 10px 40px rgba(0,0,0,.25); }
+  .modal-hdr { background:linear-gradient(135deg,#1a5276,#1a3c5e); color:#fff; padding:18px 22px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1; }
+  .modal-hdr h3 { font-size:15px; }
+  .modal-close { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; }
+  .modal-body { padding:20px 22px; }
+  .msec-title { font-weight:700; color:#1a5276; font-size:14px; border-bottom:2px solid #eaf0f7; padding-bottom:5px; margin:16px 0 7px; }
+  .mrow { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #f3f3f3; font-size:14px; align-items:center; }
+  .mrow span:first-child { flex:1; color:#445; }
+  .c-met  { color:#1e8449; font-weight:700; white-space:nowrap; }
+  .c-not  { color:#c0392b; font-weight:700; white-space:nowrap; }
+  .c-ni   { color:#7d6608; font-weight:700; white-space:nowrap; }
+  .c-skip { color:#bbb; font-style:italic; white-space:nowrap; }
+
+  #toast { position:fixed; bottom:28px; right:28px; padding:13px 22px; border-radius:8px; font-weight:600; font-size:14px; color:#fff; box-shadow:0 4px 16px rgba(0,0,0,.2); display:none; z-index:3000; max-width:380px; line-height:1.5; }
+  #toast.show { display:block; animation:slideUp .3s ease; }
+  @keyframes slideUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .tsk-panel { background: linear-gradient(135deg, #0a1a2e, #0f2a45); border-radius: 12px; padding: 22px 24px; margin-bottom: 22px; border: 1px solid #1e4060; box-shadow: 0 4px 18px rgba(0,0,0,.2); }
+  .tsk-btn { padding: 10px 18px; border: none; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 7px; transition: opacity .2s; white-space: nowrap; }
+  .tsk-btn-primary { background: linear-gradient(90deg,#1a6bb5,#1e88e5); color: #fff; }
+  .tsk-btn-demo    { background: rgba(255,255,255,.1); color: #8ab4d4; border: 1px solid #1e4060; }
+  .tsk-btn:hover { opacity: .88; }
+  .tsk-btn:disabled { opacity: .45; cursor: not-allowed; }
+  .tsk-key-input { width: 100%; padding: 9px 12px; border-radius: 7px; border: 1.5px solid #1e4060; background: rgba(255,255,255,.07); color: #fff; font-size: 13px; font-family: monospace; }
+  .tsk-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+  .sum-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid #b8d8f0; background: #e8f4fd; color: #1a5276; transition: all .15s; white-space: nowrap; }
+  .sum-chip:hover { background: #1a5276; color: #fff; }
+  .no-sum { font-size: 12px; color: #ccc; font-style: italic; }
+  .sum-modal-body { background: #f8fafc; border: 1px solid #dce8f5; border-radius: 8px; padding: 16px 18px; font-size: 13.5px; line-height: 1.85; color: #334; white-space: pre-wrap; max-height: 55vh; overflow-y: auto; }
+  .sum-copy-btn { margin-top: 14px; background: #1a5276; color: #fff; border: none; padding: 9px 20px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; }
+
+  #tsk-form-file-list { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(210px,1fr)); gap: 8px; max-height: 320px; overflow-y: auto; padding-right: 6px; }
+  .tsk-form-file-card { cursor: pointer; background: rgba(255,255,255,.05); border: 1.5px solid #2d5a82; border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; transition: all .15s; }
+
+  .stat-link { transition: opacity .15s; }
+  .stat-link:hover { opacity: .75; text-decoration: none; }
+
+  .retry-countdown { background: rgba(66,133,244,.12); border: 1px solid rgba(66,133,244,.3); border-radius: 6px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: #8ab4d4; display: none; text-align: center; }
+  .retry-countdown.show { display: block; }
+
+  @media(max-width:640px){
+    .meta-grid { grid-template-columns:1fr; }
+    .kpi-row   { grid-template-columns:1fr 1fr; }
+    .cl-row, .cl-head { grid-template-columns:32px 1fr 140px; font-size:12px; }
+    .aoi-item  { grid-template-columns:32px 1fr 70px; }
+    .aoi-item .aoi-bar-wrap { display:none; }
+    .summary-card-columns { grid-template-columns:1fr; }
+    .summary-col-left { border-right:none; border-bottom:2px solid #e0ecf8; }
+  }
+</style>
+</head>
+<body>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('form')">📋 Call Monitoring Form</button>
+  <button class="tab-btn" onclick="switchTab('dashboard')">📊 Agent Scoreboard</button>
+  <button class="tab-btn" onclick="switchTab('summaries')">📄 Overall Summary</button>
+</div>
+
+<!-- ═══════════ FORM TAB ═══════════ -->
+<div id="panel-form" class="panel active">
+  <div class="form-header">
+    <h1>TNVL CALL MONITORING FORM</h1>
+    <p>Rate each applicable item — blank items are not counted in the score</p>
+  </div>
+  <div class="form-wrap">
+    <div class="meta-card">
+      <div class="meta-grid">
+        <div><label>Date</label><input type="date" id="f-date"></div>
+        <div><label>Lead ID</label><input type="text" id="f-lead" placeholder="Enter Lead ID"></div>
+        <div><label>Agent Name</label>
+          <select id="f-agent">
+            <option value="">— Select Agent —</option>
+            <option>Myles</option><option>Dustin</option><option>Thomas</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+          </select></div>
+        <div><label>Customer Name / Number</label>
+          <input type="text" id="f-customer" placeholder="Customer name or number"></div>
+        <div><label>Call Type</label>
+          <select id="f-calltype" onchange="onCallTypeChange(this.value)">
+            <option value="">— Select —</option>
+            <option>Inbound quote request</option>
+            <option>Inbound follow up</option>
+            <option>Outbound - Initial call</option>
+            <option>Outbound - follow up</option>
+            <option>Pre Move Confirmation call</option>
+            <option>Short calls less than 3 Mins</option>
+          </select></div>
+        <div><label>Call Duration (hh:mm:ss)</label>
+          <input type="text" id="f-duration" placeholder="00:00:00"></div>
+        <div><label>Call Date / Time</label><input type="datetime-local" id="f-datetime"></div>
+        <div><label>Evaluator Name</label><input type="text" id="f-evaluator" placeholder="Your name"></div>
+        <div><label>Move Type</label>
+          <select id="f-movetype">
+            <option value="">— Select —</option>
+            <option>Local Move</option>
+            <option>Long Distance Move</option>
+          </select>
+        </div>
+        <div><label>Move Value ($)</label>
+          <input type="number" id="f-movevalue-amount" placeholder="Enter amount" oninput="updateMoveValue()">
+        </div>
+        <div><label>Move Value Category</label>
+          <select id="f-movevalue">
+            <option value="">— Auto —</option>
+            <option>Low Value</option>
+            <option>Mid Value</option>
+            <option>High Value</option>
+          </select>
+        </div>
+        <div><label>Conversion Probability</label>
+          <select id="f-conversion">
+            <option value="">— Select —</option>
+            <option>Low</option>
+            <option>High</option>
+            <option>MayBe (50-50)</option>
+          </select>
+        </div>
+        <div><label>Lead Status</label>
+          <select id="f-leadstatus">
+            <option value="">— Select —</option>
+            <option>Closed</option>
+            <option>Open</option>
+            <option>Booked</option>
+          </select>
+        </div>
+        <div><label>Cue Card Usage</label>
+          <select id="f-cuecard">
+            <option value="">— Select —</option>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI ANALYZER PANEL -->
+    <div class="ai-panel">
+      <div class="ai-panel-title">
+        🤖 AI Call Analyzer
+        <span class="ai-badge">AUTO-FILL</span>
+        <span class="gemini-badge">✨ GEMINI 2.0 FLASH</span>
+        <span class="ai-badge" style="background:linear-gradient(90deg,#1a6bb5,#1e88e5)">📄 TRANSKRIPTOR</span>
+        <button onclick="toggleApiSettings()" id="settings-toggle-btn"
+          style="margin-left:auto;background:rgba(255,255,255,.1);border:1px solid #2d5a82;color:#8ab4d4;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;">
+          ⚙️ API Settings
+        </button>
+      </div>
+      <div class="ai-panel-subtitle">
+        Select a Transkriptor file below — Gemini 2.0 Flash will auto-fill all 140 checklist items with precise skip logic and conditional rating for ~85-95% accuracy.
+      </div>
+
+      <div id="api-settings-panel" style="display:none;">
+        <div class="gemini-key-section" style="background:rgba(245,80,54,.1);border-color:rgba(245,80,54,.3);margin-bottom:12px;">
+          <div class="gemini-key-header">
+            <div class="gemini-key-title" style="color:#ffa07a;">
+              🔑 Groq API Key <span class="free-label">FREE</span>
+            </div>
+            <div class="gemini-key-links">
+              <a href="https://console.groq.com/keys" target="_blank">🔗 Get Free Key →</a>
+            </div>
+          </div>
+          <div class="gemini-key-input-row">
+            <input type="password" id="gemini-key-input" class="gemini-key-input"
+              placeholder="gsk_..." oninput="saveGeminiKey(this.value)" style="border-color:#f55036;">
+            <button class="gemini-key-toggle" onclick="toggleGeminiKeyVisibility()">👁</button>
+          </div>
+          <div id="gemini-key-status" class="gemini-key-status"></div>
+        </div>
+        <div style="background:rgba(26,107,181,.12);border:1px solid rgba(26,107,181,.3);border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;color:#4a7a9b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🔑 Transkriptor API Key</div>
+          <div style="display:flex;gap:8px;">
+            <input class="tsk-key-input" type="password" id="tsk-apikey-sum"
+              placeholder="Bearer token from transkriptor.com"
+              oninput="document.getElementById('tsk-apikey').value=this.value;localStorage.setItem('tnvl_tkey',this.value)"
+              style="flex:1;">
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:#4a7a9b;text-transform:uppercase;letter-spacing:.5px;">📁 Select a Transkriptor File</span>
+          <button class="tsk-btn tsk-btn-primary" onclick="tskLoadFilesFromSummary()" style="padding:7px 14px;font-size:12px;">📂 Browse Files</button>
+          <button class="tsk-btn tsk-btn-demo" onclick="tskLoadDemoFromSummary()" style="padding:7px 14px;font-size:12px;">🎭 Demo Files</button>
+        </div>
+        <div id="tsk-form-file-area">
+          <div id="tsk-form-no-files" style="border:2px dashed #2d5a82;border-radius:10px;padding:20px;text-align:center;background:rgba(255,255,255,.04);">
+            <div style="font-size:28px;margin-bottom:6px;">📭</div>
+            <div style="font-size:13px;font-weight:700;color:#8ab4d4;margin-bottom:4px;">No files loaded yet</div>
+            <div style="font-size:12px;color:#4a7a9b;">Click <strong style="color:#8ab4d4">📂 Browse Files</strong> or <strong style="color:#8ab4d4">🎭 Demo Files</strong> above.</div>
+          </div>
+          <div id="tsk-file-count-label" style="display:none;font-size:12px;font-weight:700;color:#4a7a9b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;"></div>
+          <div id="tsk-form-file-list" style="display:none;"></div>
+        </div>
+      </div>
+
+      <div id="tsk-form-selected" style="display:none;margin-top:6px;margin-bottom:4px;padding:10px 14px;background:rgba(39,174,96,.12);border:1px solid rgba(39,174,96,.3);border-radius:8px;">
+        <div style="font-size:11px;color:#5dde8a;font-weight:700;">✅ Selected for analysis:</div>
+        <div id="tsk-form-selected-name" style="font-size:14px;color:#fff;font-weight:800;margin-top:2px;"></div>
+      </div>
+
+      <button class="ai-analyze-btn" id="ai-btn" onclick="runAnalysis()">
+        ✨ Analyze &amp; Auto-Fill with Gemini 2.0 Flash
+      </button>
+
+      <div class="retry-countdown" id="retry-countdown"></div>
+
+      <div class="ai-progress" id="ai-progress">
+        <div class="ai-progress-title">⚙️ AI Analysis in progress…</div>
+        <div class="ai-step" id="step-1"><span class="ai-step-icon">⏳</span> Reading AI Summary from Transkriptor…</div>
+        <div class="ai-step" id="step-2"><span class="ai-step-icon">⏳</span> Reading Full Transcript…</div>
+        <div class="ai-step" id="step-3"><span class="ai-step-icon">⏳</span> Evaluating against all 140 checklist criteria (Gemini 2.0 Flash)…</div>
+        <div class="ai-step" id="step-4"><span class="ai-step-icon">⏳</span> Filling in ratings on the form…</div>
+      </div>
+
+      <div class="ai-result-bar" id="ai-result"></div>
+      <div class="error-help" id="error-help">
+        <strong>Troubleshooting tips:</strong><br>
+        • <strong>Server not running</strong> → Open terminal → run: <code>node server.js</code><br>
+        • <strong>Wrong port</strong> → Server must run on port 3000 (check .env: PORT=3000)<br>
+        • <strong>API key missing</strong> → Check .env has: <code>GEMINI_API_KEY=AIza...</code><br>
+        • <strong>No file selected</strong> → Click Browse Files or Demo Files above, then click a file card
+      </div>
+
+      <button class="transcript-toggle" id="transcript-toggle" onclick="toggleTranscript()">📄 Show Transcript Used</button>
+      <div class="transcript-box" id="transcript-box"><p id="transcript-text"></p></div>
+    </div>
+
+    <div class="legend">
+      <strong style="color:#1a3c5e;margin-right:4px">Rating Guide:</strong>
+      <div class="legend-item"><div class="leg-dot" style="background:#27ae60"></div><span><strong style="color:#1e8449">Met</strong> — correctly performed (scores 1)</span></div>
+      <div class="legend-item"><div class="leg-dot" style="background:#e74c3c"></div><span><strong style="color:#922b21">Not Met</strong> — not performed (scores 0)</span></div>
+      <div class="legend-item"><div class="leg-dot" style="background:#f0b429"></div><span><strong style="color:#7d6608">Needs Improvement</strong> — partially done (scores 0)</span></div>
+      <div class="legend-item"><div class="leg-dot" style="background:#ccc"></div><span><strong style="color:#888">Blank</strong> — not assessed, not counted</span></div>
+    </div>
+
+    <div class="score-bar">
+      <div class="sc-group"><div class="sc-label">Score</div><div class="sc-val" id="ls-score">0 / 0</div></div>
+      <div class="sc-group"><div class="sc-label">Assessed</div><div class="sc-val" id="ls-assessed">0</div></div>
+      <div class="sc-group"><div class="sc-label" style="color:#5dde8a">✅ Met</div><div class="sc-val" id="ls-met" style="color:#5dde8a">0</div></div>
+      <div class="sc-group"><div class="sc-label" style="color:#ff7f7f">❌ Not Met</div><div class="sc-val" id="ls-notmet" style="color:#ff7f7f">0</div></div>
+      <div class="sc-group"><div class="sc-label" style="color:#ffd97d">🔶 Needs Impr.</div><div class="sc-val" id="ls-ni" style="color:#ffd97d">0</div></div>
+      <div class="sc-pct" id="ls-pct" style="background:#555">— %</div>
+    </div>
+
+    <div id="checklist-mode-banner" style="display:none;background:linear-gradient(135deg,#6c3483,#8e44ad);color:#fff;border-radius:8px;padding:13px 18px;margin-bottom:14px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:22px;">📞</span>
+      <div>
+        <div style="font-size:14px;font-weight:800;letter-spacing:.4px;">PRE-MOVE CONFIRMATION CALL CHECKLIST</div>
+        <div style="font-size:12px;opacity:.8;margin-top:2px;">22 items · Confirmation-focused criteria active</div>
+      </div>
+      <span style="margin-left:auto;background:rgba(255,255,255,.18);padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;">DIFFERENT CHECKLIST</span>
+    </div>
+    <div id="checklist-container"></div>
+
+    <div class="submit-row">
+      <button class="btn btn-reset" onclick="resetForm()">🔄 Reset</button>
+      <button class="btn btn-preview" onclick="previewScore()">👁 Preview Score</button>
+      <button class="btn btn-submit" id="btn-submit" onclick="submitForm()">✅ Submit &amp; Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DASHBOARD TAB ═══════════ -->
+<div id="panel-dashboard" class="panel">
+  <div class="dash-wrap">
+    <div class="dash-title">📊 Agent Scoreboard</div>
+    <input type="hidden" id="tsk-apikey">
+    <div style="display:none" id="tsk-files"><div id="tsk-file-grid"></div></div>
+
+    <div class="sub-tabs">
+      <button class="sub-tab-btn active" id="subtab-perf-btn" onclick="switchSubTab('performance')">
+        📊 Agent Performance
+      </button>
+      <button class="sub-tab-btn" id="subtab-aoi-btn" onclick="switchSubTab('aoi')">
+        🎯 Areas of Improvement <span style="font-size:11px;opacity:.75;">(Performance Clinique)</span>
+      </button>
+    </div>
+
+    <!-- Agent Performance sub-panel -->
+    <div class="sub-panel active" id="subpanel-performance">
+      <div class="filter-bar">
+        <div><label>From Date</label><input type="date" id="d-from"></div>
+        <div><label>To Date</label><input type="date" id="d-to"></div>
+        <div><label>Agent</label>
+          <select id="d-agent">
+            <option value="">All Agents</option>
+            <option>Myles</option><option>Dustin</option><option>Thomas</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+          </select></div>
+        <div><label>Call Type</label>
+          <select id="d-calltype">
+            <option value="">All Types</option>
+            <option>Inbound quote request</option>
+            <option>Inbound follow up</option>
+            <option>Outbound - Initial call</option>
+            <option>Outbound - follow up</option>
+            <option>Pre Move Confirmation call</option>
+            <option>Short calls less than 3 Mins</option>
+          </select></div>
+        <button class="btn-filter" onclick="renderDashboard()">🔍 Filter</button>
+        <button class="btn-clear-f" onclick="clearFilters()">✕ Clear</button>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card"><div class="kpi-val" id="kpi-total" style="color:#1a5276">0</div><div class="kpi-label">Total Assessments</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-avg" style="color:#27ae60">—</div><div class="kpi-label">Avg Score %</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-top" style="color:#e05c2a;font-size:18px">—</div><div class="kpi-label">Top Performer</div></div>
+        <div class="kpi-card"><div class="kpi-val" id="kpi-low" style="color:#c0392b;font-size:18px">—</div><div class="kpi-label">Needs Coaching</div></div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-title">📋 Agent Performance Summary</div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr>
+            <th>Rank</th><th>Agent</th><th>Calls</th><th>Avg Met</th><th>Avg Not Met</th>
+            <th>Avg Needs Impr.</th><th>Score %</th><th>Breakdown</th><th>Rating</th><th>Details</th>
+          </tr></thead>
+          <tbody id="agent-tbody"><tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-card-title">📞 Individual Call Log</div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr>
+            <th>Date</th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
+            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>📄 Summary</th><th>View</th>
+          </tr></thead>
+          <tbody id="call-tbody"><tr><td colspan="11" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <div class="charts-section">
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-card-header-left">
+              <span class="viz-title">📈 Score % Control Chart by Agent (SPC)</span>
+              <span class="viz-sub">Statistical Process Control · 3-Sigma Limits · Process Capability Analysis</span>
+            </div>
+            <div class="viz-toggle">
+              <button class="viz-toggle-btn active" id="chart-btn-agent" onclick="setGroupMode('agent')">By Agent</button>
+              <button class="viz-toggle-btn" id="chart-btn-date"  onclick="setGroupMode('date')">By Date</button>
+            </div>
+          </div>
+          <div class="viz-body">
+            <div class="viz-filter-bar">
+              <div>
+                <label>Agents</label>
+                <div class="multi-select-wrap" id="trend-ms-wrap">
+                  <button type="button" class="multi-select-trigger" id="trend-agents-trigger">All agents</button>
+                  <div class="multi-select-dropdown" id="trend-agents-dropdown">
+                    <div class="ms-search"><input type="text" placeholder="Search agents..." id="trend-agent-search" onkeyup="filterAgentOptions('trend')"></div>
+                    <div class="ms-options" id="trend-agent-options"></div>
+                    <div class="ms-actions">
+                      <button type="button" onclick="selectAllAgents('trend')">All</button>
+                      <button type="button" onclick="deselectAllAgents('trend')">None</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div><label>From</label><input type="date" id="trend-from"></div>
+              <div><label>To</label><input type="date" id="trend-to"></div>
+              <button class="btn-viz-filter" onclick="applyTrendFilters()">🔍 Apply</button>
+              <button class="btn-viz-clear" onclick="clearTrendFilters()">✕ Clear</button>
+            </div>
+            <div class="viz-canvas-wrap" id="scoreChartWrap">
+              <canvas id="scoreChart"></canvas>
+              <div id="chart-no-data" class="viz-no-data" style="position:absolute;inset:0;">
+                <div class="nd-i">📉</div>
+                <p>No trend data yet.<br>Submit calls across multiple dates.</p>
+              </div>
+            </div>
+            <div class="trend-agent-legend" id="trend-custom-legend"></div>
+          </div>
+        </div>
+
+        <div class="viz-card">
+          <div class="viz-card-header">
+            <div class="viz-card-header-left">
+              <span class="viz-title">🔥 Performance Heatmap</span>
+              <span class="viz-sub">Agent × Date · Color intensity = score (green=high, red=low)</span>
+            </div>
+            <span class="viz-badge viz-badge-live">● LIVE</span>
+          </div>
+          <div class="viz-body">
+            <div class="viz-filter-bar">
+              <div>
+                <label>Agents</label>
+                <div class="multi-select-wrap" id="heatmap-ms-wrap">
+                  <button type="button" class="multi-select-trigger" id="heatmap-agents-trigger">All agents</button>
+                  <div class="multi-select-dropdown" id="heatmap-agents-dropdown">
+                    <div class="ms-search"><input type="text" placeholder="Search agents..." id="heatmap-agent-search" onkeyup="filterAgentOptions('heatmap')"></div>
+                    <div class="ms-options" id="heatmap-agent-options"></div>
+                    <div class="ms-actions">
+                      <button type="button" onclick="selectAllAgents('heatmap')">All</button>
+                      <button type="button" onclick="deselectAllAgents('heatmap')">None</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div><label>From</label><input type="date" id="heatmap-from"></div>
+              <div><label>To</label><input type="date" id="heatmap-to"></div>
+              <button class="btn-viz-filter" onclick="applyHeatmapFilters()">🔍 Apply</button>
+              <button class="btn-viz-clear" onclick="clearHeatmapFilters()">✕ Clear</button>
+            </div>
+            <div class="heatmap-wrap" id="heatmapWrap">
+              <div id="heatmapNoData" class="viz-no-data" style="min-height:200px;">
+                <div class="nd-i">🔥</div>
+                <p>No data yet.<br>Submit calls to see the heatmap.</p>
+              </div>
+              <table class="heatmap-table" id="heatmapTable" style="display:none;"></table>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="agentBarChart" style="display:none;"></canvas>
+        <canvas id="radarChart" style="display:none;"></canvas>
+        <div id="agentBarNoData" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Areas of Improvement sub-panel -->
+    <div class="sub-panel" id="subpanel-aoi">
+      <div class="aoi-header">
+        <div class="aoi-header-left">
+          <h2>🎯 Areas of Improvement — Performance Clinique</h2>
+          <p>Aggregated "Not Met" counts across all monitored calls. Focus coaching on these top issues.</p>
+        </div>
+        <div class="aoi-kpi-mini" id="aoi-kpi-row">
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Calls Analysed</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-nm">0</div><div class="aoi-kpi-label">Total Not Met</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-nm">—</div><div class="aoi-kpi-label">Avg Not Met / Call</div></div>
+        </div>
+      </div>
+
+      <div class="aoi-filter-bar">
+        <div><label>Filter by Agent</label>
+          <select id="aoi-agent">
+            <option value="">All Agents</option>
+            <option>Myles</option><option>Dustin</option><option>Thomas</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+          </select>
+        </div>
+        <div><label>From Date</label><input type="date" id="aoi-from" style="padding:8px 12px;border:1.5px solid #d0dae5;border-radius:6px;font-size:13px;"></div>
+        <div><label>To Date</label><input type="date" id="aoi-to" style="padding:8px 12px;border:1.5px solid #d0dae5;border-radius:6px;font-size:13px;"></div>
+        <button class="btn-filter" onclick="renderAOI()">🔍 Apply Filter</button>
+        <button class="btn-clear-f" onclick="clearAOIFilters()">✕ Clear</button>
+      </div>
+
+      <div class="aoi-list-card" id="aoi-list-card">
+        <div class="aoi-list-header">
+          <h3>❌ Top 10 Most "Not Met" Criteria</h3>
+          <span id="aoi-list-subtitle">Across all calls</span>
+        </div>
+        <div id="aoi-list-body">
+          <div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>
+        </div>
+      </div>
+
+      <div class="aoi-section-breakdown">
+        <div class="aoi-section-header">
+          <h3>📋 Section-Level Not Met Breakdown</h3>
+          <span style="font-size:12px;opacity:.8;">All sections ranked by Not Met count</span>
+        </div>
+        <div class="aoi-sec-head">
+          <span>Section</span>
+          <span style="text-align:center">❌ Not Met</span>
+          <span style="text-align:center">🔶 Needs Impr.</span>
+          <span style="text-align:center">✅ Met</span>
+          <span style="text-align:center">Fail Rate</span>
+        </div>
+        <div id="aoi-section-body">
+          <div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ OVERALL SUMMARY TAB ═══════════ -->
+<div id="panel-summaries" class="panel">
+  <div class="sum3-wrap">
+    <div style="background:linear-gradient(135deg,#1a3c5e,#1a5276);color:#fff;border-radius:10px;padding:18px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:18px;font-weight:800;letter-spacing:.4px;margin-bottom:3px;">📄 Overall Call Summaries</div>
+        <div style="font-size:12px;color:#8ab4d4;">All summaries are saved automatically and persist across sessions</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <div id="sum3-header-count" style="background:rgba(255,255,255,.12);border-radius:20px;padding:6px 18px;font-size:13px;font-weight:700;color:#c8e0f4;">0 summaries</div>
+        <button onclick="clearAllSummaries()" style="background:rgba(192,57,43,.8);color:#fff;border:none;border-radius:20px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Clear All</button>
+      </div>
+    </div>
+
+    <div class="sum3-filter-bar">
+      <div><label>🔍 Search by name / lead</label><input type="text" id="sum3-search" placeholder="e.g. Daniel, 994…" oninput="renderSummaries()"></div>
+      <div><label>👤 Agent</label>
+        <select id="sum3-agent" onchange="renderSummaries()">
+          <option value="">All Agents</option>
+          <option>Myles</option><option>Dustin</option><option>Thomas</option>
+          <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+        </select>
+      </div>
+      <div><label>📅 From Date</label><input type="date" id="sum3-from" onchange="renderSummaries()"></div>
+      <div><label>📅 To Date</label><input type="date" id="sum3-to" onchange="renderSummaries()"></div>
+      <button style="padding:8px 16px;border-radius:6px;border:none;background:#888;color:#fff;font-size:12px;font-weight:700;cursor:pointer;" onclick="clearSum3Filters()">✕ Clear</button>
+      <div class="sum3-count-tag" id="sum3-count-tag">0 shown</div>
+    </div>
+
+    <div id="summaries-container"></div>
+    <div id="no-summaries-msg" style="display:none;">
+      <div class="sum3-empty"><div class="e-icon">📭</div><h3>No summaries loaded yet</h3><p>Go to the <strong style="color:#1a5276">📋 Call Monitoring Form</strong> tab → click <strong style="color:#1a5276">📂 Browse Files</strong> or <strong style="color:#1a5276">🎭 Demo Files</strong> → click a file card.</p></div>
+    </div>
+    <div id="no-match-msg" style="display:none;">
+      <div class="sum3-empty"><div class="e-icon">🔍</div><h3>No summaries match your filters</h3><p>Try adjusting your search or clearing the filters.</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="modal-title">Detail</h3><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+<div id="toast"></div>
+
+<script>
+const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwAGXVRq_yL4yULbXTRmLOkPTqUVWcCa0dqYsWHtTRbYRi__B2jkUGrnuINj6wmboZR/exec";
+const R_BLANK = "", R_MET = "met", R_NM = "notmet", R_NI = "ni";
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+// ═══════════════════════════════════════════════
+//  UPDATED CHECKLIST — Revised 09 Mar 2026
+// ═══════════════════════════════════════════════
+const SECTIONS = [
+  { title: "Call Opening & Contact Verification", items: [
+    "Introduced self with agent name and company name",
+    "Used a professional greeting, addressed the customer by name, and confirmed identity.",
+    "If wrong person, requested best callback time politely",
+    "Confirmed correct contact number when applicable",
+    "Scheduled callback when customer was unavailable",
+    "If wrong number, politely closed the call",
+    "Logged wrong number and informed team lead/vendor (as applicable)"
+  ]},
+  { title: "Permission & Call Agenda Setting", items: [
+    "Clearly stated purpose of call (quote request / move discussion)",
+    "Explained what will be covered during the call (move details + inventory)",
+    "Set expectation of call duration (approx. time required)",
+    "Asked for permission to proceed",
+    "If not a good time, accepted politely and did not push",
+    "Confirmed callback timing clearly",
+    "Scheduled callback at customer-preferred time"
+  ]},
+  { title: "Move Type Identification (Basic vs End-to-End Support)", items: [
+    "Identified whether customer needs basic or full-service moving.",
+    "Explained inclusions of basic moving as required (Loading, Transport, Unloading)",
+    "Explained inclusions of full-service moving as required (Packing, Dismantling/Assembling, Loading, Transport and Unloading)",
+    "Acknowledged and confirmed customer preference"
+  ]},
+  { title: "Address & Move Date Capture", items: [
+    "Captured complete pickup address",
+    "Captured complete delivery address",
+    "Confirmed move date clearly",
+    "Checked flexibility on dates"
+  ]},
+  { title: "Inventory Capture (Room-to-Room)", items: [
+    "Explained the importance of inventory for accurate pricing",
+    "Followed structured room-to-room approach",
+    "Covered all major rooms (living, bedrooms, kitchen)",
+    "Asked about storage, garage, balcony, and outdoor items",
+    "Probed for bulky, fragile, or special items",
+    "Confirmed bed sizes and major furniture dimensions where relevant",
+    "Confirmed appliances to be moved",
+    "Checked if any items were missed",
+    "Set clear follow-up if inventory was incomplete"
+  ]},
+  { title: "Access & Constraints (Time & Cost Impact)", items: [
+    "Asked about stairs or elevator at pickup",
+    "Asked about stairs or elevator at delivery",
+    "Checked parking availability at both locations",
+    "Assessed walking distance from truck to entrance",
+    "Flagged long carry if distance exceeds standard limits",
+    "Advised elevator booking if required",
+    "Advised to include buffer time for elevator booking",
+    "Explained impact of access on time and cost"
+  ]},
+  { title: "Packing & Add-On Services", items: [
+    "Checked if customer prefers self-packing or company packing",
+    "Acknowledged customer's packing preference clearly",
+    "Offered packing materials for self-pack customers.",
+    "If packing service requested, confirmed full or partial packing requirement",
+    "Explained packing time inclusion in crew hours.",
+    "Asked about dismantling and reassembly (beds, wardrobes, large furniture)",
+    "Documented dismantling requirements",
+    "Explained that dismantling/assembly affects time and estimate",
+    "Offered packing tips or guidance for fragile items when relevant",
+    "Recorded add-ons accurately in the system"
+  ]},
+  { title: "Pricing & Estimate \u2013 Local Moves", items: [
+    "Explained pricing is based on hourly rate and crew size",
+    "Explained billing start and end points clearly",
+    "Linked estimate to inventory and access factors",
+    "Provided time range, not guaranteed duration"
+  ]},
+  { title: "Pricing & Estimate \u2013 Long Distance", items: [
+    "Explained pricing is based on shipment weight and distance",
+    "Explained certified weigh station process",
+    "Clarified labor vs transportation charges",
+    "Explained delivery window vs fixed date"
+  ]},
+  { title: "TNVL Trust Builders & Transparency", items: [
+    "Explained when billing starts (at loading, not during drive to pickup)",
+    "Explained travel time calculation (using Google Maps)",
+    "Explained that crews follow proper wrapping and protection procedures (As applicable)",
+    "Reinforced that there are no hidden charges and pricing drivers are explained upfront",
+    "Explained how crew work time is tracked and communicated",
+    "Clarified that break time is not charged and timer is paused during breaks",
+    "Positioned trust and visibility as part of TNVL service approach",
+    "Delivered trust statements confidently and naturally (not scripted)"
+  ]},
+  { title: "Objection Handling - Trust & Credibility Objections", items: [
+    "Addressed \"no / few reviews\" concern by explaining recent rebranding",
+    "Clarified that crew and coordinators are experienced, not new to industry",
+    "Highlighted structured planning and documentation",
+    "Redirected conversation back to service process and next steps"
+  ]},
+  { title: "Objection Handling - Price & Value Objections", items: [
+    "Clarified that estimates are based on inventory and access details",
+    "Explained that planning helps avoid later price increases",
+    "Did not criticize competitor pricing practices directly",
+    "Positioned service quality and planning as value drivers",
+    "Offered basic vs full service options where relevant",
+    "Avoided negotiating price without reviewing service scope"
+  ]},
+  { title: "Objection Handling - Safety & Damage Concerns", items: [
+    "Reassured with planning and correct crew sizing",
+    "Explained use of proper padding, wrapping, and loading methods",
+    "Encouraged disclosure of fragile or special items",
+    "Confirmed special handling items are noted in move plan",
+    "Clarified that issues are handled through office process, not just crew"
+  ]},
+  { title: "Objection Handling - Storage & Delivery Timing", items: [
+    "Explained storage vs direct delivery",
+    "Clarified why storage is charged from day one (handling and facilities)",
+    "Did not claim competitor offers are misleading or wrong",
+    "Explained delivery windows for long-distance moves",
+    "Did not guarantee fixed delivery dates for standard service",
+    "Offered alternatives (storage or dedicated truck) when firm dates required"
+  ]},
+  { title: "Objection Handling - Last-Minute / Short-Notice Moves", items: [
+    "Acknowledged urgency without over-promising",
+    "Explained limited availability of crews and trucks",
+    "Did not guarantee service without verifying availability"
+  ]},
+  { title: "Objection Handling - Decision Delay / Comparison", items: [
+    "Respected customer need to consult family or partner",
+    "Offered to send estimate and move details for review",
+    "Set clear follow-up timeline and next contact point",
+    "Offered tentative date hold",
+    "Did not disengage or end call without next steps"
+  ]},
+  { title: "Objection Handling - Charges, Valuation & Policies", items: [
+    "Reassured that known cost factors are included upfront",
+    "Explained that changes are discussed before move day",
+    "Avoided unrealistic commitments",
+    "Explained valuation as weight-based industry standard",
+    "Avoided overselling additional insurance",
+    "Reinforced prevention through planning and handling"
+  ]},
+  { title: "Sale Technique - Booking & Payment Process", items: [
+    "Attempted to close after sharing estimate",
+    "Asked clearly if customer would like to proceed with booking",
+    "Offered tentative slot if customer hesitated",
+    "Explained deposit amount and purpose clearly",
+    "Explained cancellation window linked to deposit",
+    "Explained 50% payment before loading at place of Origin",
+    "Explained balance payment timing correctly (before unloading)",
+    "Did not give unclear or conflicting payment information"
+  ]},
+  { title: "Pre-Move Confirmation Process", items: [
+    "Informed customer about pre-move confirmation call",
+    "Informed that the pre-move confirmation call will be 3 days prior to actual move date",
+    "Explained purpose of confirmation call",
+    "Confirmed best contact number",
+    "Confirmed preferred time for confirmation call",
+    "Explained importance of confirmation for crew dispatch",
+    "Reinforced updating inventory if changes occur"
+  ]},
+  { title: "Cancellation & Reschedule Management", items: [
+    "Acknowledged cancellation request with empathy",
+    "Asked reason before processing cancellation",
+    "Attempted save if issue was objection-related",
+    "Offered reschedule where appropriate",
+    "Explained cancellation charges as per policy",
+    "Did not pressure after final decision",
+    "Confirmed cancellation process and next steps"
+  ]},
+  { title: "Soft Skills & Customer Experience", items: [
+    "Spoke clearly, confidently, and at an appropriate pace",
+    "Used professional and customer-friendly language",
+    "Avoided vague, unsure, or filler language",
+    "Did not interrupt and listened actively to the customer",
+    "Asked relevant probing questions to understand needs",
+    "Showed empathy and reassurance during customer concerns",
+    "Maintained a calm, respectful, and positive tone throughout the call",
+    "Guided the conversation and kept it focused on next steps.",
+    "Built rapport and trust using the customer\u2019s name and natural conversation",
+    "Summarized key details and encouraged commitment or next steps",
+    "Confidently responded to customer questions without deflection",
+    "Did not sound dismissive, rushed, or irritated"
+  ]},
+  { title: "Tools Usage", items: [
+    "Correct customer details verified and updated",
+    "Move Section updated with all relevant details (Move Date, Address, Add on Services, Inventory List, Access details)",
+    "Follow-up tasks created with correct timeline",
+    "Call outcome updated correctly",
+    "Estimate shared with the Customer (during the call/immediately after call)",
+    "Clear notes updated on call discussion"
+  ]}
+];
+
+let ratings = {}, records = [], selectedFile = null;
+
+function initRatings() {
+  ratings = {};
+  SECTIONS.forEach((sec, si) => sec.items.forEach((_, ii) => { ratings[`r_${si}_${ii}`] = R_BLANK; }));
+}
+
+function buildChecklist() {
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = '';
+  SECTIONS.forEach((sec, si) => {
+    const hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    hdr.innerHTML = `<span>${sec.title}</span><span class="sec-count">${sec.items.length} items</span>`;
+    const card = document.createElement('div');
+    card.className = 'checklist-card';
+    const colHdr = document.createElement('div');
+    colHdr.className = 'cl-head';
+    colHdr.innerHTML = '<span>#</span><span>Criteria</span><span style="text-align:center">Rating</span>';
+    card.appendChild(colHdr);
+    sec.items.forEach((item, ii) => {
+      const row = document.createElement('div');
+      row.className = 'cl-row'; row.id = `row_${si}_${ii}`;
+      row.innerHTML = `
+        <span class="cl-num">${ii+1}</span>
+        <span class="cl-text">${item}</span>
+        <span><select class="rating-select blank" id="r_${si}_${ii}" onchange="onRatingChange(this,${si},${ii})">
+          <option value="">— Not Assessed —</option>
+          <option value="met">✅ Met</option>
+          <option value="notmet">❌ Not Met</option>
+          <option value="ni">🔶 Needs Improvement</option>
+        </select></span>`;
+      card.appendChild(row);
+    });
+    container.appendChild(hdr);
+    container.appendChild(card);
+  });
+}
+
+function onRatingChange(sel, si, ii) {
+  const val = sel.value;
+  ratings[`r_${si}_${ii}`] = val;
+  sel.className = 'rating-select ' + (val==='met'?'met':val==='notmet'?'notmet':val==='ni'?'ni':'blank');
+  updateLiveScore();
+}
+
+function calcScore() {
+  let assessed=0,metCount=0,nmCount=0,niCount=0; const breakdown=[];
+  SECTIONS.forEach((sec,si) => {
+    let sA=0,sM=0,sN=0,sI=0; const items=[];
+    sec.items.forEach((item,ii) => {
+      const r=ratings[`r_${si}_${ii}`]; if(r===R_BLANK) return;
+      sA++;assessed++;
+      if(r===R_MET){sM++;metCount++;}if(r===R_NM){sN++;nmCount++;}if(r===R_NI){sI++;niCount++;}
+      items.push({label:item,rating:r});
+    });
+    if(sA>0) breakdown.push({title:sec.title,met:sM,notmet:sN,ni:sI,assessed:sA,items});
+  });
+  const pct=assessed>0?Math.round((metCount/assessed)*100):0;
+  return {assessed,metCount,nmCount,niCount,pct,breakdown};
+}
+
+function updateLiveScore() {
+  const {assessed,metCount,nmCount,niCount,pct}=calcScore();
+  document.getElementById('ls-score').textContent=`${metCount} / ${assessed}`;
+  document.getElementById('ls-assessed').textContent=assessed;
+  document.getElementById('ls-met').textContent=metCount;
+  document.getElementById('ls-notmet').textContent=nmCount;
+  document.getElementById('ls-ni').textContent=niCount;
+  const el=document.getElementById('ls-pct');
+  el.textContent=assessed>0?`${pct}%`:'— %';
+  el.style.background=assessed===0?'#555':pct>=80?'#27ae60':pct>=60?'#e0a01a':'#c0392b';
+}
+
+function toggleApiSettings() {
+  const panel = document.getElementById('api-settings-panel');
+  const btn = document.getElementById('settings-toggle-btn');
+  if(panel.style.display === 'none') { panel.style.display = 'block'; btn.textContent = '⚙️ Hide Settings'; btn.style.background = 'rgba(245,80,54,.2)'; }
+  else { panel.style.display = 'none'; btn.textContent = '⚙️ API Settings'; btn.style.background = 'rgba(255,255,255,.1)'; }
+}
+
+function saveGeminiKey(val) {
+  const acvlKey = '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';
+  if(val && val.trim() !== acvlKey) {
+    const el=document.getElementById('gemini-key-status');
+    if(el) el.innerHTML = '<span style="color:#fbbf24">⚠️ ACVL API key is locked. Using ACVL key.</span>';
+    setTimeout(() => { localStorage.setItem('groq_api_key', acvlKey); const ki=document.getElementById('gemini-key-input'); if(ki)ki.value=acvlKey; if(el)el.innerHTML='<span style="color:#5dde8a">✅ ACVL API key locked and active.</span>'; }, 1000);
+    return;
+  }
+  val=val.trim(); const el=document.getElementById('gemini-key-status');
+  if(val){ localStorage.setItem('groq_api_key',val); const valid=val.startsWith('gsk_'); el.innerHTML=valid?'<span style="color:#5dde8a">✅ ACVL API key locked and active.</span>':'<span style="color:#f0b429">⚠️ Key should start with gsk_...</span>'; }
+  else{ localStorage.removeItem('groq_api_key'); el.textContent=''; }
+}
+function toggleGeminiKeyVisibility() { const inp=document.getElementById('gemini-key-input'); inp.type=inp.type==='password'?'text':'password'; }
+function loadSavedGeminiKey() {
+  const newKey = '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';
+  localStorage.setItem('groq_api_key', newKey);
+  localStorage.removeItem('last_rate_limit');
+  const forceUpdate = () => { const ki=document.getElementById('gemini-key-input'); const se=document.getElementById('gemini-key-status'); if(ki){ki.value=newKey;} if(se){se.innerHTML='<span style="color:#5dde8a">✅ ACVL API key loaded.</span>';} };
+  forceUpdate(); setTimeout(forceUpdate,200); setTimeout(forceUpdate,500);
+  enforceAcvlKey();
+}
+function enforceAcvlKey() {
+  const acvlKey = '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';
+  setInterval(() => { const ki=document.getElementById('gemini-key-input'); const ck=localStorage.getItem('groq_api_key'); if(ki&&ki.value!==acvlKey)ki.value=acvlKey; if(ck!==acvlKey)localStorage.setItem('groq_api_key',acvlKey); }, 1000);
+}
+
+async function callGeminiAPI(prompt, apiKey) {
+  const correctKey = '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';
+  if(apiKey !== correctKey) { apiKey = correctKey; localStorage.setItem('groq_api_key', correctKey); }
+  if(!apiKey||!apiKey.startsWith('gsk_')) throw new Error('Invalid Groq API key. Must start with gsk_');
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  let retries=0; const maxRetries=3;
+  while(retries<maxRetries) {
+    try {
+      const response=await fetch(GROQ_API_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},body:JSON.stringify({model:GROQ_MODEL,messages:[{role:'system',content:'You are a call quality evaluator. Return ONLY valid JSON, no markdown, no explanation.'},{role:'user',content:prompt}],temperature:0.1,max_tokens:4096})});
+      if(!response.ok){const errData=await response.json().catch(()=>({}));const errMsg=errData?.error?.message||`HTTP ${response.status}`;if(response.status===401)throw new Error('Invalid Groq API key.');if(response.status===429){retries++;if(retries>=maxRetries)throw new Error('Rate limit exceeded. Please wait and try again.');await new Promise(r=>setTimeout(r,5000*retries));continue;}throw new Error(`Groq API error ${response.status}: ${errMsg}`);}
+      const data=await response.json();const text=data?.choices?.[0]?.message?.content||'';if(!text)throw new Error('Groq returned empty response.');return text;
+    } catch(error) { if(error.message.includes('Rate limit')){retries++;if(retries>=maxRetries)throw error;await new Promise(r=>setTimeout(r,10000*retries));continue;} throw error; }
+  }
+  throw new Error('Failed after maximum retries. Please try again later.');
+}
+
+// ═══ FILE SELECTION ═══
+let selectedTskOrderId = null;
+let allTskFiles = [];
+
+function renderFileListInForm(files) {
+  allTskFiles = files;
+  const noFiles=document.getElementById('tsk-form-no-files'),label=document.getElementById('tsk-file-count-label'),list=document.getElementById('tsk-form-file-list');
+  if(!files.length){noFiles.style.display='';label.style.display='none';list.style.display='none';list.innerHTML='';return;}
+  noFiles.style.display='none';label.style.display='block';label.textContent=`📁 ${files.length} files — click one to select, click again to deselect`;list.style.display='grid';
+  list.innerHTML=files.map(f=>{const isSelected=selectedTskOrderId===f.order_id;const isLoaded=!!tskSummaries[f.order_id];const borderColor=isSelected?'#27ae60':isLoaded?'#1a6bb5':'#2d5a82';const bgColor=isSelected?'rgba(39,174,96,.22)':isLoaded?'rgba(26,107,181,.1)':'rgba(255,255,255,.05)';const arrow=isSelected?'✅':isLoaded?'☑':'→';const safeId=f.order_id.replace(/[^a-zA-Z0-9_-]/g,'_');const safeName=(f.name||'').replace(/\\/g,'').replace(/'/g,"'").replace(/"/g,'&quot;');const safeDate=(f.created_at||'').replace(/'/g,"'");return `<div class="tsk-form-file-card" id="tsk-form-card-${safeId}" style="border:1.5px solid ${borderColor};background:${bgColor};cursor:pointer;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;transition:all .15s;" onclick="toggleFileSelection('${f.order_id.replace(/'/g,"\\'")}','${safeName}','${safeDate}')"><div style="flex:1;min-width:0;overflow:hidden;"><div style="font-size:13px;font-weight:700;color:#d0eaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${f.name}</div>${f.created_at?`<div style="font-size:11px;color:#6a9abf;margin-top:2px;">${f.created_at}</div>`:''}</div><div style="font-size:16px;flex-shrink:0;" id="tsk-form-arrow-${safeId}">${arrow}</div></div>`;}).join('');
+}
+
+async function toggleFileSelection(orderId,name,date) {
+  if(selectedTskOrderId===orderId){selectedTskOrderId=null;document.getElementById('tsk-form-selected').style.display='none';renderFileListInForm(allTskFiles);showToast('Deselected — click another file to select it','#888');return;}
+  selectedTskOrderId=orderId;renderFileListInForm(allTskFiles);
+  const safeId=orderId.replace(/[^a-zA-Z0-9_-]/g,'_');const arrowEl=document.getElementById(`tsk-form-arrow-${safeId}`);if(arrowEl)arrowEl.innerHTML='<span class="tsk-spinner"></span>';
+  document.getElementById('tsk-form-selected').style.display='block';document.getElementById('tsk-form-selected-name').textContent=`⏳ Loading: ${name}...`;
+  if(!tskSummaries[orderId]){
+    let summaryText='';
+    if(TSK_DEMO_SUMMARIES[orderId]){await new Promise(r=>setTimeout(r,500));summaryText=TSK_DEMO_SUMMARIES[orderId];}
+    else{const key=localStorage.getItem('tnvl_tkey')||(document.getElementById('tsk-apikey-sum')&&document.getElementById('tsk-apikey-sum').value.trim())||'';if(!key){document.getElementById('api-settings-panel').style.display='block';document.getElementById('settings-toggle-btn').textContent='⚙️ Hide Settings';showToast('⚠️ Enter your Transkriptor API key in ⚙️ API Settings','#e05c2a');selectedTskOrderId=null;document.getElementById('tsk-form-selected').style.display='none';renderFileListInForm(allTskFiles);return;}
+      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`http://localhost:3000/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
+    }
+    const leadMatch=name.match(/(\d+)$/);const leadId=leadMatch?leadMatch[1]:null;
+    tskSummaries[orderId]={fileName:name,fileDate:date,text:summaryText,leadId};saveTskSummaries();renderSummaries();
+  }
+  document.getElementById('tsk-form-selected-name').textContent=`📄 ${name}`;renderFileListInForm(allTskFiles);
+  showToast(`✅ "${name}" selected — click ✨ Analyze to auto-fill checklist`,'#27ae60');
+}
+
+function refreshTskFormFiles() { if(allTskFiles.length){renderFileListInForm(allTskFiles);}else if(Object.keys(tskSummaries).length){const files=Object.entries(tskSummaries).map(([id,s])=>({order_id:id,name:s.fileName,created_at:s.fileDate||''}));renderFileListInForm(files);} }
+
+// ═══ ANALYSIS ═══
+async function runAnalysis(){
+  if(!selectedTskOrderId||!tskSummaries[selectedTskOrderId]){showErrorResult('Please select a file from the list above first — click 📂 Browse Files or 🎭 Demo Files, then click a file card.');return;}
+  await runRealAnalysis();
+}
+function showErrorResult(message){const el=document.getElementById('ai-result');el.className='ai-result-bar error';el.innerHTML=`❌ ${message}`;document.getElementById('error-help').classList.add('show');}
+
+async function runRealAnalysis(){
+  const s=tskSummaries[selectedTskOrderId];const fullText=s.text||'';
+  const btn=document.getElementById('ai-btn');btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Analyzing with Gemini 2.0 Flash…';
+  const progressEl=document.getElementById('ai-progress'),resultEl=document.getElementById('ai-result'),helpEl=document.getElementById('error-help');
+  progressEl.classList.add('show');resultEl.className='ai-result-bar';resultEl.textContent='';helpEl.classList.remove('show');
+  [1,2,3,4].forEach(n=>setStep(n,'pending'));setStep(1,'active');await delay(400);
+  let aiSummary='',transcript='';const tMarker='🎙️ FULL TRANSCRIPT',sMarker='📝 AI SUMMARY';
+  if(fullText.includes(tMarker)){const parts=fullText.split(tMarker);aiSummary=parts[0].replace(sMarker,'').replace(/─+/g,'').trim();transcript=parts[1]?parts[1].replace(/─+/g,'').trim():'';}else{transcript=fullText;}
+  const combined=`AI SUMMARY:\n${aiSummary}\n\nFULL TRANSCRIPT:\n${transcript}`;
+  setStep(1,'done');setStep(2,'active');await delay(300);setStep(2,'done');setStep(3,'active');
+  try {
+    const flatChecklist=SECTIONS.flatMap((sec,si)=>sec.items.map((item,ii)=>`r_${si}_${ii}: ${item}`)).join('\n');
+    let fetchResponse;
+    try{fetchResponse=await fetch('http://localhost:3000/api/analyze-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
+    catch(networkErr){throw new Error('Cannot reach backend server. Open a terminal and run: node server.js');}
+    if(!fetchResponse.ok){const errData=await fetchResponse.json().catch(()=>({}));const errMsg=errData?.error||`HTTP ${fetchResponse.status}`;if(fetchResponse.status===429)throw new Error('Rate limit hit. Wait 1 min then try again.');if(errMsg.includes('GEMINI_API_KEY')||errMsg.includes('API key'))throw new Error('Gemini API key missing or invalid. Check .env: GEMINI_API_KEY=AIza...');throw new Error('Backend error: '+errMsg);}
+    const data=await fetchResponse.json();const serverRatings=data.ratings||{};
+    let filled=0,skipped=0;
+    for(let si=0;si<SECTIONS.length;si++){for(let ii=0;ii<SECTIONS[si].items.length;ii++){const key=`r_${si}_${ii}`;const aiRating=serverRatings[key];if(!aiRating||aiRating==='skip'){skipped++;continue;}const sel=document.getElementById(key);if(sel){sel.value=aiRating;ratings[key]=aiRating;sel.className='rating-select '+aiRating;const row=document.getElementById(`row_${si}_${ii}`);if(row){row.classList.remove('ai-filled');void row.offsetWidth;row.classList.add('ai-filled');}filled++;updateLiveScore();}await delay(12);}await delay(20);}
+    setStep(3,'done');setStep(4,'active');
+    const{metCount,nmCount,niCount,pct}=calcScore();
+    resultEl.className='ai-result-bar success';resultEl.innerHTML=`✅ AI analysis complete from <strong>${s.fileName}</strong>!<br>Auto-filled <strong>${filled}</strong> criteria (${skipped} skipped as N/A).<br>Score: <strong>${metCount} Met / ${nmCount} Not Met / ${niCount} Needs Improvement = ${pct}%</strong>`;
+    if(transcript){document.getElementById('transcript-text').textContent=transcript.substring(0,3000);document.getElementById('transcript-toggle').style.display='inline-block';}
+    const leadMatch=(s.fileName||'').match(/(\d+)$/);if(leadMatch&&!document.getElementById('f-lead').value)document.getElementById('f-lead').value=leadMatch[1];
+    const agentMatch=(s.fileName||'').match(/^([A-Za-z]+)\s*[-_]/);if(agentMatch){const agentSel=document.getElementById('f-agent');for(let opt of agentSel.options){if(opt.text.toLowerCase().startsWith(agentMatch[1].toLowerCase())){agentSel.value=opt.value;break;}}}
+    showToast(`✨ Gemini filled ${filled} items! Score: ${pct}%`,'#27ae60');saveTskSummaries();
+  }catch(err){
+    [1,2,3,4].forEach(n=>setStep(n,'error'));resultEl.className='ai-result-bar error';
+    resultEl.innerHTML=`❌ Analysis failed: <strong>${err.message}</strong>`;
+    document.getElementById('error-help').classList.add('show');showToast(`⚠️ ${err.message}`,'#e05c2a');
+  }
+  btn.disabled=false;btn.innerHTML='✨ Analyze &amp; Auto-Fill with Gemini 2.0 Flash';
+  setTimeout(()=>{document.getElementById('checklist-container').scrollIntoView({behavior:'smooth',block:'start'});},800);
+}
+
+function toggleTranscript(){const box=document.getElementById('transcript-box');const btn=document.getElementById('transcript-toggle');if(box.classList.contains('show')){box.classList.remove('show');btn.textContent='📄 Show Transcript Used';}else{box.classList.add('show');btn.textContent='📄 Hide Transcript';}}
+
+function previewScore(){const{assessed,metCount,nmCount,niCount,pct}=calcScore();if(assessed===0){showToast('⚠️ No items rated yet!','#e05c2a');return;}const rating=pct>=80?'⭐ Excellent':pct>=60?'📈 Good':'⚠️ Needs Improvement';alert(`📊 Score Preview\n\nItems Assessed  : ${assessed}\n✅ Met          : ${metCount}\n❌ Not Met      : ${nmCount}\n🔶 Needs Impr.  : ${niCount}\n\nFinal Score     : ${metCount} / ${assessed} = ${pct}%\nRating          : ${rating}`);}
+
+function updateMoveValue(){const a=parseFloat(document.getElementById('f-movevalue-amount').value)||0;const s=document.getElementById('f-movevalue');s.value=a===0?'':a<2000?'Low Value':a<=5000?'Mid Value':'High Value';}
+
+function resetForm(){
+  if(!confirm('Reset all ratings and fields?'))return;
+  SECTIONS.forEach((sec,si)=>sec.items.forEach((_,ii)=>{const sel=document.getElementById(`r_${si}_${ii}`);if(sel){sel.value='';sel.className='rating-select blank';}}));
+  initRatings();
+  ['f-lead','f-customer','f-duration','f-evaluator'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-agent','f-calltype','f-movetype','f-movevalue-amount','f-movevalue','f-conversion','f-leadstatus','f-cuecard'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];document.getElementById('f-datetime').value='';
+  document.getElementById('ai-progress').classList.remove('show');document.getElementById('ai-result').className='ai-result-bar';document.getElementById('ai-result').textContent='';document.getElementById('error-help').classList.remove('show');document.getElementById('transcript-box').classList.remove('show');document.getElementById('transcript-toggle').style.display='none';
+  updateLiveScore();
+}
+
+async function submitForm(){
+  const agent=document.getElementById('f-agent').value,date=document.getElementById('f-date').value;
+  if(!agent){showToast('⚠️ Please select an agent!','#e05c2a');return;}if(!date){showToast('⚠️ Please enter a date!','#e05c2a');return;}
+  const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
+  const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
+  records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
+  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
+  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
+  btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
+}
+
+// ═══ DASHBOARD ═══
+function getFiltered(){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;if(ag&&r.agent!==ag)return false;if(ct&&r.callType!==ct)return false;return true;}).sort((a,b)=>b.date.localeCompare(a.date));}
+const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
+function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
+function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
+function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
+function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));}
+function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));}
+
+function initMultiSelect(wrapId,triggerId,dropdownId){
+  const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
+  const prev=getSelectedAgents(wrapId),agents=getAllAgents(),type=wrapId.includes('trend')?'trend':'heatmap',optionsContainer=document.getElementById(`${type}-agent-options`);
+  if(optionsContainer)optionsContainer.innerHTML=agents.map(a=>`<label><input type="checkbox" value="${String(a).replace(/"/g,'&quot;')}" ${prev.length===0||prev.includes(a)?'checked':''}> ${escHtml(a)}</label>`).join('');
+  wrap._clickOutside||=function(e){if(!wrap.contains(e.target))wrap.classList.remove('open');};
+  trigger.onclick=()=>{wrap.classList.toggle('open');};document.removeEventListener('click',wrap._clickOutside);document.addEventListener('click',wrap._clickOutside);
+  const checkboxes=optionsContainer?optionsContainer.querySelectorAll('input'):[];checkboxes.forEach(cb=>cb.addEventListener('change',()=>updateMultiSelectLabel(wrapId,triggerId)));
+  updateMultiSelectLabel(wrapId,triggerId);
+}
+function updateMultiSelectLabel(wrapId,triggerId){const wrap=document.getElementById(wrapId),sel=getSelectedAgents(wrapId),trigger=document.getElementById(triggerId),total=wrap?.querySelectorAll('.multi-select-dropdown input[type="checkbox"]')?.length||0;if(trigger){if(sel.length===0)trigger.textContent='No agents';else if(total>0&&sel.length===total)trigger.textContent='All agents';else trigger.textContent=`${sel.length} agent${sel.length>1?'s':''} selected`;}}
+function filterAgentOptions(type){const si=document.getElementById(`${type}-agent-search`),oc=document.getElementById(`${type}-agent-options`),st=si.value.toLowerCase(),labels=oc?oc.querySelectorAll('label'):[];labels.forEach(l=>{l.classList.toggle('hidden',!l.textContent.toLowerCase().includes(st));});}
+function selectAllAgents(type){const oc=document.getElementById(`${type}-agent-options`);if(oc)oc.querySelectorAll('input:not(:disabled)').forEach(cb=>cb.checked=true);updateMultiSelectLabel(`${type}-ms-wrap`,`${type}-agents-trigger`);}
+function deselectAllAgents(type){const oc=document.getElementById(`${type}-agent-options`);if(oc)oc.querySelectorAll('input:not(:disabled)').forEach(cb=>cb.checked=false);updateMultiSelectLabel(`${type}-ms-wrap`,`${type}-agents-trigger`);}
+
+function pctColor(p){return p>=80?'#27ae60':p>=60?'#e0a01a':'#c0392b';}
+function ratingBadge(p){return p>=80?`<span class="badge badge-high">⭐ Excellent</span>`:p>=60?`<span class="badge badge-mid">📈 Good</span>`:`<span class="badge badge-low">⚠️ Needs Work</span>`;}
+function segBar(met,nm,ni,total){if(!total)return'<div class="seg-bar"></div>';const mp=Math.round(met/total*100),nip=Math.round(ni/total*100),nmp=100-mp-nip;return`<div class="seg-bar"><div class="seg-met" style="width:${mp}%"></div><div class="seg-ni" style="width:${nip}%"></div><div class="seg-nm" style="width:${nmp}%"></div></div>`;}
+
+const AGENT_COLORS=[{border:'#38bdf8',bg:'rgba(56,189,248,.75)',light:'rgba(56,189,248,'},{border:'#fb923c',bg:'rgba(251,146,60,.75)',light:'rgba(251,146,60,'},{border:'#a78bfa',bg:'rgba(167,139,250,.75)',light:'rgba(167,139,250,'},{border:'#4ade80',bg:'rgba(74,222,128,.75)',light:'rgba(74,222,128,'},{border:'#f472b6',bg:'rgba(244,114,182,.75)',light:'rgba(244,114,182,'},{border:'#facc15',bg:'rgba(250,204,21,.75)',light:'rgba(250,204,21,'},{border:'#34d399',bg:'rgba(52,211,153,.75)',light:'rgba(52,211,153,'},{border:'#f87171',bg:'rgba(248,113,113,.75)',light:'rgba(248,113,113,'},];
+let scoreChartInstance=null,currentGroupMode='agent';
+function setGroupMode(mode){currentGroupMode=mode;const ba=document.getElementById('chart-btn-agent'),bd=document.getElementById('chart-btn-date');if(ba)ba.classList.toggle('active',mode==='agent');if(bd)bd.classList.toggle('active',mode==='date');renderScoreChart(getTrendFiltered());}
+function applyTrendFilters(){renderScoreChart(getTrendFiltered());}
+function clearTrendFilters(){const f=document.getElementById('trend-from'),t=document.getElementById('trend-to');if(f)f.value='';if(t)t.value='';const drop=document.getElementById('trend-agents-dropdown');if(drop)drop.querySelectorAll('input').forEach(c=>c.checked=true);updateMultiSelectLabel('trend-ms-wrap','trend-agents-trigger');renderScoreChart(getTrendFiltered());}
+function applyHeatmapFilters(){renderHeatmap(getHeatmapFiltered());}
+function clearHeatmapFilters(){const f=document.getElementById('heatmap-from'),t=document.getElementById('heatmap-to');if(f)f.value='';if(t)t.value='';const drop=document.getElementById('heatmap-agents-dropdown');if(drop)drop.querySelectorAll('input').forEach(c=>c.checked=true);updateMultiSelectLabel('heatmap-ms-wrap','heatmap-agents-trigger');renderHeatmap(getHeatmapFiltered());}
+
+function scoreToHeatColor(pct){if(pct==null||isNaN(pct))return'rgba(80,90,110,.5)';const t=Math.max(0,Math.min(100,pct))/100;return`rgb(${Math.round(192-153*t)},${Math.round(57+117*t)},${Math.round(43+53*t)})`;}
+function renderHeatmap(filtered){
+  const wrap=document.getElementById('heatmapWrap'),noData=document.getElementById('heatmapNoData'),table=document.getElementById('heatmapTable');if(!wrap||!table)return;
+  if(!filtered||!filtered.length){table.style.display='none';if(noData)noData.style.display='flex';return;}
+  const dates=[...new Set(filtered.map(r=>r.date))].sort(),agents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
+  filtered.forEach(r=>{if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
+  const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
+  let html='<thead><tr><th>Agent</th>';dates.forEach(d=>{html+=`<th>${fmtDate(d)}</th>`;});html+='</tr></thead><tbody>';
+  agents.forEach((ag,ai)=>{const c=AGENT_COLORS[ai%AGENT_COLORS.length];html+=`<tr><td class="hm-agent" style="border-left:3px solid ${c.border}">${escHtml(ag)}</td>`;dates.forEach(dt=>{const vals=lookup[ag]?.[dt];const avg=vals&&vals.length?Math.round(vals.reduce((s,v)=>s+v,0)/vals.length):null;html+=`<td class="heatmap-cell" style="background:${scoreToHeatColor(avg)}">${avg!=null?avg+'%':'—'}</td>`;});html+='</tr>';});html+='</tbody>';
+  table.innerHTML=html;table.style.display='table';if(noData)noData.style.display='none';
+}
+
+function renderScoreChart(filtered){
+  const canvas=document.getElementById('scoreChart'),noDataEl=document.getElementById('chart-no-data');if(!canvas)return;
+  if(!filtered||!filtered.length){try{if(scoreChartInstance){scoreChartInstance.destroy();scoreChartInstance=null;}}catch(e){scoreChartInstance=null;}canvas.style.display='none';if(noDataEl)noDataEl.style.display='flex';const cl=document.getElementById('trend-custom-legend');if(cl)cl.innerHTML='';return;}
+  canvas.style.display='block';if(noDataEl)noDataEl.style.display='none';
+  const allDatesRaw=[...new Set(filtered.map(r=>r.date))].sort(),last7dates=allDatesRaw.slice(-7),allAgents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
+  filtered.forEach(r=>{if(!last7dates.includes(r.date))return;if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
+  allAgents.forEach(ag=>{last7dates.forEach(dt=>{if(lookup[ag]?.[dt]){const vals=lookup[ag][dt];lookup[ag][dt]=Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);}});});
+  const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
+  const DATE_PALETTE=[{border:'#38bdf8',light:'rgba(56,189,248,'},{border:'#fb923c',light:'rgba(251,146,60,'},{border:'#a78bfa',light:'rgba(167,139,250,'},{border:'#4ade80',light:'rgba(74,222,128,'},{border:'#f472b6',light:'rgba(244,114,182,'},{border:'#facc15',light:'rgba(250,204,21,'},{border:'#34d399',light:'rgba(52,211,153,'},];
+  let labels,datasets;
+  if(currentGroupMode==='agent'){labels=allAgents;datasets=last7dates.map((date,di)=>{const c=DATE_PALETTE[di%DATE_PALETTE.length];return{label:fmtDate(date),data:allAgents.map(ag=>lookup[ag]?.[date]??null),borderColor:c.border,backgroundColor:c.light+'0.2',pointBackgroundColor:c.border,pointBorderColor:'#ffffff',pointBorderWidth:2,borderWidth:3,pointRadius:6,pointHoverRadius:8,tension:0.3,fill:false,spanGaps:true,_color:c.border};});}
+  else{labels=last7dates.map(fmtDate);datasets=allAgents.map((ag,ai)=>{const c=AGENT_COLORS[ai%AGENT_COLORS.length];return{label:ag,data:last7dates.map(dt=>lookup[ag]?.[dt]??null),borderColor:c.border,backgroundColor:c.light+'0.2',pointBackgroundColor:c.border,pointBorderColor:'#ffffff',pointBorderWidth:2,borderWidth:3,pointRadius:6,pointHoverRadius:8,tension:0.3,fill:true,spanGaps:true,_light:c.light,_color:c.border,_name:c.name};});}
+  const calcControlLimits=(data)=>{const vd=data.filter(v=>v!==null&&!isNaN(v));if(vd.length<2)return{ucl:null,lcl:null,cl:null,sigma:null};const cl=45,variance=vd.reduce((s,v)=>s+Math.pow(v-cl,2),0)/(vd.length-1),sigma=Math.sqrt(variance);return{ucl:cl+3*sigma,lcl:Math.max(0,cl-3*sigma),cl,sigma};};
+  const allValidData=[];datasets.forEach(ds=>{if(!ds._isExpectation)ds.data.forEach(v=>{if(v!==null&&v!==undefined)allValidData.push(v);});});
+  const controlLimits=calcControlLimits(allValidData);
+  if(controlLimits.ucl!==null){datasets.push({label:`UCL: ${controlLimits.ucl.toFixed(1)}%`,data:labels.map(()=>controlLimits.ucl),borderColor:'#f59e0b',borderWidth:2,borderDash:[10,5],pointRadius:0,pointHoverRadius:0,tension:0,fill:false,spanGaps:true,_isControlLine:true,_isUCL:true},{label:`LCL: ${controlLimits.lcl.toFixed(1)}%`,data:labels.map(()=>controlLimits.lcl),borderColor:'#8b5cf6',borderWidth:2,borderDash:[10,5],pointRadius:0,pointHoverRadius:0,tension:0,fill:false,spanGaps:true,_isControlLine:true,_isLCL:true},{label:`📊 Central Line Avg: 45%`,data:labels.map(()=>controlLimits.cl),borderColor:'#0ea5e9',borderWidth:4,borderDash:[5,3],pointRadius:0,pointHoverRadius:0,tension:0,fill:false,spanGaps:true,_isControlLine:true,_isCL:true});}
+  datasets.push({label:'🎯 Target 90%',data:labels.map(()=>90),borderColor:'#ef4444',borderWidth:3,borderDash:[12,3],pointRadius:0,pointHoverRadius:0,tension:0,fill:false,spanGaps:true,_isTarget:true});
+  try{if(scoreChartInstance){scoreChartInstance.destroy();scoreChartInstance=null;}
+    const gradientPlugin={id:'gradientFill',beforeDatasetsDraw(chart){chart.data.datasets.forEach((ds)=>{if(!ds.fill||!ds._light)return;const ctx2=chart.ctx,g=ctx2.createLinearGradient(0,chart.chartArea?.top||0,0,chart.chartArea?.bottom||300);g.addColorStop(0,ds._light+'.35)');g.addColorStop(0.7,ds._light+'.06)');g.addColorStop(1,ds._light+'.0)');ds.backgroundColor=g;});}};
+    scoreChartInstance=new Chart(canvas,{type:'line',plugins:[gradientPlugin,ChartDataLabels],data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},datalabels:{display:function(ctx){const v=ctx.dataset.data[ctx.dataIndex];return v!==null&&v!==undefined&&!ctx.dataset._isTarget&&!ctx.dataset._isControlLine;},align:'top',anchor:'end',offset:10,color:function(ctx){const v=ctx.dataset.data[ctx.dataIndex];if(v===null||v===undefined)return'#999';if(v>=90)return'#4ade80';if(v>=45)return'#fbbf24';return'#fbbf24';},font:{weight:'bold',size:12},formatter:function(v){return v!==null&&v!==undefined?Math.round(v)+'%':'';},backgroundColor:'rgba(8,24,48,.9)',borderRadius:6,padding:4},tooltip:{backgroundColor:'rgba(10,20,40,.92)',borderColor:'rgba(56,189,248,.3)',borderWidth:1,titleColor:'#e8f4ff',titleFont:{size:13,weight:'800'},bodyColor:'rgba(160,200,240,.9)',bodyFont:{size:12},padding:14,cornerRadius:10,callbacks:{title:ctx=>currentGroupMode==='agent'?`👤 ${ctx[0].label}`:`📅 ${ctx[0].label}`,label:ctx=>{const v=ctx.parsed.y,ds=ctx.dataset;if(ds._isTarget)return' 🎯 90% Target Line';if(ds._isUCL)return` 📊 UCL: ${v.toFixed(1)}%`;if(ds._isLCL)return` 📊 LCL: ${v.toFixed(1)}%`;if(ds._isCL)return` 📊 Center Line: ${v.toFixed(1)}% (Fixed at 45%)`;const icon=v>=90?'🟢 ':v>=45?'🟡 ':'🟡 ';return` ${icon}${ctx.dataset.label}: ${v!==null?v.toFixed(1)+'%':'—'}`;}}}},scales:{x:{grid:{color:'rgba(255,255,255,.06)',drawBorder:false},ticks:{color:'rgba(160,200,240,.8)',font:{size:12,weight:'600'},maxRotation:0,padding:10}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,.08)',drawBorder:false},ticks:{color:'rgba(160,200,240,.7)',font:{size:12,weight:'600'},callback:v=>v+'%',stepSize:20,padding:10}}}}});
+  }catch(error){console.error('Chart error:',error);canvas.style.display='none';if(noDataEl)noDataEl.style.display='flex';return;}
+  const cl=document.getElementById('trend-custom-legend');if(!cl)return;
+  let legendHTML='';
+  if(currentGroupMode==='date'){legendHTML=allAgents.map((ag,ai)=>{const c=AGENT_COLORS[ai%AGENT_COLORS.length];return`<div class="trend-legend-chip" style="border-color:${c.border}44;background:${c.light}.1);color:${c.border};"><div class="trend-legend-line" style="background:${c.border};box-shadow:0 0 5px ${c.border}88;"></div>${escHtml(ag)}</div>`;}).join('');}
+  else{legendHTML=last7dates.map((dt,di)=>{const c=DATE_PALETTE[di%DATE_PALETTE.length];return`<div class="trend-legend-chip" style="border-color:${c.border}44;background:${c.light}.1);color:${c.border};"><div class="trend-legend-line" style="background:${c.border};box-shadow:0 0 5px ${c.border}88;"></div>${fmtDate(dt)}</div>`;}).join('');}
+  legendHTML+=`<div class="trend-legend-chip" style="border-color:#ef444444;background:rgba(239,68,68,0.08);color:#ef4444;"><div class="trend-legend-line dashed" style="border-color:#ef4444;"></div>🎯 Target 90%</div>`;
+  if(controlLimits.ucl!==null){legendHTML+=`<div class="trend-legend-chip" style="border-color:#f59e0b44;background:rgba(245,158,11,0.05);color:#f59e0b;"><div class="trend-legend-line dashed" style="border-color:#f59e0b;"></div>UCL: ${controlLimits.ucl.toFixed(1)}%</div><div class="trend-legend-chip" style="border-color:#8b5cf644;background:rgba(139,92,246,0.05);color:#8b5cf6;"><div class="trend-legend-line dashed" style="border-color:#8b5cf6;"></div>LCL: ${controlLimits.lcl.toFixed(1)}%</div><div class="trend-legend-chip" style="border-color:#0ea5e944;background:rgba(14,165,233,0.1);color:#0ea5e9;"><div class="trend-legend-line dashed" style="border-color:#0ea5e9;"></div>📊 Central Line: 45%</div>`;}
+  cl.innerHTML=legendHTML;
+}
+
+function renderDashboard(){
+  const filtered=getFiltered();document.getElementById('kpi-total').textContent=filtered.length;
+  if(!filtered.length){['kpi-avg','kpi-top','kpi-low'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('agent-tbody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr>';document.getElementById('call-tbody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());return;}
+  const avgPct=Math.round(filtered.reduce((s,r)=>s+r.pct,0)/filtered.length);document.getElementById('kpi-avg').textContent=avgPct+'%';
+  const agMap={};filtered.forEach(r=>{if(!agMap[r.agent])agMap[r.agent]=[];agMap[r.agent].push(r);});
+  const agStats=Object.entries(agMap).map(([name,recs])=>({name,calls:recs.length,avgMet:(recs.reduce((s,r)=>s+r.metCount,0)/recs.length).toFixed(1),avgNm:(recs.reduce((s,r)=>s+r.nmCount,0)/recs.length).toFixed(1),avgNi:(recs.reduce((s,r)=>s+r.niCount,0)/recs.length).toFixed(1),avgAss:(recs.reduce((s,r)=>s+r.assessed,0)/recs.length).toFixed(1),avgPct:Math.round(recs.reduce((s,r)=>s+r.pct,0)/recs.length),totMet:recs.reduce((s,r)=>s+r.metCount,0),totNm:recs.reduce((s,r)=>s+r.nmCount,0),totNi:recs.reduce((s,r)=>s+r.niCount,0),totAss:recs.reduce((s,r)=>s+r.assessed,0)})).sort((a,b)=>b.avgPct-a.avgPct);
+  document.getElementById('kpi-top').textContent=agStats[0]?.name.split(' ')[0]||'—';const low=agStats.filter(a=>a.avgPct<70);document.getElementById('kpi-low').textContent=low.length?low.map(a=>a.name.split(' ')[0]).join(', '):'All Good ✅';
+  document.getElementById('agent-tbody').innerHTML=agStats.map((a,i)=>`<tr><td><strong>${i+1}</strong></td><td><strong>${a.name}</strong></td><td>${a.calls}</td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','met')" style="color:#1e8449;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #27ae60;padding-bottom:1px;">${a.avgMet}</span></td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','notmet')" style="color:#c0392b;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #e74c3c;padding-bottom:1px;">${a.avgNm}</span></td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','ni')" style="color:#7d6608;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #f0b429;padding-bottom:1px;">${a.avgNi}</span></td><td><strong style="color:${pctColor(a.avgPct)}">${a.avgPct}%</strong><small style="color:#999;display:block">${a.avgMet} met / ${a.avgAss} assessed</small></td><td style="min-width:110px">${segBar(a.totMet,a.totNm,a.totNi,a.totAss)}</td><td>${ratingBadge(a.avgPct)}</td><td><button onclick="showAgentDetail('${a.name}')" style="background:#1a5276;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;">Details</button></td></tr>`).join('');
+  document.getElementById('call-tbody').innerHTML=filtered.map(r=>`<tr><td>${r.date}</td><td>${r.agent} <span style="font-size:11px;background:#e8f4fd;color:#1a5276;padding:1px 6px;border-radius:10px;font-weight:700">✨ AI</span></td><td>${r.leadId||'—'}</td><td>${r.customer||'—'}</td><td>${r.callType||'—'}</td><td style="color:#1e8449;font-weight:700">${r.metCount}</td><td style="color:#c0392b;font-weight:700">${r.nmCount}</td><td style="color:#7d6608;font-weight:700">${r.niCount}</td><td><span class="badge badge-${r.pct>=80?'high':r.pct>=60?'mid':'low'}">${r.pct}%</span></td><td>${tskSummaryChip(r.id)}</td><td><button onclick="showCallDetail(${r.id})" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button></td></tr>`).join('');
+  initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());
+}
+function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');renderDashboard();}
+
+// ═══ AREAS OF IMPROVEMENT ═══
+function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
+function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
+function renderAOI(){
+  const filtered=getAOIFiltered(),totalNM=filtered.reduce((s,r)=>s+r.nmCount,0);
+  document.getElementById('aoi-total-calls').textContent=filtered.length;document.getElementById('aoi-total-nm').textContent=totalNM;document.getElementById('aoi-avg-nm').textContent=filtered.length?(totalNM/filtered.length).toFixed(1):'—';
+  const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${filtered.length} call${filtered.length!==1?'s':''} — ${agentLabel}`;
+  if(!filtered.length||filtered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
+  const itemCounts={},sectionCounts={};
+  SECTIONS.forEach((sec,si)=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sec.items.forEach((item,ii)=>{const k=`${si}_${ii}`;if(!itemCounts[k])itemCounts[k]={label:item,section:sec.title,notmet:0,ni:0,total:0};});});
+  filtered.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sectionCounts[sec.title].met+=sec.met||0;sectionCounts[sec.title].notmet+=sec.notmet||0;sectionCounts[sec.title].ni+=sec.ni||0;sectionCounts[sec.title].assessed+=sec.assessed||0;sec.items.forEach(item=>{const found=Object.keys(itemCounts).find(k=>itemCounts[k].label===item.label);if(!found)return;if(item.rating==='notmet')itemCounts[found].notmet++;if(item.rating==='ni')itemCounts[found].ni++;itemCounts[found].total++;});});});
+  const sorted=Object.values(itemCounts).filter(x=>x.notmet>0).sort((a,b)=>b.notmet-a.notmet||b.ni-a.ni).slice(0,10),maxCount=sorted.length?sorted[0].notmet:1;
+  const rankClass=i=>i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other',rankLabel=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
+  document.getElementById('aoi-list-body').innerHTML=!sorted.length?`<div class="no-data-aoi" style="padding:40px"><div class="icon">🎉</div><h3>No "Not Met" items!</h3></div>`:sorted.map((item,i)=>`<div class="aoi-item"><div class="aoi-rank ${rankClass(i)}">${rankLabel(i)}</div><div class="aoi-item-info"><div class="aoi-item-label">${escHtml(item.label)}</div><div class="aoi-item-section">📂 ${escHtml(item.section)}</div></div><div class="aoi-count-badge">❌ ${item.notmet}×</div><div class="aoi-bar-wrap"><div class="aoi-bar-bg"><div class="aoi-bar-fill" style="width:${Math.round(item.notmet/maxCount*100)}%"></div></div><div class="aoi-bar-pct">${Math.round(item.notmet/maxCount*100)}%</div></div></div>`).join('');
+  const secSorted=Object.values(sectionCounts).filter(s=>s.assessed>0).sort((a,b)=>b.notmet-a.notmet);
+  document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No data</h3></div>`:secSorted.map(s=>{const failRate=s.assessed>0?Math.round((s.notmet/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
+}
+
+function switchSubTab(tab){document.getElementById('subtab-perf-btn').classList.toggle('active',tab==='performance');document.getElementById('subtab-aoi-btn').classList.toggle('active',tab==='aoi');document.getElementById('subpanel-performance').classList.toggle('active',tab==='performance');document.getElementById('subpanel-aoi').classList.toggle('active',tab==='aoi');if(tab==='aoi')renderAOI();if(tab==='performance'){initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());}}
+
+// ═══ OVERALL SUMMARY ═══
+function clearSum3Filters(){['sum3-search','sum3-from','sum3-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const ag=document.getElementById('sum3-agent');if(ag)ag.value='';renderSummaries();}
+function clearAllSummaries(){if(!confirm('Remove ALL saved summaries?'))return;Object.keys(tskSummaries).forEach(id=>{try{localStorage.removeItem('tnvl_tsum_'+id);}catch(e){}});try{localStorage.removeItem('tnvl_tsum_ids');}catch(e){}try{localStorage.removeItem('tnvl_tsummaries');}catch(e){}Object.keys(tskSummaries).forEach(id=>delete tskSummaries[id]);renderSummaries();showToast('🗑 All summaries cleared','#888');}
+function renderSummaries(){
+  const container=document.getElementById('summaries-container'),noMsg=document.getElementById('no-summaries-msg'),noMatchMsg=document.getElementById('no-match-msg'),headerCount=document.getElementById('sum3-header-count'),countTag=document.getElementById('sum3-count-tag'),allKeys=Object.keys(tskSummaries);
+  if(!allKeys.length){noMsg.style.display='block';noMatchMsg.style.display='none';container.innerHTML='';if(headerCount)headerCount.textContent='0 summaries';if(countTag)countTag.textContent='0 shown';return;}
+  noMsg.style.display='none';if(headerCount)headerCount.textContent=`${allKeys.length} summar${allKeys.length!==1?'ies':'y'}`;
+  const search=(document.getElementById('sum3-search')?.value||'').toLowerCase().trim(),agFilt=document.getElementById('sum3-agent')?.value||'',fromFilt=document.getElementById('sum3-from')?.value||'',toFilt=document.getElementById('sum3-to')?.value||'';
+  const filtered=allKeys.filter(orderId=>{const s=tskSummaries[orderId],name=(s.fileName||'').toLowerCase();if(search&&!name.includes(search)&&!(s.leadId||'').toLowerCase().includes(search))return false;if(agFilt){const agLow=agFilt.toLowerCase().split(' ')[0];if(!name.includes(agLow))return false;}if(fromFilt&&s.fileDate&&s.fileDate<fromFilt)return false;if(toFilt&&s.fileDate&&s.fileDate>toFilt)return false;return true;});
+  if(countTag)countTag.textContent=`${filtered.length} shown`;if(!filtered.length){container.innerHTML='';noMatchMsg.style.display='block';return;}noMatchMsg.style.display='none';
+  container.innerHTML=filtered.map(orderId=>{const s=tskSummaries[orderId],fullText=s.text||'';let aiSummary='',fullTranscript='';const tM='🎙️ FULL TRANSCRIPT',sM='📝 AI SUMMARY',dp=/─{10,}/g;if(fullText.includes(tM)){const parts=fullText.split(tM);aiSummary=parts[0].replace(sM,'').replace(dp,'').trim();fullTranscript=parts[1]?parts[1].replace(dp,'').trim():'';}else{fullTranscript=fullText;}const agentName=(s.fileName||'').split(/\s*[-–]\s*/)[0].trim(),agColors={thomas:'#1a6bb5',daniel:'#6d4c9e',jessica:'#c0392b',alex:'#27ae60',maria:'#e05c2a',david:'#0097a7',priya:'#8e44ad',james:'#7d6608'},agColor=agColors[agentName.toLowerCase().split(' ')[0]]||'#1a3c5e';return`<div class="summary-card" id="sumcard-${orderId}"><div class="summary-card-header" style="background:linear-gradient(90deg,${agColor},#1a3c5e);"><div class="summary-card-title">📋 ${escHtml(s.fileName||orderId)}</div><div class="summary-card-meta">${s.fileDate?`<span>📅 <span class="meta-pill">${escHtml(s.fileDate)}</span></span>`:''} ${s.leadId?`<span>🔖 Lead ID: <span class="meta-pill">${escHtml(s.leadId)}</span></span>`:''} ${agentName?`<span>👤 <span class="meta-pill">${escHtml(agentName)}</span></span>`:''}</div></div><div class="summary-card-columns"><div class="summary-col summary-col-left"><div class="summary-col-label">📝 AI Summary</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(aiSummary||(fullTranscript?'':fullText))}</div></div></div><div class="summary-col summary-col-right"><div class="summary-col-label">🎙️ Full Transcript</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(fullTranscript||(aiSummary?'—':''))}</div></div></div></div><div class="summary-card-footer"><button class="sum-action-btn sum-btn-copy" onclick="copySummaryById('${orderId}')">📋 Copy All</button><button class="sum-action-btn sum-btn-remove" onclick="removeSummaryById('${orderId}')">🗑 Remove</button></div></div>`;}).join('');
+}
+function copySummaryById(orderId){const s=tskSummaries[orderId];if(!s)return;navigator.clipboard.writeText(s.text).then(()=>showToast('✅ Summary copied!','#27ae60')).catch(()=>showToast('❌ Copy failed','#e05c2a'));}
+function removeSummaryById(orderId){if(!confirm('Remove this summary?'))return;delete tskSummaries[orderId];try{localStorage.removeItem('tnvl_tsum_'+orderId);}catch(e){}saveTskSummaries();renderSummaries();refreshTskFormFiles();showToast('🗑 Summary removed','#888');}
+
+// ═══ TRANSKRIPTOR ═══
+async function tskLoadFilesFromSummary(){
+  const settingsInput=document.getElementById('tsk-apikey-sum'),key=(settingsInput&&settingsInput.value.trim())||localStorage.getItem('tnvl_tkey')||'';
+  if(!key){document.getElementById('api-settings-panel').style.display='block';document.getElementById('settings-toggle-btn').textContent='⚙️ Hide Settings';showToast('⚠️ Please enter your Transkriptor API key in ⚙️ API Settings above','#e05c2a');return;}
+  showToast('⏳ Fetching your Transkriptor files…','#1a6bb5');
+  try{const response=await fetch('http://localhost:3000/api/transkriptor/files',{method:'GET',headers:{'x-transkriptor-key':key}});if(!response.ok){const err=await response.json();throw new Error(err.details||err.error||`Error ${response.status}`);}const data=await response.json();const files=data.data||data||[];if(!files.length){showToast('⚠️ No files found in your Transkriptor account','#e05c2a');return;}renderFileListInForm(files);showToast(`✅ ${files.length} files loaded — click a file to select it`,'#27ae60');}catch(err){showToast(`❌ Failed: ${err.message}`,'#e05c2a');}
+}
+function tskLoadDemoFromSummary(){renderFileListInForm(TSK_DEMO_FILES);showToast('🎭 Demo files loaded — click a file card to select it','#1a6bb5');}
+
+// ═══ MODAL ═══
+const ratingLabel=r=>r==='met'?'<span class="c-met">✅ Met</span>':r==='notmet'?'<span class="c-not">❌ Not Met</span>':r==='ni'?'<span class="c-ni">🔶 Needs Improvement</span>':'<span class="c-skip">— Not Assessed</span>';
+function showAgentDetail(name){
+  const recs=records.filter(r=>r.agent===name).sort((a,b)=>b.date.localeCompare(a.date));if(!recs.length){openModal(`📋 ${name} — Details`,'<p style="color:#999;padding:20px;">No records found.</p>');return;}
+  const secMap={};recs.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!secMap[sec.title])secMap[sec.title]={nm:0,ni:0,met:0};secMap[sec.title].nm+=sec.notmet||0;secMap[sec.title].ni+=sec.ni||0;secMap[sec.title].met+=sec.met||0;});});
+  const top3=Object.entries(secMap).filter(([,v])=>v.nm>0).sort((a,b)=>b[1].nm-a[1].nm).slice(0,3),medalColors=['#c0392b','#d35400','#b7770d'],medalBg=['#fdf2f2','#fef5ec','#fef9e7'],medalBorder=['#f5b7b1','#f5cba7','#f9e79f'],medals=['🥇','🥈','🥉'];
+  const top3Html=top3.length===0?`<div style="text-align:center;padding:16px;color:#aaa;font-size:14px;font-style:italic;">No "Not Met" items recorded yet.</div>`:top3.map(([title,v],i)=>`<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:${medalBg[i]};border:1.5px solid ${medalBorder[i]};margin-bottom:10px;"><span style="font-size:28px;flex-shrink:0;">${medals[i]}</span><div style="flex:1;"><div style="font-size:15px;font-weight:800;color:${medalColors[i]};margin-bottom:4px;">${escHtml(title)}</div><div style="display:flex;gap:16px;font-size:13px;flex-wrap:wrap;"><span style="color:#c0392b;font-weight:700;">❌ ${v.nm} Not Met</span><span style="color:#7d6608;font-weight:700;">🔶 ${v.ni} Needs Impr.</span><span style="color:#1e8449;font-weight:700;">✅ ${v.met} Met</span></div></div><div style="text-align:center;background:${medalBg[i]};border:2px solid ${medalColors[i]};border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:${medalColors[i]};flex-shrink:0;">${v.nm}</div></div>`).join('');
+  const callsHtml=recs.map(r=>`<div style="padding:10px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:14px;flex-wrap:wrap;"><span style="font-size:13px;color:#888;min-width:88px;">📅 ${r.date}</span><span style="font-size:13px;color:#555;flex:1;">Lead: <strong>${r.leadId||'N/A'}</strong>  ${r.callType?'· '+r.callType:''}</span><span style="font-size:14px;font-weight:800;color:${pctColor(r.pct)};background:${r.pct>=80?'#eafaf1':r.pct>=60?'#fef9e7':'#fdf2f2'};padding:3px 12px;border-radius:20px;">${r.pct}% &nbsp; ✅${r.metCount} ❌${r.nmCount} 🔶${r.niCount}</span></div>`).join('');
+  openModal(`📋 ${name} — Performance Details`,`<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">🎯 Top 3 Categories with Most "Not Met"</div>${top3Html}<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">📞 Call History (${recs.length} call${recs.length!==1?'s':''})</div>${callsHtml}`);
+}
+function showAgentStatDrill(name,type){
+  const recs=records.filter(r=>r.agent===name);if(!recs.length){showToast('No records found for '+name,'#888');return;}
+  const cfg={met:{label:'Met',color:'#1e8449',bg:'#eafaf1',border:'#a9dfbf',icon:'✅'},notmet:{label:'Not Met',color:'#c0392b',bg:'#fdf2f2',border:'#f5b7b1',icon:'❌'},ni:{label:'Needs Improvement',color:'#7d6608',bg:'#fef9e7',border:'#f9e79f',icon:'🔶'}};
+  const c=cfg[type],items=[];recs.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{sec.items.forEach(item=>{const match=(type==='met'&&item.rating==='met')||(type==='notmet'&&item.rating==='notmet')||(type==='ni'&&item.rating==='ni');if(match)items.push(item.label);});});});
+  openModal(`${c.icon} ${name} — All "${c.label}" Items (${items.length})`,`<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;"><span style="font-size:36px;font-weight:900;color:${c.color}">${items.length}</span><div><div style="font-size:15px;font-weight:800;color:${c.color}">${c.icon} Total "${c.label}" items</div><div style="font-size:13px;color:#666;margin-top:2px;">Across all ${recs.length} monitored call${recs.length!==1?'s':''} for <strong>${escHtml(name)}</strong></div></div></div>${items.length===0?`<p style="color:#aaa;font-style:italic;text-align:center;padding:20px;">No items found.</p>`:`<ol style="margin:0;padding-left:22px;">${items.map(label=>`<li style="padding:9px 4px;border-bottom:1px solid #f0f0f0;font-size:15px;color:#2c3e50;">${escHtml(label)}</li>`).join('')}</ol>`}`);
+}
+function showCallDetail(id){
+  const r=records.find(x=>x.id===id);if(!r)return;
+  const rows=[['Agent',r.agent],['Date',r.date],['Customer',r.customer||'N/A'],['Lead ID',r.leadId||'N/A'],['Call Type',r.callType||'N/A'],['Duration',r.duration||'N/A'],['✅ Met',r.metCount],['❌ Not Met',r.nmCount],['🔶 Needs Impr.',r.niCount],['Final Score',`${r.metCount} / ${r.assessed} = ${r.pct}%`]];
+  openModal(`📋 Call Detail — ${r.agent}`,`<div class="msec-title">Call Summary</div>${rows.map(([k,v])=>`<div class="mrow"><span>${k}</span><span style="font-weight:${k==='Final Score'?700:400}">${v}</span></div>`).join('')}${r.breakdown.map(sec=>`<div class="msec-title">${sec.title} — ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni} / ${sec.assessed} assessed</div>${sec.items.map(item=>`<div class="mrow"><span>${item.label}</span>${ratingLabel(item.rating)}</div>`).join('')}`).join('')}`);
+}
+function openModal(title,body){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+
+function tskSummaryChip(recordId){const r=records.find(x=>x.id===recordId);if(r&&r.tskSummary)return`<span class="sum-chip" onclick="tskViewSummary(${recordId})">📄 View Summary</span>`;if(r&&r.leadId){const match=Object.values(tskSummaries).find(s=>s.leadId&&s.leadId===r.leadId.replace(/\D/g,''));if(match){r.tskSummary=match;return`<span class="sum-chip" onclick="tskViewSummary(${recordId})">📄 View Summary</span>`;}}return`<span class="no-sum">—</span>`;}
+function tskViewSummary(recordId){const r=records.find(x=>x.id===recordId);if(!r||!r.tskSummary)return;const s=r.tskSummary;openModal(`📄 Call Summary — ${s.fileName||r.agent}`,`<div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:#f0f6ff;border-radius:7px;margin-bottom:14px;font-size:13px;"><div>📄 File: <strong>${s.fileName||'—'}</strong></div><div>👤 Agent: <strong>${r.agent}</strong></div><div>📅 Date: <strong>${r.date}</strong></div>${r.leadId?`<div>🔖 Lead: <strong>${r.leadId}</strong></div>`:''}</div><div class="sum-modal-body">${escHtml(s.text)}</div><button class="sum-copy-btn" onclick="tskCopySummary(${recordId})">📋 Copy Summary</button>`);}
+function tskCopySummary(recordId){const r=records.find(x=>x.id===recordId);if(!r?.tskSummary?.text)return;navigator.clipboard.writeText(r.tskSummary.text).then(()=>showToast('✅ Summary copied!','#27ae60')).catch(()=>showToast('❌ Copy failed','#e05c2a'));}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((btn,i)=>btn.classList.toggle('active',(i===0&&tab==='form')||(i===1&&tab==='dashboard')||(i===2&&tab==='summaries')));
+  document.getElementById('panel-form').classList.toggle('active',tab==='form');document.getElementById('panel-dashboard').classList.toggle('active',tab==='dashboard');document.getElementById('panel-summaries').classList.toggle('active',tab==='summaries');
+  if(tab==='dashboard')renderDashboard();if(tab==='summaries')renderSummaries();if(tab==='form')refreshTskFormFiles();
+}
+
+function showToast(msg,color='#27ae60'){const t=document.getElementById('toast');t.textContent=msg;t.style.background=color;t.classList.remove('show');void t.offsetWidth;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4500);}
+function escHtml(str=''){return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function setStep(n,status){const el=document.getElementById(`step-${n}`);if(!el)return;const icons={active:'<span class="spinner"></span>',done:'✅',pending:'⏳',error:'❌'};el.className=`ai-step ${status==='done'?'done':status==='active'?'active':''}`;el.querySelector('.ai-step-icon').innerHTML=icons[status]||'⏳';}
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// ═══ DEMO DATA ═══
+let tskSummaries={};
+const TSK_DEMO_FILES=[{order_id:'demo-1025',name:'Jessica - Lead - 1025',created_at:'16/02/2026'},{order_id:'demo-994',name:'Daniel - Lead - 994',created_at:'16/02/2026'},{order_id:'demo-995',name:'Thomas - Lead - 995',created_at:'16/02/2026'},{order_id:'demo-898',name:'Thomas - Lead - 898',created_at:'16/02/2026'}];
+const TSK_DEMO_SUMMARIES={'demo-1025':`📝 AI SUMMARY\n${'─'.repeat(40)}\nJessica - local house-to-house move, Cornwall, Feb 21st. Basic move. Booked.\n\n🎙️ FULL TRANSCRIPT\n${'─'.repeat(40)}\nAgent: Good morning, True North Van Lines, Jessica speaking.\nCustomer: Hi, I need a quote for a local move.\nAgent: Of course! What's your move date?\nCustomer: February 21st, fixed.\nAgent: Living room items?\nCustomer: Sofa, coffee table, TV unit, bookshelf.\nAgent: Bedrooms?\nCustomer: Queen bed, two side tables, wardrobe. Second bedroom: single bed, desk.\nAgent: Appliances?\nCustomer: Fridge, washing machine, microwave.\nAgent: Any stairs at pickup?\nCustomer: Ground floor.\nAgent: Delivery?\nCustomer: Second floor, small elevator.\nAgent: Great — would you like to proceed with booking?\nCustomer: Yes, let's do it.`,'demo-994':`📝 AI SUMMARY\n${'─'.repeat(40)}\nDaniel - Brisbane to Melbourne interstate move. Weight-based pricing explained. Follow-up scheduled.\n\n🎙️ FULL TRANSCRIPT\n${'─'.repeat(40)}\nAgent: Good afternoon, True North Van Lines, Daniel speaking.\nCustomer: Hi, I need an interstate quote, Brisbane to Melbourne.\nAgent: What date are you targeting?\nCustomer: Mid-March, around the 15th.\nAgent: Current place?\nCustomer: Two-bedroom apartment, third floor with elevator.\nAgent: Melbourne?\nCustomer: House, ground floor.\nAgent: For interstate our pricing is weight and distance based, 5-7 day delivery window.\nCustomer: Can you email a quote?\nAgent: Absolutely. I'll follow up next week.`,'demo-995':`📝 AI SUMMARY\n${'─'.repeat(40)}\nThomas - small studio local move, same suburb. 2-person crew, 2-3 hours. Customer to confirm date.\n\n🎙️ FULL TRANSCRIPT\n${'─'.repeat(40)}\nAgent: Good morning, True North Van Lines, Thomas speaking.\nCustomer: Hi, I need a small local move quote.\nAgent: From and to?\nCustomer: Studio to a house, same suburb.\nAgent: Furniture?\nCustomer: Bed, desk, couch, about 10 boxes.\nAgent: Stairs?\nCustomer: First floor, no elevator.\nAgent: Delivery?\nCustomer: Ground floor.\nAgent: 2-person crew, about 2-3 hours hourly. I'll hold your details — call back to confirm.`,'demo-898':`📝 AI SUMMARY\n${'─'.repeat(40)}\nThomas - full-service 3-bed house move. Piano + home gym noted. Booking confirmed, deposit collected.\n\n🎙️ FULL TRANSCRIPT\n${'─'.repeat(40)}\nAgent: True North Van Lines, Thomas speaking.\nCustomer: I need full packing and moving for a 3-bedroom house.\nAgent: Move date?\nCustomer: First week of March, 3rd or 4th.\nAgent: Same city?\nCustomer: Yes, double storey to single storey.\nAgent: Special items?\nCustomer: Upright piano and home gym.\nAgent: Noted — those need our senior crew. Payment is deposit now, 50% before loading, balance before unloading.\nCustomer: Let's go ahead.\nAgent: Confirmed! Sending move plan to your email.`};
+
+function saveTskSummaries(){try{const ids=Object.keys(tskSummaries);localStorage.setItem('tnvl_tsum_ids',JSON.stringify(ids));ids.forEach(id=>{const s=tskSummaries[id];try{localStorage.setItem('tnvl_tsum_'+id,JSON.stringify({fileName:s.fileName,fileDate:s.fileDate,leadId:s.leadId,text:s.text||''}));}catch(e){try{localStorage.setItem('tnvl_tsum_'+id,JSON.stringify({fileName:s.fileName,fileDate:s.fileDate,leadId:s.leadId,text:(s.text||'').substring(0,3000)+'…'}));}catch(e2){}}});}catch(e){}}
+function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_tsum_ids')||'[]');ids.forEach(id=>{if(tskSummaries[id])return;try{const raw=localStorage.getItem('tnvl_tsum_'+id);if(raw){tskSummaries[id]=JSON.parse(raw);}}catch(e){}});}catch(e){}try{const legacy=localStorage.getItem('tnvl_tsummaries');if(legacy){const parsed=JSON.parse(legacy);Object.entries(parsed).forEach(([id,s])=>{if(!tskSummaries[id])tskSummaries[id]=s;});}}catch(e){}}
+window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
+
+// ═══ INIT ═══
+(function init(){
+  try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
+  loadTskSummaries();
+  records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
+  try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  initRatings();buildChecklist();updateLiveScore();
+  if(Object.keys(tskSummaries).length)saveTskSummaries();
+})();
+// ═══════════════════════════════════════════════════════
+//  PRE-MOVE CONFIRMATION CALL CHECKLIST  (22 items)
+// ═══════════════════════════════════════════════════════
+const PRE_MOVE_SECTIONS = [
+  { title: "Call Opening & Identity Verification", items: [
+    "Introduced self, company, and purpose of the call clearly.",
+    "Confirmed customer identity and verified contact details."
+  ]},
+  { title: "Move Details Reconfirmation", items: [
+    "Reconfirmed move date and preferred time window",
+    "Revalidated full pickup and delivery addresses.",
+    "Confirmed inventory and checked for any additions, removals, or changes.",
+    "Checked if packing requirements have changed.",
+    "Reconfirmed dismantling and special handling needs"
+  ]},
+  { title: "Access & Special Items Verification", items: [
+    "Verified access details (stairs, elevator, parking, long carry).",
+    "Confirmed elevator booking and building move restrictions.",
+    "Checked for fragile, bulky, or high-value items."
+  ]},
+  { title: "Crew & Pricing Reconfirmation", items: [
+    "Explained expected crew size and arrival process",
+    "Reconfirmed pricing structure and key cost drivers.",
+    "Clarified payment process and timelines."
+  ]},
+  { title: "Customer Support & Reassurance", items: [
+    "Addressed any customer concerns or questions",
+    "Reinforced preparation tips and move-day readiness.",
+    "Shared what the customer should expect on move day",
+    "Provided contact details for support and escalation.",
+    "Encouraged the customer to update TNVL if there are further changes",
+    "Built reassurance and confidence in the move process."
+  ]},
+  { title: "Call Wrap-Up & System Update", items: [
+    "Summarized key details and confirmed next steps",
+    "Updated the tool with relevant changes to move details discussed on the call",
+    "Informed the lead and crew of the details discussed on the call"
+  ]}
+];
+
+let currentChecklistMode = 'standard'; // 'standard' | 'premove'
+let activeRatings = {}; // stores ratings for current mode
+
+function onCallTypeChange(val) {
+  const isPreMove = val === 'Pre Move Confirmation call';
+  const banner = document.getElementById('checklist-mode-banner');
+  if (banner) banner.style.display = isPreMove ? 'flex' : 'none';
+
+  if (isPreMove && currentChecklistMode !== 'premove') {
+    // Save standard ratings, switch to pre-move
+    currentChecklistMode = 'premove';
+    initRatings();
+    buildChecklist();
+    updateLiveScore();
+  } else if (!isPreMove && currentChecklistMode !== 'standard') {
+    // Switch back to standard
+    currentChecklistMode = 'standard';
+    initRatings();
+    buildChecklist();
+    updateLiveScore();
+  }
+}
+
+// ── Override initRatings to be mode-aware ────────────────────────────────────
+const _origInitRatings = initRatings;
+initRatings = function() {
+  ratings = {};
+  const sections = currentChecklistMode === 'premove' ? PRE_MOVE_SECTIONS : SECTIONS;
+  sections.forEach((sec, si) => sec.items.forEach((_, ii) => { ratings[`r_${si}_${ii}`] = R_BLANK; }));
+};
+
+// ── Override buildChecklist to be mode-aware ─────────────────────────────────
+const _origBuildChecklist = buildChecklist;
+buildChecklist = function() {
+  const container = document.getElementById('checklist-container');
+  container.innerHTML = '';
+  const sections = currentChecklistMode === 'premove' ? PRE_MOVE_SECTIONS : SECTIONS;
+  sections.forEach((sec, si) => {
+    const hdr = document.createElement('div');
+    hdr.className = 'section-header';
+    // purple accent for pre-move
+    if (currentChecklistMode === 'premove') {
+      hdr.style.background = 'linear-gradient(90deg,#6c3483,#8e44ad)';
+    }
+    hdr.innerHTML = `<span>${sec.title}</span><span class="sec-count">${sec.items.length} items</span>`;
+    const card = document.createElement('div');
+    card.className = 'checklist-card';
+    const colHdr = document.createElement('div');
+    colHdr.className = 'cl-head';
+    colHdr.innerHTML = '<span>#</span><span>Criteria</span><span style="text-align:center">Rating</span>';
+    card.appendChild(colHdr);
+    sec.items.forEach((item, ii) => {
+      const row = document.createElement('div');
+      row.className = 'cl-row'; row.id = `row_${si}_${ii}`;
+      row.innerHTML = `
+        <span class="cl-num">${ii+1}</span>
+        <span class="cl-text">${item}</span>
+        <span><select class="rating-select blank" id="r_${si}_${ii}" onchange="onRatingChange(this,${si},${ii})">
+          <option value="">— Not Assessed —</option>
+          <option value="met">✅ Met</option>
+          <option value="notmet">❌ Not Met</option>
+          <option value="ni">🔶 Needs Improvement</option>
+        </select></span>`;
+      card.appendChild(row);
+    });
+    container.appendChild(hdr);
+    container.appendChild(card);
+  });
+};
+
+// ── Override calcScore to be mode-aware ──────────────────────────────────────
+const _origCalcScore = calcScore;
+calcScore = function() {
+  let assessed=0,metCount=0,nmCount=0,niCount=0; const breakdown=[];
+  const sections = currentChecklistMode === 'premove' ? PRE_MOVE_SECTIONS : SECTIONS;
+  sections.forEach((sec,si) => {
+    let sA=0,sM=0,sN=0,sI=0; const items=[];
+    sec.items.forEach((item,ii) => {
+      const r=ratings[`r_${si}_${ii}`]; if(r===R_BLANK) return;
+      sA++;assessed++;
+      if(r===R_MET){sM++;metCount++;}if(r===R_NM){sN++;nmCount++;}if(r===R_NI){sI++;niCount++;}
+      items.push({label:item,rating:r});
+    });
+    if(sA>0) breakdown.push({title:sec.title,met:sM,notmet:sN,ni:sI,assessed:sA,items});
+  });
+  const pct=assessed>0?Math.round((metCount/assessed)*100):0;
+  return {assessed,metCount,nmCount,niCount,pct,breakdown};
+};
+
+// ── Override resetForm to also reset the mode banner ─────────────────────────
+const _origResetForm = resetForm;
+resetForm = function() {
+  // Reset call type select
+  const ctSel = document.getElementById('f-calltype');
+  if(ctSel) ctSel.value = '';
+
+  // Reset checklist mode back to standard if was pre-move
+  if(currentChecklistMode === 'premove') {
+    currentChecklistMode = 'standard';
+    const banner = document.getElementById('checklist-mode-banner');
+    if(banner) banner.style.display = 'none';
+  }
+
+  // Run original
+  SECTIONS.forEach((sec,si)=>sec.items.forEach((_,ii)=>{const sel=document.getElementById(`r_${si}_${ii}`);if(sel){sel.value='';sel.className='rating-select blank';}}));
+  PRE_MOVE_SECTIONS.forEach((sec,si)=>sec.items.forEach((_,ii)=>{const sel=document.getElementById(`r_${si}_${ii}`);if(sel){sel.value='';sel.className='rating-select blank';}}));
+  initRatings();
+  ['f-lead','f-customer','f-duration','f-evaluator'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-agent','f-calltype','f-movetype','f-movevalue-amount','f-movevalue','f-conversion','f-leadstatus','f-cuecard'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-datetime').value='';
+  document.getElementById('ai-progress').classList.remove('show');
+  document.getElementById('ai-result').className='ai-result-bar';
+  document.getElementById('ai-result').textContent='';
+  document.getElementById('error-help').classList.remove('show');
+  document.getElementById('transcript-box').classList.remove('show');
+  document.getElementById('transcript-toggle').style.display='none';
+  buildChecklist();
+  updateLiveScore();
+};
+
+</script>
+</body>
+</html>
