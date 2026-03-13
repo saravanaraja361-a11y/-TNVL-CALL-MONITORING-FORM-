@@ -227,9 +227,10 @@
   .sub-tab-btn:hover:not(.active) { background: #eaf0f7; color: #1a3c5e; }
 
   .badge { display:inline-block; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:700; }
-  .badge-high { background:#d5f5e3; color:#1e8449; }
-  .badge-mid  { background:#fef9e7; color:#b7770d; }
-  .badge-low  { background:#fde8e8; color:#c0392b; }
+  .badge-excellent { background:#d5f5e3; color:#1e8449; }
+  .badge-good      { background:#eafaf1; color:#2db36f; }
+  .badge-average   { background:#fef9e7; color:#b7770d; }
+  .badge-poor      { background:#fde8e8; color:#c0392b; }
 
   .kpi-val   { font-size:32px; font-weight:800; }
   .kpi-label { font-size:12px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
@@ -514,7 +515,17 @@
         <div><label>Call Duration (hh:mm:ss)</label>
           <input type="text" id="f-duration" placeholder="00:00:00"></div>
         <div><label>Call Date / Time</label><input type="datetime-local" id="f-datetime"></div>
-        <div><label>Evaluator Name</label><input type="text" id="f-evaluator" placeholder="Your name"></div>
+        <div><label>Evaluator Name</label>
+          <select id="f-evaluator">
+            <option value="">— Select —</option>
+            <option>Aarti - AI</option>
+            <option>Aarti - Verified</option>
+            <option>Sachin</option>
+            <option>Solomon</option>
+            <option>Daniel</option>
+            <option>Saravana J</option>
+          </select>
+        </div>
         <div><label>Move Type</label>
           <select id="f-movetype">
             <option value="">— Select —</option>
@@ -523,7 +534,10 @@
           </select>
         </div>
         <div><label>Move Value ($)</label>
-          <input type="number" id="f-movevalue-amount" placeholder="Enter amount" oninput="updateMoveValue()">
+          <div style="position:relative; display:flex; align-items:center;">
+            <span style="position:absolute; left:12px; color:#555; font-weight:600;">$</span>
+            <input type="number" id="f-movevalue-amount" placeholder="Enter amount" oninput="updateMoveValue()" style="padding-left:26px;">
+          </div>
         </div>
         <div><label>Move Value Category</label>
           <select id="f-movevalue">
@@ -555,6 +569,9 @@
             <option>Yes</option>
             <option>No</option>
           </select>
+        </div>
+        <div style="grid-column: span 2;"><label>Call Recording Link</label>
+          <input type="text" id="f-recording" placeholder="Insert URL here (e.g. Drive/Dropbox link)">
         </div>
       </div>
     </div>
@@ -701,6 +718,50 @@
       <button class="sub-tab-btn" id="subtab-aoi-btn" onclick="switchSubTab('aoi')">
         🎯 Areas of Improvement <span style="font-size:11px;opacity:.75;">(Performance Clinique)</span>
       </button>
+      <button class="sub-tab-btn" id="subtab-report-btn" onclick="switchSubTab('reports')">
+        📥 Reports
+      </button>
+    </div>
+
+    <!-- Reports sub-panel -->
+    <div class="sub-panel" id="subpanel-reports">
+
+      <!-- ── AGENT SUMMARY ── -->
+      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+        <div style="font-weight:800;font-size:16px;color:#1a5276;margin-bottom:14px;display:flex;align-items:center;gap:8px;">👤 Agent Summary</div>
+        <div class="filter-bar" style="margin-bottom:0;">
+          <div><label>From Date</label><input type="date" id="rpt-from"></div>
+          <div><label>To Date</label><input type="date" id="rpt-to"></div>
+          <div>
+            <label>Agents</label>
+            <div class="multi-select-wrap" id="rpt-ms-wrap">
+              <button type="button" class="multi-select-trigger" id="rpt-agents-trigger">All agents</button>
+              <div class="multi-select-dropdown" id="rpt-agents-dropdown">
+                <div class="ms-search"><input type="text" placeholder="Search agents..." id="rpt-agent-search" onkeyup="filterAgentOptions('rpt')"></div>
+                <div class="ms-options" id="rpt-agent-options"></div>
+                <div class="ms-actions">
+                  <button type="button" onclick="selectAllAgents('rpt')">All</button>
+                  <button type="button" onclick="deselectAllAgents('rpt')">None</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <button class="btn-filter" onclick="downloadReportCSV()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download CSV</button>
+        </div>
+        <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads one row per call: <em>Date, Lead ID, Agent, Met, Not Met, Needs Improvement, Score %</em> — with a TOTAL row at bottom.</div>
+      </div>
+
+      <!-- ── TEAM SUMMARY ── -->
+      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+        <div style="font-weight:800;font-size:16px;color:#1a5276;margin-bottom:14px;display:flex;align-items:center;gap:8px;">👥 Team Summary</div>
+        <div class="filter-bar" style="margin-bottom:0;">
+          <div><label>From Date</label><input type="date" id="tsm-from"></div>
+          <div><label>To Date</label><input type="date" id="tsm-to"></div>
+          <button class="btn-filter" onclick="downloadTeamSummaryCSV()" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team CSV</button>
+        </div>
+        <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads the <strong>Top Not Met items</strong> ranked by frequency, with a breakdown of which agents contributed most to each failure.</div>
+      </div>
+
     </div>
 
     <!-- Agent Performance sub-panel -->
@@ -1219,7 +1280,7 @@ function updateLiveScore() {
   document.getElementById('ls-ni').textContent=niCount;
   const el=document.getElementById('ls-pct');
   el.textContent=assessed>0?`${pct}%`:'— %';
-  el.style.background=assessed===0?'#555':pct>=80?'#27ae60':pct>=60?'#e0a01a':'#c0392b';
+  el.style.background=assessed===0?'#555':pct>90?'#27ae60':pct>=80?'#2db36f':pct>=70?'#e0a01a':'#c0392b';
 }
 
 function toggleApiSettings() {
@@ -1347,7 +1408,10 @@ async function runRealAnalysis(){
 
 function toggleTranscript(){const box=document.getElementById('transcript-box');const btn=document.getElementById('transcript-toggle');if(box.classList.contains('show')){box.classList.remove('show');btn.textContent='📄 Show Transcript Used';}else{box.classList.add('show');btn.textContent='📄 Hide Transcript';}}
 
-function previewScore(){const{assessed,metCount,nmCount,niCount,pct}=calcScore();if(assessed===0){showToast('⚠️ No items rated yet!','#e05c2a');return;}const rating=pct>=80?'⭐ Excellent':pct>=60?'📈 Good':'⚠️ Needs Improvement';alert(`📊 Score Preview\n\nItems Assessed  : ${assessed}\n✅ Met          : ${metCount}\n❌ Not Met      : ${nmCount}\n🔶 Needs Impr.  : ${niCount}\n\nFinal Score     : ${metCount} / ${assessed} = ${pct}%\nRating          : ${rating}`);}
+function previewScore(){const{assessed,metCount,nmCount,niCount,pct}=calcScore();if(assessed===0){showToast('⚠️ No items rated yet!','#e05c2a');return;}
+  let rating='⚠️ Poor'; if(pct>90)rating='⭐ Excellent'; else if(pct>=80)rating='📈 Good'; else if(pct>=70)rating='⚖️ Average';
+  alert(`📊 Score Preview\n\nItems Assessed  : ${assessed}\n✅ Met          : ${metCount}\n❌ Not Met      : ${nmCount}\n🔶 Needs Impr.  : ${niCount}\n\nFinal Score     : ${metCount} / ${assessed} = ${pct}%\nRating          : ${rating}`);
+}
 
 function updateMoveValue(){const a=parseFloat(document.getElementById('f-movevalue-amount').value)||0;const s=document.getElementById('f-movevalue');s.value=a===0?'':a<2000?'Low Value':a<=5000?'Mid Value':'High Value';}
 
@@ -1356,7 +1420,7 @@ function resetForm(){
   SECTIONS.forEach((sec,si)=>sec.items.forEach((_,ii)=>{const sel=document.getElementById(`r_${si}_${ii}`);if(sel){sel.value='';sel.className='rating-select blank';}}));
   initRatings();
   ['f-lead','f-customer','f-duration','f-evaluator'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['f-agent','f-calltype','f-movetype','f-movevalue-amount','f-movevalue','f-conversion','f-leadstatus','f-cuecard'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-agent','f-calltype','f-movetype','f-movevalue-amount','f-movevalue','f-conversion','f-leadstatus','f-cuecard','f-recording'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];document.getElementById('f-datetime').value='';
   document.getElementById('ai-progress').classList.remove('show');document.getElementById('ai-result').className='ai-result-bar';document.getElementById('ai-result').textContent='';document.getElementById('error-help').classList.remove('show');document.getElementById('transcript-box').classList.remove('show');document.getElementById('transcript-toggle').style.display='none';
   updateLiveScore();
@@ -1366,7 +1430,7 @@ async function submitForm(){
   const agent=document.getElementById('f-agent').value,date=document.getElementById('f-date').value;
   if(!agent){showToast('⚠️ Please select an agent!','#e05c2a');return;}if(!date){showToast('⚠️ Please enter a date!','#e05c2a');return;}
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
-  const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
+  const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
   records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
   const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
   try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
@@ -1384,7 +1448,9 @@ function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-fro
 
 function initMultiSelect(wrapId,triggerId,dropdownId){
   const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
-  const prev=getSelectedAgents(wrapId),agents=getAllAgents(),type=wrapId.includes('trend')?'trend':'heatmap',optionsContainer=document.getElementById(`${type}-agent-options`);
+  const prev=getSelectedAgents(wrapId),agents=getAllAgents();
+  const prefix=wrapId.replace('-ms-wrap','');
+  const optionsContainer=document.getElementById(`${prefix}-agent-options`);
   if(optionsContainer)optionsContainer.innerHTML=agents.map(a=>`<label><input type="checkbox" value="${String(a).replace(/"/g,'&quot;')}" ${prev.length===0||prev.includes(a)?'checked':''}> ${escHtml(a)}</label>`).join('');
   wrap._clickOutside||=function(e){if(!wrap.contains(e.target))wrap.classList.remove('open');};
   trigger.onclick=()=>{wrap.classList.toggle('open');};document.removeEventListener('click',wrap._clickOutside);document.addEventListener('click',wrap._clickOutside);
@@ -1396,8 +1462,13 @@ function filterAgentOptions(type){const si=document.getElementById(`${type}-agen
 function selectAllAgents(type){const oc=document.getElementById(`${type}-agent-options`);if(oc)oc.querySelectorAll('input:not(:disabled)').forEach(cb=>cb.checked=true);updateMultiSelectLabel(`${type}-ms-wrap`,`${type}-agents-trigger`);}
 function deselectAllAgents(type){const oc=document.getElementById(`${type}-agent-options`);if(oc)oc.querySelectorAll('input:not(:disabled)').forEach(cb=>cb.checked=false);updateMultiSelectLabel(`${type}-ms-wrap`,`${type}-agents-trigger`);}
 
-function pctColor(p){return p>=80?'#27ae60':p>=60?'#e0a01a':'#c0392b';}
-function ratingBadge(p){return p>=80?`<span class="badge badge-high">⭐ Excellent</span>`:p>=60?`<span class="badge badge-mid">📈 Good</span>`:`<span class="badge badge-low">⚠️ Needs Work</span>`;}
+function pctColor(p){return p>90?'#27ae60':p>=80?'#2db36f':p>=70?'#e0a01a':'#c0392b';}
+function ratingBadge(p){
+  if(p>90) return `<span class="badge badge-excellent">⭐ Excellent</span>`;
+  if(p>=80) return `<span class="badge badge-good">📈 Good</span>`;
+  if(p>=70) return `<span class="badge badge-average">⚖️ Average</span>`;
+  return `<span class="badge badge-poor">⚠️ Poor</span>`;
+}
 function segBar(met,nm,ni,total){if(!total)return'<div class="seg-bar"></div>';const mp=Math.round(met/total*100),nip=Math.round(ni/total*100),nmp=100-mp-nip;return`<div class="seg-bar"><div class="seg-met" style="width:${mp}%"></div><div class="seg-ni" style="width:${nip}%"></div><div class="seg-nm" style="width:${nmp}%"></div></div>`;}
 
 const AGENT_COLORS=[{border:'#38bdf8',bg:'rgba(56,189,248,.75)',light:'rgba(56,189,248,'},{border:'#fb923c',bg:'rgba(251,146,60,.75)',light:'rgba(251,146,60,'},{border:'#a78bfa',bg:'rgba(167,139,250,.75)',light:'rgba(167,139,250,'},{border:'#4ade80',bg:'rgba(74,222,128,.75)',light:'rgba(74,222,128,'},{border:'#f472b6',bg:'rgba(244,114,182,.75)',light:'rgba(244,114,182,'},{border:'#facc15',bg:'rgba(250,204,21,.75)',light:'rgba(250,204,21,'},{border:'#34d399',bg:'rgba(52,211,153,.75)',light:'rgba(52,211,153,'},{border:'#f87171',bg:'rgba(248,113,113,.75)',light:'rgba(248,113,113,'},];
@@ -1481,7 +1552,97 @@ function renderAOI(){
   document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No data</h3></div>`:secSorted.map(s=>{const failRate=s.assessed>0?Math.round((s.notmet/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
 }
 
-function switchSubTab(tab){document.getElementById('subtab-perf-btn').classList.toggle('active',tab==='performance');document.getElementById('subtab-aoi-btn').classList.toggle('active',tab==='aoi');document.getElementById('subpanel-performance').classList.toggle('active',tab==='performance');document.getElementById('subpanel-aoi').classList.toggle('active',tab==='aoi');if(tab==='aoi')renderAOI();if(tab==='performance'){initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());}}
+function switchSubTab(tab){
+  document.getElementById('subtab-perf-btn').classList.toggle('active',tab==='performance');
+  document.getElementById('subtab-aoi-btn').classList.toggle('active',tab==='aoi');
+  const rptBtn=document.getElementById('subtab-report-btn');
+  if(rptBtn)rptBtn.classList.toggle('active',tab==='reports');
+  document.getElementById('subpanel-performance').classList.toggle('active',tab==='performance');
+  document.getElementById('subpanel-aoi').classList.toggle('active',tab==='aoi');
+  const rptPanel=document.getElementById('subpanel-reports');
+  if(rptPanel)rptPanel.classList.toggle('active',tab==='reports');
+  if(tab==='aoi')renderAOI();
+  if(tab==='performance'){initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());}
+  if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown');}
+}
+
+function downloadReportCSV(){
+  const from=document.getElementById('rpt-from')?.value||'';
+  const to=document.getElementById('rpt-to')?.value||'';
+  const checked=document.querySelectorAll('#rpt-agents-dropdown .ms-options input[type=checkbox]:checked');
+  const selectedAgents=getSelectedAgents('rpt-ms-wrap');
+  const filtered=records.filter(r=>{
+    if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
+    if(from&&r.date<from)return false;
+    if(to&&r.date>to)return false;
+    return true;
+  });
+  if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
+  const headers=['Date','Lead ID','Agent Name','Evaluator','Met','Not Met','Needs Improvement','Score (%)','Recording Link'];
+  const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
+  const rows=filtered.map(r=>[
+    esc(r.date),esc(r.leadId||''),esc(r.agent),esc(r.evaluator||''),
+    esc(r.metCount),esc(r.nmCount),esc(r.niCount),esc(r.pct+'%'),esc(r.recordingLink||'')
+  ].join(','));
+  const totMet=filtered.reduce((s,r)=>s+r.metCount,0);
+  const totNm=filtered.reduce((s,r)=>s+r.nmCount,0);
+  const totNi=filtered.reduce((s,r)=>s+r.niCount,0);
+  const avgPct=Math.round(filtered.reduce((s,r)=>s+r.pct,0)/filtered.length);
+  rows.push([esc('TOTAL'),esc(''),esc(filtered.length+' calls'),esc(''),esc(totMet),esc(totNm),esc(totNi),esc(avgPct+'% (avg)'),esc('')].join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateStamp=new Date().toISOString().slice(0,10);
+  const agentLabel=selectedAgents.length===1?selectedAgents[0]:'Multi-Agent';
+  a.href=url;a.download=`Report_${agentLabel}_${dateStamp}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ Report downloaded (${filtered.length} calls)`,'#27ae60');
+}
+
+function downloadTeamSummaryCSV(){
+  const from=document.getElementById('tsm-from')?.value||'';
+  const to=document.getElementById('tsm-to')?.value||'';
+  const filtered=records.filter(r=>{
+    if(from&&r.date<from)return false;
+    if(to&&r.date>to)return false;
+    return true;
+  });
+  if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
+  const itemMap={};
+  filtered.forEach(r=>{
+    if(!r.breakdown)return;
+    r.breakdown.forEach(sec=>{
+      sec.items.forEach(item=>{
+        if(item.rating!=='notmet')return;
+        const k=item.label;
+        if(!itemMap[k])itemMap[k]={label:k,section:sec.title,total:0,agents:{}};
+        itemMap[k].total++;
+        itemMap[k].agents[r.agent]=(itemMap[k].agents[r.agent]||0)+1;
+      });
+    });
+  });
+  const sorted=Object.values(itemMap).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
+  if(!sorted.length){showToast('⚠️ No "Not Met" items found in the selected period','#e05c2a');return;}
+  const esc=v=>{const s=String(v==null?'':v);return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`  :s;};
+  const headers=['Rank','Not Met Item','Section','Total Not Met','Top Agents (count)'];
+  const rows=sorted.map((item,i)=>{
+    const agentBreakdown=Object.entries(item.agents).sort((a,b)=>b[1]-a[1]).map(([ag,cnt])=>`${ag}(${cnt})`).join(' | ');
+    return[esc(i+1),esc(item.label),esc(item.section),esc(item.total),esc(agentBreakdown)].join(',');
+  });
+  const totalNM=sorted.reduce((s,x)=>s+x.total,0);
+  rows.push([esc('TOTAL'),esc(''),esc(''),esc(totalNM),esc('')].join(','));
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const dateStamp=new Date().toISOString().slice(0,10);
+  a.href=url;a.download=`TeamSummary_${dateStamp}.csv`;
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ Team Summary downloaded (${sorted.length} items)`,'#8e44ad');
+}
 
 // ═══ OVERALL SUMMARY ═══
 function clearSum3Filters(){['sum3-search','sum3-from','sum3-to'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});const ag=document.getElementById('sum3-agent');if(ag)ag.value='';renderSummaries();}
