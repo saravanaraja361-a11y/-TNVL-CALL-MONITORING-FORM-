@@ -770,9 +770,9 @@
               </div>
             </div>
           </div>
-          <div style="min-width:180px;"><label>Evaluator</label>
+          <div style="min-width:180px;"><label>Evaluator Name</label>
             <select id="rpt-evaluator" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;">
-              <option value="">All Evaluators</option>
+              <option value="">— Select —</option>
             </select>
           </div>
           <button class="btn-filter" onclick="downloadReportCSV()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download CSV</button>
@@ -1518,6 +1518,7 @@ async function submitForm(){
 // ═══ DASHBOARD ═══
 function getFiltered(){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;if(ag&&r.agent!==ag)return false;if(ct&&r.callType!==ct)return false;return true;}).sort((a,b)=>b.date.localeCompare(a.date));}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
+const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
 function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
@@ -1639,11 +1640,8 @@ function updateEvaluatorList() {
   const select = document.getElementById('rpt-evaluator');
   if(!select) return;
   const currentVal = select.value;
-  const evaluators = new Set();
-  records.forEach(r => { if(r.evaluator) evaluators.add(r.evaluator); });
-  const sorted = [...evaluators].sort();
-  let html = '<option value="">All Evaluators</option>';
-  sorted.forEach(ev => {
+  let html = '<option value="">— Select —</option>';
+  DEFAULT_EVALUATORS.forEach(ev => {
     html += `<option value="${ev.replace(/"/g,'&quot;')}" ${ev === currentVal ? 'selected' : ''}>${escHtml(ev)}</option>`;
   });
   select.innerHTML = html;
