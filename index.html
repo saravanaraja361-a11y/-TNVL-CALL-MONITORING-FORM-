@@ -752,14 +752,49 @@
       </div>
 
       <!-- ── TEAM SUMMARY ── -->
-      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
         <div style="font-weight:800;font-size:16px;color:#1a5276;margin-bottom:14px;display:flex;align-items:center;gap:8px;">👥 Team Summary</div>
+        <div class="filter-bar" style="margin-bottom:0;">
+          <div><label>From Date</label><input type="date" id="tsm-perf-from"></div>
+          <div><label>To Date</label><input type="date" id="tsm-perf-to"></div>
+          <button class="btn-filter" onclick="downloadTeamPerformanceCSV()" style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team Summary</button>
+        </div>
+        <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads an aggregated report per agent: <em>Total Calls, Total Parameters, Applicable Parameters, Met, Not Met, Needs Improvement, Defect Rate, Adherence %, Grading.</em></div>
+      </div>
+
+      <!-- ── AREAS OF IMPROVEMENT ── -->
+      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+        <div style="font-weight:800;font-size:16px;color:#1a5276;margin-bottom:14px;display:flex;align-items:center;gap:8px;">👥 Areas Of Improvement</div>
         <div class="filter-bar" style="margin-bottom:0;">
           <div><label>From Date</label><input type="date" id="tsm-from"></div>
           <div><label>To Date</label><input type="date" id="tsm-to"></div>
           <button class="btn-filter" onclick="downloadTeamSummaryCSV()" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team CSV</button>
         </div>
         <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads the <strong>Top Not Met items</strong> ranked by frequency, with a breakdown of which agents contributed most to each failure.</div>
+      </div>
+
+      <!-- ── SUMMARY & FEEDBACK ── -->
+      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;margin-top:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);overflow:hidden;">
+        <div style="background:#2c3e50;color:#fff;padding:12px 24px;font-weight:800;font-size:15px;letter-spacing:0.5px;">SUMMARY &amp; FEEDBACK</div>
+        <div style="padding:20px 24px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Call Summary</label>
+              <textarea id="rpt-f-summary" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Enter call summary..."></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Positive)</label>
+              <textarea id="rpt-f-positive" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="What went well..."></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Needs Improvement)</label>
+              <textarea id="rpt-f-ni" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Areas for improvement..."></textarea>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:20px;">
+            <button onclick="saveReportFeedback()" style="background:#1a5276;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:700;cursor:pointer;">Submit</button>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -1018,6 +1053,15 @@ const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwAGXVRq_yL4yULbXTRm
 const R_BLANK = "", R_MET = "met", R_NM = "notmet", R_NI = "ni";
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+let reportFeedback = { summary: '', positive: '', ni: '' };
+
+function saveReportFeedback(){
+  const s = document.getElementById('rpt-f-summary').value;
+  const p = document.getElementById('rpt-f-positive').value;
+  const n = document.getElementById('rpt-f-ni').value;
+  reportFeedback = { summary: s, positive: p, ni: n };
+  showToast('✅ Feedback saved for report!','#1a5276');
+}
 
 // ═══════════════════════════════════════════════
 //  UPDATED CHECKLIST — Revised 09 Mar 2026
@@ -1199,7 +1243,7 @@ const SECTIONS = [
     "Confidently responded to customer questions without deflection",
     "Did not sound dismissive, rushed, or irritated"
   ]},
-  { title: "Tools Usage", items: [
+  { title: "Tools Usage", manualOnly: true, items: [
     "Correct customer details verified and updated",
     "Move Section updated with all relevant details (Move Date, Address, Add on Services, Inventory List, Access details)",
     "Follow-up tasks created with correct timeline",
@@ -1222,9 +1266,11 @@ function buildChecklist() {
   SECTIONS.forEach((sec, si) => {
     const hdr = document.createElement('div');
     hdr.className = 'section-header';
-    hdr.innerHTML = `<span>${sec.title}</span><span class="sec-count">${sec.items.length} items</span>`;
+    if(sec.manualOnly) hdr.style.background = 'linear-gradient(90deg, #7d6608, #b7950b)';
+    hdr.innerHTML = `<span>${sec.title} ${sec.manualOnly ? '<span style="background:rgba(255,255,255,.25);padding:2px 8px;border-radius:4px;font-size:10px;margin-left:8px;vertical-align:middle;letter-spacing:0.5px;border:1px solid rgba(255,255,255,.4)">MANUAL RATING ONLY</span>' : ''}</span><span class="sec-count">${sec.items.length} items</span>`;
     const card = document.createElement('div');
     card.className = 'checklist-card';
+    if(sec.manualOnly) card.style.background = '#fffbef';
     const colHdr = document.createElement('div');
     colHdr.className = 'cl-head';
     colHdr.innerHTML = '<span>#</span><span>Criteria</span><span style="text-align:center">Rating</span>';
@@ -1569,7 +1615,6 @@ function switchSubTab(tab){
 function downloadReportCSV(){
   const from=document.getElementById('rpt-from')?.value||'';
   const to=document.getElementById('rpt-to')?.value||'';
-  const checked=document.querySelectorAll('#rpt-agents-dropdown .ms-options input[type=checkbox]:checked');
   const selectedAgents=getSelectedAgents('rpt-ms-wrap');
   const filtered=records.filter(r=>{
     if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
@@ -1578,28 +1623,185 @@ function downloadReportCSV(){
     return true;
   });
   if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
-  const headers=['Date','Lead ID','Agent Name','Evaluator','Met','Not Met','Needs Improvement','Score (%)','Recording Link'];
+
+  const fmtDate=(dStr)=>{
+    if(!dStr) return '';
+    const d=new Date(dStr);
+    if(isNaN(d.getTime())) return dStr;
+    const day=String(d.getDate()).padStart(2,'0');
+    const month=d.toLocaleString('en-US',{month:'short'});
+    const year=String(d.getFullYear()).slice(-2);
+    return `${day}-${month}-${year}`;
+  };
+
+  const getGrading=(pct)=>{
+    if(pct>90) return 'Excellent';
+    if(pct>=80) return 'Good';
+    if(pct>=70) return 'Average';
+    return 'Poor';
+  };
+
+  const headers=[
+    'S. No','Call Date','Audit Date','Agent Name','Lead ID',
+    'Total Parameters (Met+Not Met+Needs Improvement+NA)',
+    'Total Applicable Parameters (Excludes NA)',
+    'Move Value Category','Move Value','Lead Status','Cue Card Usage',
+    'Conversion Probability','Total - Met','Total - Not Met',
+    'Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)',
+    'Adherence %','Grading','Recording Link',
+    'Call Summary','Feedback (Positive)','Feedback (Needs Improvement)'
+  ];
+
   const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
-  const rows=filtered.map(r=>[
-    esc(r.date),esc(r.leadId||''),esc(r.agent),esc(r.evaluator||''),
-    esc(r.metCount),esc(r.nmCount),esc(r.niCount),esc(r.pct+'%'),esc(r.recordingLink||'')
-  ].join(','));
+
+  const rows=filtered.map((r,i)=>{
+    const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((s,sec)=>s+sec.items.length,0);
+    const defectRate=r.assessed>0?(((r.nmCount+r.niCount)/r.assessed)*100).toFixed(1)+'%':'0%';
+    const grading=getGrading(r.pct);
+
+    return [
+      esc(i+1),
+      esc(fmtDate(r.datetime||r.date)),
+      esc(fmtDate(r.date)),
+      esc(r.agent),
+      esc(r.leadId||''),
+      esc(totalParams),
+      esc(r.assessed),
+      esc(r.moveValueCategory||''),
+      esc(r.moveValueAmount||''),
+      esc(r.leadStatus||''),
+      esc(r.cueCardUsage||''),
+      esc(r.conversionProbability||''),
+      esc(r.metCount),
+      esc(r.nmCount),
+      esc(r.niCount),
+      esc(defectRate),
+      esc(r.pct+'%'),
+      esc(grading),
+      esc(r.recordingLink||''),
+      esc(reportFeedback.summary),
+      esc(reportFeedback.positive),
+      esc(reportFeedback.ni)
+    ].join(',');
+  });
+
+  // TOTAL Row
+  const totParams=filtered.reduce((s,r)=>(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,s),0);
+  const totAssessed=filtered.reduce((s,r)=>s+r.assessed,0);
+  const totMoveVal=filtered.reduce((s,r)=>s+(parseFloat(r.moveValueAmount)||0),0);
   const totMet=filtered.reduce((s,r)=>s+r.metCount,0);
   const totNm=filtered.reduce((s,r)=>s+r.nmCount,0);
   const totNi=filtered.reduce((s,r)=>s+r.niCount,0);
-  const avgPct=Math.round(filtered.reduce((s,r)=>s+r.pct,0)/filtered.length);
-  rows.push([esc('TOTAL'),esc(''),esc(filtered.length+' calls'),esc(''),esc(totMet),esc(totNm),esc(totNi),esc(avgPct+'% (avg)'),esc('')].join(','));
+  const totalAdherence=totAssessed>0?Math.round((totMet/totAssessed)*100):0;
+  const totDefectRate=totAssessed>0?(((totNm+totNi)/totAssessed)*100).toFixed(1)+'%':'0%';
+  const totGrading=getGrading(totalAdherence);
+
+  const totalRow=[
+    esc('Total'),esc(''),esc(''),esc(filtered.length+' calls'),esc(''),
+    esc(totParams),
+    esc(totAssessed),
+    esc(''),
+    esc(totMoveVal),
+    esc(''),esc(''),esc(''),
+    esc(totMet),esc(totNm),esc(totNi),
+    esc(totDefectRate),
+    esc(totalAdherence+'%'),
+    esc(totGrading),
+    esc(''),
+    esc(''),esc(''),esc('')
+  ].join(',');
+
+  rows.push(totalRow);
+
   const csv=[headers.join(','),...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
   const dateStamp=new Date().toISOString().slice(0,10);
   const agentLabel=selectedAgents.length===1?selectedAgents[0]:'Multi-Agent';
-  a.href=url;a.download=`Report_${agentLabel}_${dateStamp}.csv`;
+  a.href=url;a.download=`AgentSummary_${agentLabel}_${dateStamp}.csv`;
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast(`✅ Report downloaded (${filtered.length} calls)`,'#27ae60');
+  showToast(`✅ Agent Summary downloaded (${filtered.length} calls)`,'#27ae60');
 }
+
+function downloadTeamPerformanceCSV(){
+  const from=document.getElementById('tsm-perf-from')?.value||'';
+  const to=document.getElementById('tsm-perf-to')?.value||'';
+  const filtered=records.filter(r=>{
+    if(from && r.date < from) return false;
+    if(to && r.date > to) return false;
+    return true;
+  });
+  if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
+
+  const getGrading=(pct)=>{
+    if(pct>90) return 'Excellent';
+    if(pct>=80) return 'Good';
+    if(pct>=70) return 'Average';
+    return 'Poor';
+  };
+
+  const agMap={};
+  filtered.forEach(r=>{
+    if(!agMap[r.agent]) agMap[r.agent]={name:r.agent,calls:0,totalParams:0,appParams:0,met:0,nm:0,ni:0};
+    const s=agMap[r.agent];
+    s.calls++;
+    const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,0);
+    s.totalParams+=totalParams;
+    s.appParams+=r.assessed;
+    s.met+=r.metCount;
+    s.nm+=r.nmCount;
+    s.ni+=r.niCount;
+  });
+
+  const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
+  const headers=['S.No','Agent Name','Total calls Audited','Total Parameters (Met+Not Met+Needs Improvement+NA)','Total Applicable Parameters (Excludes NA)','Total - Met','Total - Not Met','Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)','Adherence %','Grading'];
+
+  const rows=Object.values(agMap).sort((a,b)=>a.name.localeCompare(b.name)).map((s,i)=>{
+    const defectRate=s.appParams>0?(((s.nm+s.ni)/s.appParams)*100).toFixed(1)+'%':'0%';
+    const adherence=s.appParams>0?Math.round((s.met/s.appParams)*100):0;
+    return [
+      esc(i+1),
+      esc(s.name),
+      esc(s.calls),
+      esc(s.totalParams),
+      esc(s.appParams),
+      esc(s.met),
+      esc(s.nm),
+      esc(s.ni),
+      esc(defectRate),
+      esc(adherence+'%'),
+      esc(getGrading(adherence))
+    ].join(',');
+  });
+
+  const tCalls=filtered.length;
+  const tParams=Object.values(agMap).reduce((acc,s)=>acc+s.totalParams,0);
+  const tApp=Object.values(agMap).reduce((acc,s)=>acc+s.appParams,0);
+  const tMet=Object.values(agMap).reduce((acc,s)=>acc+s.met,0);
+  const tNm=Object.values(agMap).reduce((acc,s)=>acc+s.nm,0);
+  const tNi=Object.values(agMap).reduce((acc,s)=>acc+s.ni,0);
+  const tDefect=tApp>0?(((tNm+tNi)/tApp)*100).toFixed(1)+'%':'0%';
+  const tAdh=tApp>0?Math.round((tMet/tApp)*100):0;
+
+  const totalRow=[
+    esc('Grand Total'),esc(''),esc(tCalls),esc(tParams),esc(tApp),esc(tMet),esc(tNm),esc(tNi),esc(tDefect),esc(tAdh+'%'),esc(getGrading(tAdh))
+  ].join(',');
+
+  rows.push(totalRow);
+
+  const csv=[headers.join(','),...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  const ds=new Date().toISOString().slice(0,10);
+  a.download=`TeamPerformance_${ds}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ Team Summary downloaded`,'#3498db');
+}
+
 
 function downloadTeamSummaryCSV(){
   const from=document.getElementById('tsm-from')?.value||'';
