@@ -696,6 +696,30 @@
     </div>
     <div id="checklist-container"></div>
 
+    <!-- ── SUMMARY & FEEDBACK ── -->
+    <div class="feedback-card" style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;margin-top:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);overflow:hidden;">
+      <div style="background:#2c3e50;color:#fff;padding:12px 24px;font-weight:800;font-size:15px;letter-spacing:0.5px;">SUMMARY &amp; FEEDBACK</div>
+      <div style="padding:20px 24px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+          <div>
+            <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Call Summary</label>
+            <textarea class="feedback-summary" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Enter call summary..."></textarea>
+          </div>
+          <div>
+            <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Positive)</label>
+            <textarea class="feedback-positive" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="What went well..."></textarea>
+          </div>
+          <div>
+            <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Needs Improvement)</label>
+            <textarea class="feedback-ni" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Areas for improvement..."></textarea>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:20px;">
+          <button onclick="saveReportFeedback(this)" style="background:#1a5276;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:700;cursor:pointer;">Submit</button>
+        </div>
+      </div>
+    </div>
+
     <div class="submit-row">
       <button class="btn btn-reset" onclick="resetForm()">🔄 Reset</button>
       <button class="btn btn-preview" onclick="previewScore()">👁 Preview Score</button>
@@ -746,6 +770,11 @@
               </div>
             </div>
           </div>
+          <div style="min-width:180px;"><label>Evaluator</label>
+            <select id="rpt-evaluator" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;">
+              <option value="">All Evaluators</option>
+            </select>
+          </div>
           <button class="btn-filter" onclick="downloadReportCSV()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download CSV</button>
         </div>
         <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads one row per call: <em>Date, Lead ID, Agent, Met, Not Met, Needs Improvement, Score %</em> — with a TOTAL row at bottom.</div>
@@ -771,30 +800,6 @@
           <button class="btn-filter" onclick="downloadTeamSummaryCSV()" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team CSV</button>
         </div>
         <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads the <strong>Top Not Met items</strong> ranked by frequency, with a breakdown of which agents contributed most to each failure.</div>
-      </div>
-
-      <!-- ── SUMMARY & FEEDBACK ── -->
-      <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;margin-top:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);overflow:hidden;">
-        <div style="background:#2c3e50;color:#fff;padding:12px 24px;font-weight:800;font-size:15px;letter-spacing:0.5px;">SUMMARY &amp; FEEDBACK</div>
-        <div style="padding:20px 24px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
-            <div>
-              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Call Summary</label>
-              <textarea id="rpt-f-summary" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Enter call summary..."></textarea>
-            </div>
-            <div>
-              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Positive)</label>
-              <textarea id="rpt-f-positive" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="What went well..."></textarea>
-            </div>
-            <div>
-              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Needs Improvement)</label>
-              <textarea id="rpt-f-ni" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Areas for improvement..."></textarea>
-            </div>
-          </div>
-          <div style="text-align:center;margin-top:20px;">
-            <button onclick="saveReportFeedback()" style="background:#1a5276;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:700;cursor:pointer;">Submit</button>
-          </div>
-        </div>
       </div>
 
     </div>
@@ -996,6 +1001,29 @@
           <div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>
         </div>
       </div>
+      <!-- ── SUMMARY & FEEDBACK ── -->
+      <div class="feedback-card" style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;margin-top:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);overflow:hidden;">
+        <div style="background:#2c3e50;color:#fff;padding:12px 24px;font-weight:800;font-size:15px;letter-spacing:0.5px;">SUMMARY &amp; FEEDBACK</div>
+        <div style="padding:20px 24px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Call Summary</label>
+              <textarea class="feedback-summary" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Enter call summary..."></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Positive)</label>
+              <textarea class="feedback-positive" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="What went well..."></textarea>
+            </div>
+            <div>
+              <label style="display:block;font-weight:700;color:#34495e;margin-bottom:8px;font-size:13px;">Feedback (Needs Improvement)</label>
+              <textarea class="feedback-ni" style="width:100%;height:100px;border:1.5px solid #dce8f5;border-radius:8px;padding:10px;font-size:13px;resize:none;font-family:inherit;" placeholder="Areas for improvement..."></textarea>
+            </div>
+          </div>
+          <div style="text-align:center;margin-top:20px;">
+            <button onclick="saveReportFeedback(this)" style="background:#1a5276;color:#fff;border:none;padding:10px 30px;border-radius:6px;font-weight:700;cursor:pointer;">Submit</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -1049,18 +1077,22 @@
 <div id="toast"></div>
 
 <script>
+let reportFeedback = { summary: '', positive: '', ni: '' };
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwAGXVRq_yL4yULbXTRmLOkPTqUVWcCa0dqYsWHtTRbYRi__B2jkUGrnuINj6wmboZR/exec";
 const R_BLANK = "", R_MET = "met", R_NM = "notmet", R_NI = "ni";
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-let reportFeedback = { summary: '', positive: '', ni: '' };
 
-function saveReportFeedback(){
-  const s = document.getElementById('rpt-f-summary').value;
-  const p = document.getElementById('rpt-f-positive').value;
-  const n = document.getElementById('rpt-f-ni').value;
+function saveReportFeedback(btn){
+  const card = btn.closest('.feedback-card');
+  const s = card.querySelector('.feedback-summary').value;
+  const p = card.querySelector('.feedback-positive').value;
+  const n = card.querySelector('.feedback-ni').value;
   reportFeedback = { summary: s, positive: p, ni: n };
-  showToast('✅ Feedback saved for report!','#1a5276');
+  document.querySelectorAll('.feedback-summary').forEach(el => el.value = s);
+  document.querySelectorAll('.feedback-positive').forEach(el => el.value = p);
+  document.querySelectorAll('.feedback-ni').forEach(el => el.value = n);
+  showToast('✅ Feedback saved for the report CSV!','#27ae60');
 }
 
 // ═══════════════════════════════════════════════
@@ -1584,18 +1616,37 @@ function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id
 function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
-  const filtered=getAOIFiltered(),totalNM=filtered.reduce((s,r)=>s+r.nmCount,0);
-  document.getElementById('aoi-total-calls').textContent=filtered.length;document.getElementById('aoi-total-nm').textContent=totalNM;document.getElementById('aoi-avg-nm').textContent=filtered.length?(totalNM/filtered.length).toFixed(1):'—';
+  const filtered=getAOIFiltered(),
+        totalNM=filtered.reduce((s,r)=>s+r.nmCount,0),
+        totalNI=filtered.reduce((s,r)=>s+r.niCount,0),
+        totalCombined=totalNM+totalNI;
+  document.getElementById('aoi-total-calls').textContent=filtered.length;
+  document.getElementById('aoi-total-nm').textContent=totalCombined;
+  document.getElementById('aoi-avg-nm').textContent=filtered.length?(totalCombined/filtered.length).toFixed(1):'—';
   const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${filtered.length} call${filtered.length!==1?'s':''} — ${agentLabel}`;
   if(!filtered.length||filtered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
   const itemCounts={},sectionCounts={};
   SECTIONS.forEach((sec,si)=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sec.items.forEach((item,ii)=>{const k=`${si}_${ii}`;if(!itemCounts[k])itemCounts[k]={label:item,section:sec.title,notmet:0,ni:0,total:0};});});
   filtered.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sectionCounts[sec.title].met+=sec.met||0;sectionCounts[sec.title].notmet+=sec.notmet||0;sectionCounts[sec.title].ni+=sec.ni||0;sectionCounts[sec.title].assessed+=sec.assessed||0;sec.items.forEach(item=>{const found=Object.keys(itemCounts).find(k=>itemCounts[k].label===item.label);if(!found)return;if(item.rating==='notmet')itemCounts[found].notmet++;if(item.rating==='ni')itemCounts[found].ni++;itemCounts[found].total++;});});});
-  const sorted=Object.values(itemCounts).filter(x=>x.notmet>0).sort((a,b)=>b.notmet-a.notmet||b.ni-a.ni).slice(0,10),maxCount=sorted.length?sorted[0].notmet:1;
+  const sorted=Object.values(itemCounts).filter(x=>(x.notmet+x.ni)>0).sort((a,b)=>(b.notmet+b.ni)-(a.notmet+a.ni)).slice(0,10),maxCombined=sorted.length?(sorted[0].notmet+sorted[0].ni):1;
   const rankClass=i=>i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other',rankLabel=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
-  document.getElementById('aoi-list-body').innerHTML=!sorted.length?`<div class="no-data-aoi" style="padding:40px"><div class="icon">🎉</div><h3>No "Not Met" items!</h3></div>`:sorted.map((item,i)=>`<div class="aoi-item"><div class="aoi-rank ${rankClass(i)}">${rankLabel(i)}</div><div class="aoi-item-info"><div class="aoi-item-label">${escHtml(item.label)}</div><div class="aoi-item-section">📂 ${escHtml(item.section)}</div></div><div class="aoi-count-badge">❌ ${item.notmet}×</div><div class="aoi-bar-wrap"><div class="aoi-bar-bg"><div class="aoi-bar-fill" style="width:${Math.round(item.notmet/maxCount*100)}%"></div></div><div class="aoi-bar-pct">${Math.round(item.notmet/maxCount*100)}%</div></div></div>`).join('');
-  const secSorted=Object.values(sectionCounts).filter(s=>s.assessed>0).sort((a,b)=>b.notmet-a.notmet);
-  document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No data</h3></div>`:secSorted.map(s=>{const failRate=s.assessed>0?Math.round((s.notmet/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
+  document.getElementById('aoi-list-body').innerHTML=!sorted.length?`<div class="no-data-aoi" style="padding:40px"><div class="icon">🎉</div><h3>No "Not Met" items!</h3></div>`:sorted.map((item,i)=>{const combined=item.notmet+item.ni;const p=Math.round(combined/maxCombined*100);return `<div class="aoi-item"><div class="aoi-rank ${rankClass(i)}">${rankLabel(i)}</div><div class="aoi-item-info"><div class="aoi-item-label">${escHtml(item.label)}</div><div class="aoi-item-section">📂 ${escHtml(item.section)}</div></div><div class="aoi-count-badge" style="background:rgba(192,57,43,0.1);color:#c0392b">❌ ${combined}×</div><div class="aoi-bar-wrap"><div class="aoi-bar-bg"><div class="aoi-bar-fill" style="width:${p}%"></div></div><div class="aoi-bar-pct">${p}%</div></div></div>`}).join('');
+  const secSorted=Object.values(sectionCounts).filter(s=>s.assessed>0).sort((a,b)=>(b.notmet+b.ni)-(a.notmet+a.ni));
+  document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No data</h3></div>`:secSorted.map(s=>{const combined=s.notmet+s.ni,failRate=s.assessed>0?Math.round((combined/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
+}
+
+function updateEvaluatorList() {
+  const select = document.getElementById('rpt-evaluator');
+  if(!select) return;
+  const currentVal = select.value;
+  const evaluators = new Set();
+  records.forEach(r => { if(r.evaluator) evaluators.add(r.evaluator); });
+  const sorted = [...evaluators].sort();
+  let html = '<option value="">All Evaluators</option>';
+  sorted.forEach(ev => {
+    html += `<option value="${ev.replace(/"/g,'&quot;')}" ${ev === currentVal ? 'selected' : ''}>${escHtml(ev)}</option>`;
+  });
+  select.innerHTML = html;
 }
 
 function switchSubTab(tab){
@@ -1609,15 +1660,17 @@ function switchSubTab(tab){
   if(rptPanel)rptPanel.classList.toggle('active',tab==='reports');
   if(tab==='aoi')renderAOI();
   if(tab==='performance'){initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());}
-  if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown');}
+  if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown'); updateEvaluatorList();}
 }
 
 function downloadReportCSV(){
   const from=document.getElementById('rpt-from')?.value||'';
   const to=document.getElementById('rpt-to')?.value||'';
   const selectedAgents=getSelectedAgents('rpt-ms-wrap');
+  const evalFilt=document.getElementById('rpt-evaluator')?.value||'';
   const filtered=records.filter(r=>{
     if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
+    if(evalFilt&&r.evaluator!==evalFilt)return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     return true;
@@ -1817,24 +1870,26 @@ function downloadTeamSummaryCSV(){
     if(!r.breakdown)return;
     r.breakdown.forEach(sec=>{
       sec.items.forEach(item=>{
-        if(item.rating!=='notmet')return;
+        if(item.rating==='met')return;
         const k=item.label;
-        if(!itemMap[k])itemMap[k]={label:k,section:sec.title,total:0,agents:{}};
+        if(!itemMap[k])itemMap[k]={label:k,section:sec.title,notmet:0,ni:0,total:0,agents:{}};
+        if(item.rating==='notmet')itemMap[k].notmet++;
+        if(item.rating==='ni')itemMap[k].ni++;
         itemMap[k].total++;
         itemMap[k].agents[r.agent]=(itemMap[k].agents[r.agent]||0)+1;
       });
     });
   });
   const sorted=Object.values(itemMap).filter(x=>x.total>0).sort((a,b)=>b.total-a.total);
-  if(!sorted.length){showToast('⚠️ No "Not Met" items found in the selected period','#e05c2a');return;}
+  if(!sorted.length){showToast('⚠️ No "Not Met" or "Needs Improvement" items found','#e05c2a');return;}
   const esc=v=>{const s=String(v==null?'':v);return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`  :s;};
-  const headers=['Rank','Not Met Item','Section','Total Not Met','Top Agents (count)'];
+  const headers=['Rank','Not Met Item','Section','Total Not Met','Total Needs Improvement','Total (Not Met + NI)','Top Agents (count)'];
   const rows=sorted.map((item,i)=>{
     const agentBreakdown=Object.entries(item.agents).sort((a,b)=>b[1]-a[1]).map(([ag,cnt])=>`${ag}(${cnt})`).join(' | ');
-    return[esc(i+1),esc(item.label),esc(item.section),esc(item.total),esc(agentBreakdown)].join(',');
+    return[esc(i+1),esc(item.label),esc(item.section),esc(item.notmet),esc(item.ni),esc(item.total),esc(agentBreakdown)].join(',');
   });
-  const totalNM=sorted.reduce((s,x)=>s+x.total,0);
-  rows.push([esc('TOTAL'),esc(''),esc(''),esc(totalNM),esc('')].join(','));
+  const grandCombined=sorted.reduce((s,x)=>s+x.total,0);
+  rows.push([esc('Overall output (Total sum)'),esc(''),esc(''),esc(''),esc(''),esc(grandCombined),esc('')].join(','));
   const csv=[headers.join(','),...rows].join('\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
