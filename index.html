@@ -776,6 +776,7 @@
             </select>
           </div>
           <button class="btn-filter" onclick="downloadReportCSV()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download CSV</button>
+          <button class="btn-filter" id="btn-email-report" onclick="sendReportEmail()" style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-left:8px;">📧 Send Email</button>
         </div>
         <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads one row per call: <em>Date, Lead ID, Agent, Met, Not Met, Needs Improvement, Score %</em> — with a TOTAL row at bottom.</div>
       </div>
@@ -1774,6 +1775,235 @@ function downloadReportCSV(){
   document.body.appendChild(a);a.click();document.body.removeChild(a);
   URL.revokeObjectURL(url);
   showToast(`✅ Agent Summary downloaded (${filtered.length} calls)`,'#27ae60');
+}
+
+async function sendReportEmail(){
+  const from=document.getElementById('rpt-from')?.value||'';
+  const to=document.getElementById('rpt-to')?.value||'';
+  const selectedAgents=getSelectedAgents('rpt-ms-wrap');
+  const evalFilt=document.getElementById('rpt-evaluator')?.value||'';
+  const filtered=records.filter(r=>{
+    if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
+    if(evalFilt&&r.evaluator!==evalFilt)return false;
+    if(from&&r.date<from)return false;
+    if(to&&r.date>to)return false;
+    return true;
+  });
+  
+  if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
+
+  const btn = document.getElementById('btn-email-report');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '⌛ Sending...';
+  btn.disabled = true;
+
+  try {
+    const fmtDate=(dStr)=>{
+      if(!dStr) return '';
+      const d=new Date(dStr);
+      if(isNaN(d.getTime())) return dStr;
+      const day=String(d.getDate()).padStart(2,'0');
+      const month=d.toLocaleString('en-US',{month:'short'});
+      const year=String(d.getFullYear()).slice(-2);
+      return `${day}-${month}-${year}`;
+    };
+
+    const getGrading=(pct)=>{
+      if(pct>90) return 'Excellent';
+      if(pct>=80) return 'Good';
+      if(pct>=70) return 'Average';
+      return 'Poor';
+    };
+
+    const headers=[
+      'S. No','Call Date','Audit Date','Agent Name','Lead ID',
+      'Total Parameters (Met+Not Met+Needs Improvement+NA)',
+      'Total Applicable Parameters (Excludes NA)',
+      'Move Value Category','Move Value','Lead Status','Cue Card Usage',
+      'Conversion Probability','Total - Met','Total - Not Met',
+      'Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)',
+      'Adherence %','Grading','Recording Link',
+      'Call Summary','Feedback (Positive)','Feedback (Needs Improvement)'
+    ];
+
+    const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
+
+    const rows=filtered.map((r,i)=>{
+      const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((s,sec)=>s+sec.items.length,0);
+      const defectRate=r.assessed>0?(((r.nmCount+r.niCount)/r.assessed)*100).toFixed(1)+'%':'0%';
+      const grading=getGrading(r.pct);
+
+      return [
+        esc(i+1),
+        esc(fmtDate(r.datetime||r.date)),
+        esc(fmtDate(r.date)),
+        esc(r.agent),
+        esc(r.leadId||''),
+        esc(totalParams),
+        esc(r.assessed),
+        esc(r.moveValueCategory||''),
+        esc(r.moveValueAmount||''),
+        esc(r.leadStatus||''),
+        esc(r.cueCardUsage||''),
+        esc(r.conversionProbability||''),
+        esc(r.metCount),
+        esc(r.nmCount),
+        esc(r.niCount),
+        esc(defectRate),
+        esc(r.pct+'%'),
+        esc(grading),
+        esc(r.recordingLink||''),
+        esc(reportFeedback.summary),
+        esc(reportFeedback.positive),
+        esc(reportFeedback.ni)
+      ].join(',');
+    });
+
+    const totParams=filtered.reduce((s,r)=>(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,s),0);
+    const totAssessed=filtered.reduce((s,r)=>s+r.assessed,0);
+    const totMoveVal=filtered.reduce((s,r)=>s+(parseFloat(r.moveValueAmount)||0),0);
+    const totMet=filtered.reduce((s,r)=>s+r.metCount,0);
+    const totNm=filtered.reduce((s,r)=>s+r.nmCount,0);
+    const totNi=filtered.reduce((s,r)=>s+r.niCount,0);
+    const totalAdherence=totAssessed>0?Math.round((totMet/totAssessed)*100):0;
+    const totDefectRate=totAssessed>0?(((totNm+totNi)/totAssessed)*100).toFixed(1)+'%':'0%';
+    const totGrading=getGrading(totalAdherence);
+
+    const totalRow=[
+      esc('Total'),esc(''),esc(''),esc(filtered.length+' calls'),esc(''),
+      esc(totParams),
+      esc(totAssessed),
+      esc(''),
+      esc(totMoveVal),
+      esc(''),esc(''),esc(''),
+      esc(totMet),esc(totNm),esc(totNi),
+      esc(totDefectRate),
+      esc(totalAdherence+'%'),
+      esc(totGrading),
+      esc(''),
+      esc(''),esc(''),esc('')
+    ].join(',');
+
+    rows.push(totalRow);
+    const csv=[headers.join(','),...rows].join('\n');
+    const dateStamp=new Date().toISOString().slice(0,10);
+    const agentLabel=selectedAgents.length===1?selectedAgents[0]:'Multi-Agent';
+    const fileName=`AgentSummary_${agentLabel}_${dateStamp}.csv`;
+
+    // ── Generate HTML Table for Email Body ──
+    const getStyles = (val, type) => {
+      if (type === 'adherence' || type === 'grading') {
+        const p = parseFloat(val);
+        if (p >= 90 || val === 'Excellent') return 'background-color: #d4edda; color: #155724; font-weight: bold;';
+        if (p >= 80 || val === 'Good') return 'background-color: #d4edda; color: #155724;';
+        if (p >= 70 || val === 'Average') return 'background-color: #fff3cd; color: #856404;';
+        return 'background-color: #f8d7da; color: #721c24;';
+      }
+      if (type === 'defect') {
+        const p = parseFloat(val);
+        if (p > 30) return 'background-color: #f8d7da; color: #721c24;';
+        if (p > 15) return 'background-color: #fff3cd; color: #856404;';
+        return 'background-color: #d4edda; color: #155724;';
+      }
+      return '';
+    };
+
+    let htmlTable = `
+      <h2 style="font-family: Arial, sans-serif; color: #2c3e50;">Agent Summary Report</h2>
+      <p style="font-family: Arial, sans-serif; color: #7f8c8d;">Generated on: ${new Date().toLocaleString()}</p>
+      <table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 12px;">
+        <thead>
+          <tr style="background-color: #f2f2f2; text-align: left;">
+            ${headers.map(h => `<th style="border: 1px solid #ddd; padding: 8px;">${h}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    filtered.forEach((r, i) => {
+      const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
+      const defectRateRaw = r.assessed > 0 ? ((r.nmCount + r.niCount) / r.assessed) * 100 : 0;
+      const defectRate = defectRateRaw.toFixed(1) + '%';
+      const grading = getGrading(r.pct);
+
+      htmlTable += `
+        <tr>
+          <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${fmtDate(r.datetime || r.date)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${fmtDate(r.date)}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.agent}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.leadId || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${totalParams}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.assessed}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.moveValueCategory || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.moveValueAmount || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.leadStatus || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.cueCardUsage || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.conversionProbability || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.metCount}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.nmCount}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.niCount}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(defectRate, 'defect')}">${defectRate}</td>
+          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(r.pct + '%', 'adherence')}">${r.pct}%</td>
+          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(grading, 'grading')}">${grading}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${r.recordingLink ? `<a href="${r.recordingLink}">Link</a>` : ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${reportFeedback.summary || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${reportFeedback.positive || ''}</td>
+          <td style="border: 1px solid #ddd; padding: 8px;">${reportFeedback.ni || ''}</td>
+        </tr>
+      `;
+    });
+
+    // Add Total Row to HTML
+    htmlTable += `
+      <tr style="background-color: #f9f9f9; font-weight: bold;">
+        <td style="border: 1px solid #ddd; padding: 8px;">Total</td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${filtered.length} calls</td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totParams}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totAssessed}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totMoveVal}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;"></td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totMet}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totNm}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${totNi}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totDefectRate, 'defect')}">${totDefectRate}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totalAdherence + '%', 'adherence')}">${totalAdherence}%</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totGrading, 'grading')}">${totGrading}</td>
+        <td colspan="4" style="border: 1px solid #ddd; padding: 8px;"></td>
+      </tr>
+    `;
+
+    htmlTable += `</tbody></table>`;
+
+    const response = await fetch('http://localhost:3000/api/send-report-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'saravanaraja@tnvl.ca',
+        csvContent: csv,
+        fileName: fileName,
+        htmlContent: htmlTable
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || 'Failed to send email');
+    }
+
+    showToast(`✅ Report emailed to saravanaraja@tnvl.ca`,'#27ae60');
+  } catch (error) {
+    showToast(`❌ Error: ${error.message}`, '#e74c3c');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+  }
 }
 
 function downloadTeamPerformanceCSV(){
