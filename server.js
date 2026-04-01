@@ -626,7 +626,7 @@ app.get('/api/health', (_req, res) => res.json({
 
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
-  groqKey: GROQ_API_KEY ? `set (${GROQ_API_KEY.substring(0,8)}...)` : 'MISSING',
+  groqKeys: `${GROQ_KEYS.length} keys loaded`,
   port: process.env.PORT || 3000
 }));
 
@@ -636,7 +636,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Engine : Groq FREE ✅`);
   console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
   console.log(`   Model2 : ${GROQ_MODEL_B2} (batch 2)`);
-  console.log(`   Key    : ✅ set (${GROQ_API_KEY.substring(0,8)}...)`);
+  console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
   console.log(`\n   Accuracy v2 — what changed:`);
