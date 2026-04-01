@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const fetch = require('node-fetch');
-const cors = require('cors');
+const fetch   = require('node-fetch');
+const cors    = require('cors');
 const nodemailer = require('nodemailer');
 const path = require('path');
 
@@ -9,113 +9,46 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Serve static files (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname)));
+const GROQ_API_KEY  = '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';
+const GROQ_MODEL    = 'llama-3.3-70b-versatile';
+const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
+const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
 
-// Root route - serve index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// ── Multi-Key Groq Pool ───────────────────────────────────────────────────────
-const GROQ_KEYS = [
-  process.env.GROQ_API_KEY_1,
-  process.env.GROQ_API_KEY_2,
-  process.env.GROQ_API_KEY_3,
-  process.env.GROQ_API_KEY_4,
-  process.env.GROQ_API_KEY_5,
-].filter(Boolean);
-
-if (!GROQ_KEYS.length) {
-  console.error('\n❌ No Groq API keys found! Add at least GROQ_API_KEY_1 to your .env file.');
-  console.error('   Get free keys at: https://console.groq.com/keys\n');
-}
-
-let currentKeyIndex = 0;
-
-function getCurrentKey() { return GROQ_KEYS[currentKeyIndex]; }
-function rotateKey() {
-  const prev = currentKeyIndex;
-  currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length;
-  console.log(`  🔄 Rotated from key #${prev + 1} → key #${currentKeyIndex + 1}`);
-  return GROQ_KEYS[currentKeyIndex];
-}
-
-// ── FROM SERVER V1: Two models — smart for context, fast for batch rating ─────
-const GROQ_MODEL = 'llama-3.3-70b-versatile'; // context analysis + batch 1
-const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';    // batch 2
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
-// ── callGroq with auto-rotation (from Server V1) ─────────────────────────────
 async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
-  if (!GROQ_KEYS.length) throw new Error('No Groq API keys configured. Add GROQ_API_KEY_1 to .env');
-
-  let attempts = 0;
-  const maxAttempts = GROQ_KEYS.length; // try each key once
-
-  while (attempts < maxAttempts) {
-    const apiKey = getCurrentKey();
-    attempts++;
-
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.1,
-        max_tokens: maxTokens
-      })
-    });
-
-    if (res.status === 429) {
-      console.log(`  ⚠️  Key #${currentKeyIndex + 1} hit rate limit.`);
-      if (GROQ_KEYS.length === 1) {
-        throw new Error('RATE_LIMIT: Groq quota hit. Wait 30 seconds and try again. (Add more keys to .env to avoid this)');
-      }
-      if (attempts < maxAttempts) {
-        rotateKey();
-        await delay(500);
-        continue;
-      } else {
-        throw new Error('RATE_LIMIT: All Groq API keys are rate-limited. Wait 1 minute and try again.');
-      }
-    }
-
-    if (res.status === 401) throw new Error(`Key #${currentKeyIndex + 1} is invalid. Check GROQ_API_KEY_${currentKeyIndex + 1} in .env`);
-
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(`Groq ${res.status}: ${e?.error?.message || 'unknown error'}`);
-    }
-
-    const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content || '';
-    if (!text) throw new Error('Groq returned empty response. Please try again.');
-
-    console.log(`  ✅ Response from key #${currentKeyIndex + 1}`);
-    return text;
+  if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY not set');
+  const res = await fetch(GROQ_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      temperature: 0.1,
+      max_tokens: maxTokens
+    })
+  });
+  if (res.status === 401) throw new Error('Invalid Groq API key. Get a free key at console.groq.com/keys');
+  if (res.status === 429) throw new Error('RATE_LIMIT: Groq quota hit. Wait 30 seconds and try again.');
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(`Groq ${res.status}: ${e?.error?.message || 'unknown error'}`);
   }
-
-  throw new Error('RATE_LIMIT: All Groq API keys exhausted. Wait a minute and try again.');
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('Groq returned empty response. Please try again.');
+  return text;
 }
 
 function parseJSON(raw) {
   const c = raw.replace(/```json|```/g, '').trim();
-  try { return JSON.parse(c); } catch (_) { }
+  try { return JSON.parse(c); } catch (_) {}
   const m = c.match(/\{[\s\S]*\}/);
-  if (m) try { return JSON.parse(m[0]); } catch (_) { }
+  if (m) try { return JSON.parse(m[0]); } catch (_) {}
   return null;
 }
 
-// ── FROM SERVER V1: Trim transcript to fit token budget ──────────────────────
+// Bias toward end of call (booking/payment/pre-move happen at the end)
 function sampleTranscript(text, maxChars = 8500) {
   if (text.length <= maxChars) return text;
   const s = Math.floor(maxChars * 0.38);
@@ -131,280 +64,197 @@ function sampleTranscript(text, maxChars = 8500) {
   );
 }
 
-// ── FROM SERVER V2: Parse AI Summary + Transcript from combined Transkriptor text
-function parseCombinedText(rawText) {
-  const lineBreak = /─{10,}/g;
-  let aiSummary = '', transcript = '';
-
-  const transcriptMarkers = ['🎙️ FULL TRANSCRIPT', 'FULL TRANSCRIPT', '🎙 FULL TRANSCRIPT'];
-  const summaryMarkers = ['📝 AI SUMMARY', 'AI SUMMARY', '📝 SUMMARY'];
-
-  let splitDone = false;
-  for (const tMark of transcriptMarkers) {
-    if (rawText.includes(tMark)) {
-      const parts = rawText.split(tMark);
-      let summaryPart = parts[0];
-      for (const sMark of summaryMarkers) summaryPart = summaryPart.replace(sMark, '');
-      aiSummary = summaryPart.replace(lineBreak, '').trim();
-      transcript = parts[1] ? parts[1].replace(lineBreak, '').trim() : '';
-      splitDone = true;
-      break;
-    }
-  }
-
-  if (!splitDone) {
-    const firstSpkMatch = rawText.match(/\n(SPK\d+:|Agent:|Customer:)/);
-    if (firstSpkMatch && firstSpkMatch.index > 200) {
-      const idx = firstSpkMatch.index;
-      let summaryPart = rawText.substring(0, idx);
-      for (const sMark of summaryMarkers) summaryPart = summaryPart.replace(sMark, '');
-      aiSummary = summaryPart.replace(lineBreak, '').trim();
-      transcript = rawText.substring(idx).replace(lineBreak, '').trim();
-      splitDone = true;
-    }
-  }
-
-  if (!splitDone) transcript = rawText;
-
-  const spkLines = (transcript.match(/^SPK\d+:/gm) || []).length;
-  console.log(`  Summary: ${aiSummary.length} chars | Transcript: ${transcript.length} chars | SPK lines: ${spkLines}`);
-  if (!aiSummary) console.log(`  ⚠️  No AI Summary found — transcript-only mode`);
-
-  return { aiSummary, transcript };
-}
-
-// ════════════════════════════════════════════════════════════════════════════════
-//  SECTIONS — kept from Server V2 (matches frontend exactly)
-// ════════════════════════════════════════════════════════════════════════════════
 const SECTIONS = [
-  {
-    title: "Call Opening & Contact Verification", items: [
-      "Introduced self with agent name and company name",
-      "Used a professional greeting, addressed the customer by name, and confirmed identity.",
-      "If wrong person, requested best callback time politely",
-      "Confirmed correct contact number when applicable",
-      "Scheduled callback when customer was unavailable",
-      "If wrong number, politely closed the call",
-      "Logged wrong number and informed team lead/vendor (as applicable)"
-    ]
-  },
-  {
-    title: "Permission & Call Agenda Setting", items: [
-      "Clearly stated purpose of call (quote request / move discussion)",
-      "Explained what will be covered during the call (move details + inventory)",
-      "Set expectation of call duration (approx. time required)",
-      "Asked for permission to proceed",
-      "If not a good time, accepted politely and did not push",
-      "Confirmed callback timing clearly",
-      "Scheduled callback at customer-preferred time"
-    ]
-  },
-  {
-    title: "Move Type Identification (Basic vs End-to-End Support)", items: [
-      "Identified whether customer needs basic or full-service moving.",
-      "Explained inclusions of basic moving as required (Loading, Transport, Unloading)",
-      "Explained inclusions of full-service moving as required (Packing, Dismantling/Assembling, Loading, Transport and Unloading)",
-      "Acknowledged and confirmed customer preference"
-    ]
-  },
-  {
-    title: "Address & Move Date Capture", items: [
-      "Captured complete pickup address",
-      "Captured complete delivery address",
-      "Confirmed move date clearly",
-      "Checked flexibility on dates"
-    ]
-  },
-  {
-    title: "Inventory Capture (Room-to-Room)", items: [
-      "Explained the importance of inventory for accurate pricing",
-      "Followed structured room-to-room approach",
-      "Covered all major rooms (living, bedrooms, kitchen)",
-      "Asked about storage, garage, balcony, and outdoor items",
-      "Probed for bulky, fragile, or special items",
-      "Confirmed bed sizes and major furniture dimensions where relevant",
-      "Confirmed appliances to be moved",
-      "Checked if any items were missed",
-      "Set clear follow-up if inventory was incomplete"
-    ]
-  },
-  {
-    title: "Access & Constraints (Time & Cost Impact)", items: [
-      "Asked about stairs or elevator at pickup",
-      "Asked about stairs or elevator at delivery",
-      "Checked parking availability at both locations",
-      "Assessed walking distance from truck to entrance",
-      "Flagged long carry if distance exceeds standard limits",
-      "Advised elevator booking if required",
-      "Advised to include buffer time for elevator booking",
-      "Explained impact of access on time and cost"
-    ]
-  },
-  {
-    title: "Packing & Add-On Services", items: [
-      "Checked if customer prefers self-packing or company packing",
-      "Acknowledged customer's packing preference clearly",
-      "Offered packing materials for self-pack customers.",
-      "If packing service requested, confirmed full or partial packing requirement",
-      "Explained packing time inclusion in crew hours.",
-      "Asked about dismantling and reassembly (beds, wardrobes, large furniture)",
-      "Documented dismantling requirements",
-      "Explained that dismantling/assembly affects time and estimate",
-      "Offered packing tips or guidance for fragile items when relevant",
-      "Recorded add-ons accurately in the system"
-    ]
-  },
-  {
-    title: "Pricing & Estimate – Local Moves", items: [
-      "Explained pricing is based on hourly rate and crew size",
-      "Explained billing start and end points clearly",
-      "Linked estimate to inventory and access factors",
-      "Provided time range, not guaranteed duration"
-    ]
-  },
-  {
-    title: "Pricing & Estimate – Long Distance", items: [
-      "Explained pricing is based on shipment weight and distance",
-      "Explained certified weigh station process",
-      "Clarified labor vs transportation charges",
-      "Explained delivery window vs fixed date"
-    ]
-  },
-  {
-    title: "TNVL Trust Builders & Transparency", items: [
-      "Explained when billing starts (at loading, not during drive to pickup)",
-      "Explained travel time calculation (using Google Maps)",
-      "Explained that crews follow proper wrapping and protection procedures (As applicable)",
-      "Reinforced that there are no hidden charges and pricing drivers are explained upfront",
-      "Explained how crew work time is tracked and communicated",
-      "Clarified that break time is not charged and timer is paused during breaks",
-      "Positioned trust and visibility as part of TNVL service approach",
-      "Delivered trust statements confidently and naturally (not scripted)"
-    ]
-  },
-  {
-    title: "Objection Handling - Trust & Credibility Objections", items: [
-      "Addressed \"no / few reviews\" concern by explaining recent rebranding",
-      "Clarified that crew and coordinators are experienced, not new to industry",
-      "Highlighted structured planning and documentation",
-      "Redirected conversation back to service process and next steps"
-    ]
-  },
-  {
-    title: "Objection Handling - Price & Value Objections", items: [
-      "Clarified that estimates are based on inventory and access details",
-      "Explained that planning helps avoid later price increases",
-      "Did not criticize competitor pricing practices directly",
-      "Positioned service quality and planning as value drivers",
-      "Offered basic vs full service options where relevant",
-      "Avoided negotiating price without reviewing service scope"
-    ]
-  },
-  {
-    title: "Objection Handling - Safety & Damage Concerns", items: [
-      "Reassured with planning and correct crew sizing",
-      "Explained use of proper padding, wrapping, and loading methods",
-      "Encouraged disclosure of fragile or special items",
-      "Confirmed special handling items are noted in move plan",
-      "Clarified that issues are handled through office process, not just crew"
-    ]
-  },
-  {
-    title: "Objection Handling - Storage & Delivery Timing", items: [
-      "Explained storage vs direct delivery",
-      "Clarified why storage is charged from day one (handling and facilities)",
-      "Did not claim competitor offers are misleading or wrong",
-      "Explained delivery windows for long-distance moves",
-      "Did not guarantee fixed delivery dates for standard service",
-      "Offered alternatives (storage or dedicated truck) when firm dates required"
-    ]
-  },
-  {
-    title: "Objection Handling - Last-Minute / Short-Notice Moves", items: [
-      "Acknowledged urgency without over-promising",
-      "Explained limited availability of crews and trucks",
-      "Did not guarantee service without verifying availability"
-    ]
-  },
-  {
-    title: "Objection Handling - Decision Delay / Comparison", items: [
-      "Respected customer need to consult family or partner",
-      "Offered to send estimate and move details for review",
-      "Set clear follow-up timeline and next contact point",
-      "Offered tentative date hold",
-      "Did not disengage or end call without next steps"
-    ]
-  },
-  {
-    title: "Objection Handling - Charges, Valuation & Policies", items: [
-      "Reassured that known cost factors are included upfront",
-      "Explained that changes are discussed before move day",
-      "Avoided unrealistic commitments",
-      "Explained valuation as weight-based industry standard",
-      "Avoided overselling additional insurance",
-      "Reinforced prevention through planning and handling"
-    ]
-  },
-  {
-    title: "Sale Technique - Booking & Payment Process", items: [
-      "Attempted to close after sharing estimate",
-      "Asked clearly if customer would like to proceed with booking",
-      "Offered tentative slot if customer hesitated",
-      "Explained deposit amount and purpose clearly",
-      "Explained cancellation window linked to deposit",
-      "Explained 50% payment before loading at place of Origin",
-      "Explained balance payment timing correctly (before unloading)",
-      "Did not give unclear or conflicting payment information"
-    ]
-  },
-  {
-    title: "Pre-Move Confirmation Process", items: [
-      "Informed customer about pre-move confirmation call",
-      "Informed that the pre-move confirmation call will be 3 days prior to actual move date",
-      "Explained purpose of confirmation call",
-      "Confirmed best contact number",
-      "Confirmed preferred time for confirmation call",
-      "Explained importance of confirmation for crew dispatch",
-      "Reinforced updating inventory if changes occur"
-    ]
-  },
-  {
-    title: "Cancellation & Reschedule Management", items: [
-      "Acknowledged cancellation request with empathy",
-      "Asked reason before processing cancellation",
-      "Attempted save if issue was objection-related",
-      "Offered reschedule where appropriate",
-      "Explained cancellation charges as per policy",
-      "Did not pressure after final decision",
-      "Confirmed cancellation process and next steps"
-    ]
-  },
-  {
-    title: "Soft Skills & Customer Experience", items: [
-      "Spoke clearly, confidently, and at an appropriate pace",
-      "Used professional and customer-friendly language",
-      "Avoided vague, unsure, or filler language",
-      "Did not interrupt and listened actively to the customer",
-      "Asked relevant probing questions to understand needs",
-      "Showed empathy and reassurance during customer concerns",
-      "Maintained a calm, respectful, and positive tone throughout the call",
-      "Guided the conversation and kept it focused on next steps.",
-      "Built rapport and trust using the customer's name and natural conversation",
-      "Summarized key details and encouraged commitment or next steps",
-      "Confidently responded to customer questions without deflection",
-      "Did not sound dismissive, rushed, or irritated"
-    ]
-  },
-  {
-    title: "Tools Usage", items: [
-      "Correct customer details verified and updated",
-      "Move Section updated with all relevant details (Move Date, Address, Add on Services, Inventory List, Access details)",
-      "Follow-up tasks created with correct timeline",
-      "Call outcome updated correctly",
-      "Estimate shared with the Customer (during the call/immediately after call)",
-      "Clear notes updated on call discussion"
-    ]
-  }
+  { title: "Call Opening & Contact Verification", items: [
+    "Introduced self with agent name and company name",
+    "Used professional greeting and asked for customer by name",
+    "Verified if speaking with correct customer",
+    "If wrong person, requested best callback time politely",
+    "Confirmed correct contact number when applicable",
+    "Scheduled callback when customer was unavailable",
+    "If wrong number, politely closed call and advised number removal",
+    "Logged wrong number and informed team lead/vendor (as applicable)"
+  ]},
+  { title: "Introduction & Reason for Call", items: [
+    "Clearly stated reason for the call (quote request / move discussion)",
+    "Explained intent to prepare accurate estimate"
+  ]},
+  { title: "Permission & Call Agenda Setting", items: [
+    "Explained what will be covered during the call (move details + inventory)",
+    "Set expectation of call duration (approx. time required)",
+    "Asked for permission to proceed",
+    "If not a good time, accepted politely and did not push",
+    "Confirmed callback timing clearly",
+    "Scheduled callback at customer-preferred time"
+  ]},
+  { title: "Move Type Identification (Basic vs End-to-End Support)", items: [
+    "Checks whether customer wants basic moving or end-to-end support",
+    "Clearly explained what basic moving includes (loading, transport, unloading) if needed",
+    "Clearly explained what end-to-end support includes (packing, dismantling, full handling) if needed",
+    "Acknowledged customer's stated preference clearly"
+  ]},
+  { title: "Address & Move Date Capture", items: [
+    "Confirmed full pickup address",
+    "Confirmed full delivery address",
+    "Confirmed move date clearly",
+    "Checked flexibility on dates"
+  ]},
+  { title: "Inventory Capture (Room-to-Room)", items: [
+    "Explained why inventory details are needed for accurate estimate",
+    "Followed structured room-to-room approach",
+    "Covered all major rooms (living, bedrooms, kitchen)",
+    "Asked about storage, garage, balcony, and outdoor items",
+    "Asked about bulky, fragile or special items (piano, treadmill, large cabinets, safes, artworks etc)",
+    "Confirmed bed sizes and major furniture dimensions where relevant",
+    "Confirmed appliances to be moved",
+    "Verified if any items were missed",
+    "Set clear follow-up if inventory was incomplete"
+  ]},
+  { title: "Access & Constraints (Time & Cost Impact)", items: [
+    "Asked about stairs or elevator at pickup",
+    "Asked about stairs or elevator at delivery",
+    "Asked about parking availability at both locations",
+    "Probed walking distance from truck to entrance",
+    "Flagged long carry if distance exceeds standard limits",
+    "Advised elevator booking if required",
+    "Advised to include buffer time for elevator booking",
+    "Explained how access impacts move time and cost",
+    "Did not skip access questions even if customer seemed confident"
+  ]},
+  { title: "Packing & Add-On Services", items: [
+    "Asked whether customer will self-pack or needs packing assistance",
+    "Acknowledged customer's packing preference clearly",
+    "If self-packing, offered packing materials (boxes, wrapping, wardrobe boxes)",
+    "If packing service requested, confirmed full or partial packing requirement",
+    "Explained that packing time is included in total crew hours (for local moves)",
+    "Asked about dismantling and reassembly needs (beds, wardrobes, large furniture)",
+    "Noted specific items requiring dismantling and reassembly",
+    "Explained that dismantling/assembly affects time and estimate",
+    "Offered packing tips or guidance for fragile items when relevant",
+    "Documented packing and add-on requirements accurately in system"
+  ]},
+  { title: "Estimate Logic & Pricing - Local Moves", items: [
+    "Explained pricing is based on hourly rate and crew size",
+    "Explained billing start and end points clearly",
+    "Linked estimate to inventory and access factors",
+    "Provided time range, not guaranteed duration"
+  ]},
+  { title: "Estimate Logic & Pricing - Long Distance Moves", items: [
+    "Explained pricing is based on shipment weight and distance",
+    "Explained certified weigh station process",
+    "Clarified labor vs transportation charges",
+    "Explained delivery window vs fixed date"
+  ]},
+  { title: "TNVL Trust Builders & Transparency", items: [
+    "Explained when billing starts (at loading, not during drive to pickup)",
+    "Explained how travel time is calculated (using Google Maps)",
+    "Explained that crews follow proper wrapping and protection procedures (As applicable)",
+    "Reinforced that there are no hidden charges and pricing drivers are explained upfront",
+    "Explained how crew work time is tracked and communicated",
+    "Clarified that break time is not charged and timer is paused during breaks",
+    "Reinforced transparency of billing and work process",
+    "Positioned trust and visibility as part of TNVL service approach",
+    "Delivered trust statements confidently and naturally (not scripted)"
+  ]},
+  { title: "Objection Handling - Trust & Credibility", items: [
+    "Addressed 'no / few reviews' concern by explaining recent rebranding",
+    "Clarified that crew and coordinators are experienced, not new to industry",
+    "Reinforced planning and written confirmation of move details",
+    "Avoided defensive or dismissive tone",
+    "Redirected conversation back to service process and next steps"
+  ]},
+  { title: "Objection Handling - Price & Value", items: [
+    "Clarified that estimates are based on inventory and access details",
+    "Explained that planning helps avoid later price increases",
+    "Did not criticize competitor pricing practices directly",
+    "Positioned service quality and planning as value drivers",
+    "Offered basic vs full service options where relevant",
+    "Avoided negotiating price without reviewing service scope"
+  ]},
+  { title: "Objection Handling - Safety & Damage", items: [
+    "Reassured customer using planning and crew sizing as main protection",
+    "Explained use of proper padding, wrapping, and loading methods",
+    "Encouraged disclosure of fragile or special items",
+    "Confirmed special handling items are noted in move plan",
+    "Clarified that issues are handled through office process, not just crew"
+  ]},
+  { title: "Objection Handling - Storage & Delivery Timing", items: [
+    "Explained difference between storage vs direct delivery clearly",
+    "Clarified why storage is charged from day one (handling and facilities)",
+    "Did not claim competitor offers are misleading or wrong",
+    "Explained delivery windows for long-distance moves",
+    "Did not guarantee fixed delivery dates for standard service",
+    "Offered alternatives (storage or dedicated truck) when firm dates required"
+  ]},
+  { title: "Objection Handling - Last-Minute / Short-Notice Moves", items: [
+    "Acknowledged urgency without over-promising",
+    "Explained limited availability of crews and trucks",
+    "Confirmed that options will be checked before commitment",
+    "Did not guarantee service without verifying availability",
+    "Maintained calm and realistic expectations"
+  ]},
+  { title: "Objection Handling - Decision Delay / Comparison", items: [
+    "Respected customer need to consult family or partner",
+    "Offered to send estimate and move details for review",
+    "Set clear follow-up timeline and next contact point",
+    "Offered to hold date when appropriate",
+    "Did not disengage or end call without next steps"
+  ]},
+  { title: "Objection Handling - Charges, Valuation & Policies", items: [
+    "Reassured that known cost factors are included upfront",
+    "Explained that changes are discussed before move day",
+    "Did not promise no changes regardless of circumstances",
+    "Explained valuation as weight-based industry standard",
+    "Avoided overselling additional insurance",
+    "Reinforced prevention through planning and handling"
+  ]},
+  { title: "Sale Technique - Booking & Payment Process", items: [
+    "Attempted to close after sharing estimate",
+    "Asked clearly if customer would like to proceed with booking",
+    "Offered tentative slot if customer hesitated",
+    "Explained deposit amount and purpose clearly",
+    "Explained cancellation window linked to deposit",
+    "Explained 50% payment before loading at place of Origin",
+    "Explained balance payment timing correctly (before unloading)",
+    "Did not give unclear or conflicting payment information"
+  ]},
+  { title: "Pre-Move Confirmation Process", items: [
+    "Informed customer about pre-move confirmation call",
+    "Informed that the pre-move confirmation call will be 3 days prior to actual move date",
+    "Explained purpose of confirmation call",
+    "Confirmed best contact number",
+    "Confirmed preferred time for confirmation call",
+    "Explained importance of confirmation for crew dispatch",
+    "Reinforced updating inventory if changes occur"
+  ]},
+  { title: "Cancellation & Reschedule Management", items: [
+    "Acknowledged cancellation request with empathy",
+    "Asked reason before processing cancellation",
+    "Attempted save if issue was objection-related",
+    "Offered reschedule where appropriate",
+    "Explained cancellation charges as per policy",
+    "Did not pressure after final decision",
+    "Confirmed cancellation process and next steps"
+  ]},
+  { title: "Soft Skills & Customer Experience", items: [
+    "Did not interrupt customer while they were speaking",
+    "Responded directly to customer questions without deflection",
+    "Gave clear and direct answers without hesitation",
+    "Explained pricing and policies with confidence",
+    "Avoided uncertain or vague language (e.g., 'maybe', 'I guess')",
+    "Limited use of filler words (okay, um, uh, alright, like)",
+    "Used professional, varied language (not robotic or scripted)",
+    "Asked effective questions including probing questions to understand Customer's requirements",
+    "Asked permission before placing customer on hold",
+    "Explained reason for hold",
+    "Avoided long or unexplained silence on the call",
+    "Used empathetic language at all appropriate stages of call where customer expressed concern",
+    "Maintained calm and respectful tone at all times",
+    "Did not sound dismissive, rushed, or irritated",
+    "Guided conversation back to topic when customer digressed",
+    "Transitioned clearly between call sections",
+    "Summarized key points when needed to avoid confusion"
+  ]}
 ];
 
 function flattenChecklist() {
@@ -415,9 +265,7 @@ function flattenChecklist() {
   return items;
 }
 
-// ════════════════════════════════════════════════════════════════════════════════
-//  FROM SERVER V1: Context Analysis (simple, direct)
-// ════════════════════════════════════════════════════════════════════════════════
+// ── Pass 1: Extract call context ─────────────────────────────────────────────
 async function analyzeContext(transcript) {
   const sys = 'You are a call quality analyst. Return ONLY valid JSON, no markdown, no explanation.';
   const usr = `Carefully read this call transcript and return a JSON context object.
@@ -446,10 +294,17 @@ Return ONLY this JSON with true/false values:
   "inventoryWasDiscussed": true or false,
   "packingWasDiscussed": true or false,
   "accessWasDiscussed": true or false,
-  "trustBuildingWasDiscussed": true or false,
-  "callIsSubstantive": true or false,
-  "isInboundCall": true or false
-}`;
+  "trustBuildingWasDiscussed": true or false
+}
+
+DEFINITIONS:
+- agentGaveEstimate: agent provided a price, time estimate, or quote
+- agentDiscussedPayment: agent mentioned deposit, payment terms, or booking process  
+- agentDiscussedPreMoveConf: agent explicitly mentioned a confirmation call before move day
+- inventoryWasDiscussed: agent asked about furniture or items to be moved
+- packingWasDiscussed: agent asked about packing needs, boxes, or packing services
+- accessWasDiscussed: agent asked about stairs, elevator, parking, or access
+- trustBuildingWasDiscussed: agent explained billing, timing, transparency, or how things work`;
 
   const raw = await callGroq(GROQ_MODEL, sys, usr, 500);
   const parsed = parseJSON(raw);
@@ -463,75 +318,73 @@ Return ONLY this JSON with true/false values:
     agentPlacedOnHold: false, agentGaveEstimate: false,
     agentDiscussedPayment: false, agentDiscussedPreMoveConf: false,
     inventoryWasDiscussed: false, packingWasDiscussed: false,
-    accessWasDiscussed: false, trustBuildingWasDiscussed: false,
-    callIsSubstantive: true, isInboundCall: false
+    accessWasDiscussed: false, trustBuildingWasDiscussed: false
   };
 }
 
-// ════════════════════════════════════════════════════════════════════════════════
-//  Skip logic — from Server V2 (matches V2 SECTIONS indices)
-// ════════════════════════════════════════════════════════════════════════════════
+// ── Build skip list from context ─────────────────────────────────────────────
 function buildSkipList(ctx) {
   const skip = new Set();
   const isLD = ctx.moveType === 'longdistance';
-  const isShort = !ctx.callIsSubstantive;
 
   SECTIONS.forEach((sec, si) => {
     sec.items.forEach((_, ii) => {
       const key = `r_${si}_${ii}`;
 
-      // Section 0: Call Opening
-      if (si === 0 && [2, 3, 5, 6].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
-      if (si === 0 && ii === 4 && ctx.customerAvailable !== false) skip.add(key);
+      // s0: wrong-number items
+      if (si === 0 && [3, 6, 7].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
+      // s0: callback item
+      if (si === 0 && ii === 5 && ctx.customerAvailable) skip.add(key);
 
-      // Section 1: Permission & Agenda
-      if (si === 1 && [4, 5, 6].includes(ii) && ctx.customerAvailable !== false) skip.add(key);
+      // s2 Permission: callback items
+      if (si === 2 && [4, 5].includes(ii) && ctx.customerAvailable) skip.add(key);
 
-      // Section 6: Packing — CRM-only items always skip
-      if (si === 6 && ii === 6) skip.add(key);
-      if (si === 6 && ii === 9) skip.add(key);
+      // s5 Inventory: skip whole section if inventory never discussed
+      if (si === 5 && !ctx.inventoryWasDiscussed) skip.add(key);
 
-      // Section 7: Local pricing → skip for long distance
-      if (si === 7 && isLD) skip.add(key);
+      // s6 Access: skip whole section if access never discussed
+      if (si === 6 && !ctx.accessWasDiscussed) skip.add(key);
 
-      // Section 8: Long distance pricing → skip for local
-      if (si === 8 && !isLD) skip.add(key);
+      // s7 Packing: skip detail items if packing was not discussed
+      if (si === 7 && !ctx.packingWasDiscussed && ii >= 2) skip.add(key);
 
-      // Section 9: Trust builders → skip for non-substantive calls
-      if (si === 9 && isShort) skip.add(key);
+      // s8 Local pricing: skip for LD
+      if (si === 8 && isLD) skip.add(key);
+      // s9 LD pricing: skip for local
+      if (si === 9 && !isLD) skip.add(key);
 
-      // Sections 10–16: Objection handling
-      if (si === 10 && !ctx.customerRaisedTrustObjection) skip.add(key);
-      if (si === 11 && !ctx.customerRaisedPriceObjection) skip.add(key);
-      if (si === 12 && !ctx.customerRaisedSafetyObjection) skip.add(key);
-      if (si === 13 && !ctx.customerRaisedStorageObjection) skip.add(key);
-      if (si === 14 && !ctx.customerRaisedUrgencyObjection) skip.add(key);
-      if (si === 15 && !ctx.customerAskedToDelay) skip.add(key);
-      if (si === 16 && !ctx.customerRaisedChargesObjection) skip.add(key);
+      // s10 Trust: skip whole section if trust building not discussed
+      if (si === 10 && !ctx.trustBuildingWasDiscussed) skip.add(key);
 
-      // Section 17: Sale / Payment
-      if (si === 17 && isShort) skip.add(key);
-      if (si === 17 && [5, 6].includes(ii) && !ctx.agentDiscussedPayment) skip.add(key);
+      // s11-s17 Objection sections: skip unless objection raised
+      if (si === 11 && !ctx.customerRaisedTrustObjection) skip.add(key);
+      if (si === 12 && !ctx.customerRaisedPriceObjection) skip.add(key);
+      if (si === 13 && !ctx.customerRaisedSafetyObjection) skip.add(key);
+      if (si === 14 && !ctx.customerRaisedStorageObjection) skip.add(key);
+      if (si === 15 && !ctx.customerRaisedUrgencyObjection) skip.add(key);
+      if (si === 16 && !ctx.customerAskedToDelay) skip.add(key);
+      if (si === 17 && !ctx.customerRaisedChargesObjection) skip.add(key);
 
-      // Section 18: Pre-Move Confirmation
-      if (si === 18 && !ctx.agentDiscussedPreMoveConf) skip.add(key);
+      // s18 Booking: skip if agent never got to payment/booking discussion
+      if (si === 18 && !ctx.agentDiscussedPayment) skip.add(key);
 
-      // Section 19: Cancellation
-      if (si === 19 && !ctx.cancellationRequested) skip.add(key);
+      // s19 Pre-Move Confirmation: skip if never discussed
+      if (si === 19 && !ctx.agentDiscussedPreMoveConf) skip.add(key);
 
-      // Section 21: Tools Usage — ALWAYS skip for AI (Manual Rating Only)
-      if (si === 21) skip.add(key);
+      // s20 Cancellation: skip unless customer requested
+      if (si === 20 && !ctx.cancellationRequested) skip.add(key);
+
+      // s21 Soft Skills: hold items only if hold was used
+      if (si === 21 && [8, 9].includes(ii) && !ctx.agentPlacedOnHold) skip.add(key);
     });
   });
   return skip;
 }
 
-// ════════════════════════════════════════════════════════════════════════════════
-//  FROM SERVER V1: Rate checklist in 2 batches with simple prompts
-// ════════════════════════════════════════════════════════════════════════════════
+// ── Pass 2: Rate checklist in 2 batches ──────────────────────────────────────
 async function rateChecklist(transcript, skipSet, allItems, ctx) {
   const toRate = allItems.filter(i => !skipSet.has(i.key));
-  const half = Math.ceil(toRate.length / 2);
+  const half   = Math.ceil(toRate.length / 2);
   const batch1 = toRate.slice(0, half);
   const batch2 = toRate.slice(half);
 
@@ -554,77 +407,77 @@ ${transcript}
 ITEMS TO RATE:
 ${itemLines}
 
-RATING RULES:
-"met"    → Agent clearly did this (direct evidence in transcript)
-"notmet" → Topic was relevant AND agent clearly failed to do it
-"ni"     → Agent attempted but execution was poor/incomplete
-"skip"   → Topic didn't come up, not enough evidence, or you're unsure
+RATING DECISION RULES — FOLLOW THESE EXACTLY:
 
-When in doubt → use "skip". Never penalize unfairly.
+"met" → Agent clearly did this. There is DIRECT EVIDENCE in the transcript.
+
+"notmet" → Use ONLY when ALL THREE conditions are true:
+  1. The topic was CLEARLY relevant to this call
+  2. The agent CLEARLY should have done this given the call context  
+  3. There is CLEAR EVIDENCE the agent did NOT do it
+  
+"ni" → Agent attempted this but execution was noticeably poor or incomplete.
+  Use sparingly — only when the attempt is visible but clearly insufficient.
+
+"skip" → Use when:
+  - The topic did not come up in this call
+  - There is not enough evidence to make a fair judgment
+  - The item is conditional on something that did not occur
+  - You are UNSURE whether the agent did or didn't do this
+
+IMPORTANT: When in doubt, always use "skip" — never penalize an agent unfairly.
+Only use "notmet" when the failure is OBVIOUS and CLEAR in the transcript.
 
 Return JSON: {"r_X_X": "met", ...}
 Include ALL ${batch.length} keys. Return ONLY the JSON object.`;
   }
 
-  console.log(`  Batch 1: ${batch1.length} items...`);
-  const raw1 = await callGroq(GROQ_MODEL, sys, buildBatchPrompt(batch1), 800);
+  console.log(`  Batch 1: ${batch1.length} items (${GROQ_MODEL})...`);
+  const raw1    = await callGroq(GROQ_MODEL, sys, buildBatchPrompt(batch1), 800);
   const result1 = parseJSON(raw1) || {};
 
-  console.log(`  Waiting 3s between batches...`);
-  await delay(3000);
+  console.log(`  Waiting 5s between batches...`);
+  await delay(5000);
 
-  console.log(`  Batch 2: ${batch2.length} items...`);
-  const raw2 = await callGroq(GROQ_MODEL_B2, sys, buildBatchPrompt(batch2), 800);
+  console.log(`  Batch 2: ${batch2.length} items (${GROQ_MODEL_B2})...`);
+  const raw2    = await callGroq(GROQ_MODEL_B2, sys, buildBatchPrompt(batch2), 800);
   const result2 = parseJSON(raw2) || {};
 
   return { ...result1, ...result2 };
 }
 
-// ════════════════════════════════════════════════════════════════════════════════
-//  FROM SERVER V1: Main orchestrator — 3 API calls total (1 context + 2 batches)
-//  Combined with Server V2's parseCombinedText to handle AI Summary + Transcript
-// ════════════════════════════════════════════════════════════════════════════════
+// ── Main analysis ─────────────────────────────────────────────────────────────
 async function analyzeCall(callText) {
-  const allItems = flattenChecklist();
+  const allItems   = flattenChecklist();
+  const transcript = sampleTranscript(callText, 8500);
+  console.log(`  Transcript: ${callText.length} chars → sampled ${transcript.length} chars`);
 
-  // Step 1: Parse AI Summary + Transcript from combined Transkriptor text (V2 feature)
-  console.log('  Step 1: Parsing summary + transcript...');
-  const { aiSummary, transcript } = parseCombinedText(callText);
-
-  // Build combined text and sample it (V1 approach)
-  const combined = aiSummary
-    ? `AI SUMMARY:\n${aiSummary}\n\nFULL TRANSCRIPT:\n${transcript}`
-    : transcript;
-  const sampledText = sampleTranscript(combined, 8500);
-  console.log(`  Input: ${callText.length} chars → sampled ${sampledText.length} chars`);
-
-  // Step 2: Context analysis (V1 — simple, direct)
   console.log('  Pass 1: context analysis...');
-  const ctx = await analyzeContext(sampledText);
+  const ctx  = await analyzeContext(transcript);
   const skip = buildSkipList(ctx);
-  console.log(`  Context: ${ctx.moveType} | ${ctx.callDirection}`);
+  console.log(`  Context: ${ctx.moveType} | ${ctx.callDirection} | inv=${ctx.inventoryWasDiscussed} pack=${ctx.packingWasDiscussed} access=${ctx.accessWasDiscussed} trust=${ctx.trustBuildingWasDiscussed}`);
+  console.log(`  Booking: est=${ctx.agentGaveEstimate} pay=${ctx.agentDiscussedPayment} premove=${ctx.agentDiscussedPreMoveConf}`);
   console.log(`  Skipping ${skip.size} items → rating ${allItems.length - skip.size} items`);
 
-  // Step 3: Rate checklist in 2 batches (V1 — simple prompts)
   console.log('  Pass 2: rating checklist (2 batches)...');
-  const batchRatings = await rateChecklist(sampledText, skip, allItems, ctx);
+  const batchRatings = await rateChecklist(transcript, skip, allItems, ctx);
 
-  // Merge ratings
   const ratings = {};
   allItems.forEach(({ key }) => {
     if (skip.has(key)) {
       ratings[key] = 'skip';
     } else {
       const r = batchRatings[key];
+      // Missing/unrecognised keys → skip (not notmet)
       ratings[key] = ['met', 'notmet', 'ni'].includes(r) ? r : 'skip';
     }
   });
 
-  const m = Object.values(ratings).filter(r => r === 'met').length;
-  const n = Object.values(ratings).filter(r => r === 'notmet').length;
+  const m  = Object.values(ratings).filter(r => r === 'met').length;
+  const n  = Object.values(ratings).filter(r => r === 'notmet').length;
   const ni = Object.values(ratings).filter(r => r === 'ni').length;
   const sk = Object.values(ratings).filter(r => r === 'skip').length;
-  console.log(`  ✅ met=${m} notmet=${n} ni=${ni} skip=${sk} | ${Math.round(m / (m + n + ni || 1) * 100)}%`);
+  console.log(`  ✅ met=${m} notmet=${n} ni=${ni} skip=${sk} | ${Math.round(m/(m+n+ni||1)*100)}%`);
 
   return { ratings, ctx };
 }
@@ -635,9 +488,9 @@ app.post('/api/analyze-text', async (req, res) => {
   if (!text) return res.status(400).json({ error: 'No text provided' });
   try {
     const start = Date.now();
-    console.log(`\n▶ /api/analyze-text (${text.length} chars) | active key: #${currentKeyIndex + 1}`);
+    console.log(`\n▶ /api/analyze-text (${text.length} chars) → Groq`);
     const { ratings, ctx } = await analyzeCall(text);
-    console.log(`  ⏱ Done in ${((Date.now() - start) / 1000).toFixed(1)}s`);
+    console.log(`  ⏱ Done in ${((Date.now()-start)/1000).toFixed(1)}s`);
     return res.json({ ratings, context: ctx });
   } catch (err) {
     console.error('❌', err.message);
@@ -657,7 +510,7 @@ app.get('/api/transkriptor/files', async (req, res) => {
       headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', Accept: 'application/json' }
     });
     if (!r.ok) return res.status(r.status).json({ error: 'Transkriptor error', details: await r.text() });
-    const data = await r.json();
+    const data  = await r.json();
     const files = (data.data || data.files || data || []).map(f => ({
       order_id: f.order_id || f.id || f.file_id || f.uuid,
       name: f.name || f.file_name || f.title || f.filename || 'Unnamed',
@@ -677,16 +530,16 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
     const cd = await cr.json();
     let tx = '', ai = '';
     if (cd.content && Array.isArray(cd.content))
-      tx = cd.content.map(s => `${s.Speaker || s.speaker || 'SPK1'}: ${s.text || s.Text || ''}`).join('\n');
+      tx = cd.content.map(s => `${s.Speaker || s.speaker || 'Agent'}: ${s.text || s.Text || ''}`).join('\n');
     if (cd.summary_link) {
       try {
         const sr = await fetch(cd.summary_link);
         if (sr.ok) ai = (await sr.text())
-          .replace(/<\/p>/gi, '\n').replace(/<\/li>/gi, '\n').replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<strong>(.*?)<\/strong>/gi, '$1').replace(/<li>/gi, '  • ')
-          .replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>').replace(/&nbsp;/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
-      } catch (_) { }
+          .replace(/<\/p>/gi,'\n').replace(/<\/li>/gi,'\n').replace(/<br\s*\/?>/gi,'\n')
+          .replace(/<strong>(.*?)<\/strong>/gi,'$1').replace(/<li>/gi,'  • ')
+          .replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<')
+          .replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/\n{3,}/g,'\n\n').trim();
+      } catch (_) {}
     }
     let combined = '';
     if (ai) combined += `📝 AI SUMMARY\n${'─'.repeat(40)}\n${ai}\n\n`;
@@ -698,43 +551,21 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 
 app.get('/api/health', (_req, res) => res.json({
   status: 'ok',
-  version: 'v12-merged',
-  engine: `Groq — ${GROQ_KEYS.length} key(s) loaded`,
-  ratingLogic: 'Server V1 (2-batch, simple prompts)',
-  activeKey: `#${currentKeyIndex + 1}`,
-  totalApiCallsPerAnalysis: 3,
-  keys: GROQ_KEYS.map((k, i) => `Key #${i + 1}: ${k.substring(0, 8)}...`),
+  engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
+  groqKey: GROQ_API_KEY ? `set (${GROQ_API_KEY.substring(0,8)}...)` : 'MISSING',
   port: process.env.PORT || 3000
 }));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  const total = SECTIONS.reduce((s, sec) => s + sec.items.length, 0);
-  console.log(`\n✅ TNVL Server v12-merged → http://localhost:${PORT}`);
-  console.log(`   Structure  : Server V2 (static files, routes, SECTIONS)`);
-  console.log(`   Rating     : Server V1 (2 batches, simple prompts, direct transcript)`);
-  console.log(`   Context    : ${GROQ_MODEL} (smart model)`);
-  console.log(`   Batch 1    : ${GROQ_MODEL} (smart model)`);
-  console.log(`   Batch 2    : ${GROQ_MODEL_B2} (fast model)`);
-  console.log(`   Keys loaded: ${GROQ_KEYS.length}`);
-  GROQ_KEYS.forEach((k, i) => console.log(`     Key #${i + 1}: ${k.substring(0, 8)}...`));
-  console.log(`   📋 Checklist: ${SECTIONS.length} sections, ${total} items`);
-  console.log(`   🔢 API calls per analysis: 3 (1 context + 2 rating batches)\n`);
-});
-
-// ── Email Sending Endpoint ───────────────────────────────────────────────────
+// Send Quality Report Bundle Email
 app.post('/api/send-report-email', async (req, res) => {
   const { email, csvContent, fileName, htmlContent } = req.body;
-
-  if (!email || !csvContent) {
-    return res.status(400).json({ error: 'Email and CSV content are required' });
-  }
+  if (!csvContent) return res.status(400).json({ error: 'CSV content is required' });
 
   try {
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_PORT == 465, // true for 465, false for others
+      secure: process.env.EMAIL_PORT == 465,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -743,22 +574,37 @@ app.post('/api/send-report-email', async (req, res) => {
 
     const mailOptions = {
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: email,
-      subject: `Report: ${fileName || 'Agent Summary'}`,
-      text: `Please find the attached report: ${fileName || 'Agent Summary'}`,
-      html: htmlContent || `<p>Please find the attached report: ${fileName || 'Agent Summary'}</p>`,
-      attachments: [
-        {
-          filename: fileName || 'AgentSummary.csv',
-          content: csvContent,
-        },
-      ],
+      to: process.env.EMAIL_RECIPIENTS || email,
+      subject: `Full Performance Report Bundle`,
+      text: `Please find the attached Quality Performance Reports bundle.`,
+      html: htmlContent || `<p>Please find the attached Quality Performance Reports bundle.</p>`,
+      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
     };
 
     await transporter.sendMail(mailOptions);
-    res.json({ success: true, message: 'Email sent successfully' });
+    res.json({ success: true, message: 'Report Bundle emailed successfully' });
   } catch (error) {
     console.error('❌ Email Error:', error);
     res.status(500).json({ error: 'Failed to send email', details: error.message });
   }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`\n✅ TNVL Server → http://localhost:${PORT}`);
+  console.log(`   Engine : Groq FREE ✅`);
+  console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
+  console.log(`   Model2 : ${GROQ_MODEL_B2} (batch 2)`);
+  console.log(`   Key    : ✅ set (${GROQ_API_KEY.substring(0,8)}...)`);
+  console.log(`   Speed  : ~20-30s per analysis`);
+  console.log(`   Limits : No daily cap — FREE forever`);
+  console.log(`\n   Accuracy v2 — what changed:`);
+  console.log(`   • NEW context fields: inventory/packing/access/trust/payment/premove`);
+  console.log(`   • Smart skip: s5 inventory skipped if inventory never discussed`);
+  console.log(`   • Smart skip: s6 access skipped if access never discussed`);
+  console.log(`   • Smart skip: s10 trust skipped if trust never discussed`);
+  console.log(`   • Smart skip: s18 booking skipped if payment never discussed`);
+  console.log(`   • Smart skip: s19 pre-move skipped if never mentioned`);
+  console.log(`   • Rating: "skip" when unsure — never penalize unfairly`);
+  console.log(`   • Larger transcript: 8500 chars, end-biased (captures booking/payment)\n`);
 });
