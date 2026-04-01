@@ -2,20 +2,10 @@ require('dotenv').config();
 const express = require('express');
 const fetch   = require('node-fetch');
 const cors    = require('cors');
-const nodemailer = require('nodemailer');
-const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-
-// Serve static files (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname)));
-
-// Root route - serve index.html
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
 
 const GROQ_API_KEY  = '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';
 const GROQ_MODEL    = 'llama-3.3-70b-versatile';
@@ -563,39 +553,6 @@ app.get('/api/health', (_req, res) => res.json({
   groqKey: GROQ_API_KEY ? `set (${GROQ_API_KEY.substring(0,8)}...)` : 'MISSING',
   port: process.env.PORT || 3000
 }));
-
-// Send Quality Report Bundle Email
-app.post('/api/send-report-email', async (req, res) => {
-  const { email, csvContent, fileName, htmlContent } = req.body;
-  if (!csvContent) return res.status(400).json({ error: 'CSV content is required' });
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_PORT == 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: process.env.EMAIL_RECIPIENTS || email,
-      subject: `Full Performance Report Bundle`,
-      text: `Please find the attached Quality Performance Reports bundle.`,
-      html: htmlContent || `<p>Please find the attached Quality Performance Reports bundle.</p>`,
-      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
-    };
-
-    await transporter.sendMail(mailOptions);
-    res.json({ success: true, message: 'Report Bundle emailed successfully' });
-  } catch (error) {
-    console.error('❌ Email Error:', error);
-    res.status(500).json({ error: 'Failed to send email', details: error.message });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
