@@ -249,11 +249,13 @@
   .btn-filter  { background:#1a5276; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
   .btn-clear-f { background:#888; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
 
-  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
-  .kpi-card { background:#fff; border-radius:10px; padding:18px 20px;
-    box-shadow:0 2px 8px rgba(0,0,0,.07); text-align:center; }
-  .kpi-val   { font-size:30px; font-weight:800; }
-  .kpi-label { font-size:11px; color:#888; margin-top:4px; text-transform:uppercase; letter-spacing:.4px; }
+  .kpi-grid-table { display:grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #dce8f5; border: 1.5px solid #dce8f5; border-radius: 12px; overflow: hidden; margin-bottom: 22px; box-shadow: 0 2px 10px rgba(26,82,118,0.08); }
+  .kpi-grid-cell { background: #fff; padding: 15px 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 85px; }
+  .kpi-grid-label-small { font-size: 9px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .kpi-grid-val-cnt { font-size: 24px; font-weight: 800; color: #1a5276; }
+  .kpi-grid-val-pct { font-size: 24px; font-weight: 800; color: #27ae60; }
+  .kpi-grid-val-top { font-size: 18px; font-weight: 700; color: #e67e22; }
+  .kpi-grid-val-low { font-size: 18px; font-weight: 700; color: #c0392b; }
 
   .seg-bar { display:flex; width:100%; height:10px; border-radius:20px; overflow:hidden; margin-top:5px; background:#eef2f6; }
   .seg-met { background:#27ae60; }
@@ -463,6 +465,25 @@
 
   .retry-countdown { background: rgba(66,133,244,.12); border: 1px solid rgba(66,133,244,.3); border-radius: 6px; padding: 10px 14px; margin-top: 10px; font-size: 13px; color: #8ab4d4; display: none; text-align: center; }
   .retry-countdown.show { display: block; }
+
+  .pagination-wrap { display: flex; justify-content: center; gap: 8px; padding: 16px 20px 20px; background: #fff; border-top: 1px solid #eef2f6; }
+  .pagination-btn { padding: 6px 12px; border: 1px solid #d0dae5; border-radius: 6px; background: #fff; font-size: 13px; font-weight: 700; color: #1a5276; cursor: pointer; transition: all .15s; }
+  .pagination-btn:hover:not(:disabled) { background: #f0f7ff; border-color: #1a5276; }
+  .pagination-btn.active { background: #1a5276; color: #fff; border-color: #1a5276; }
+  .pagination-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .pagination-info { font-size: 13px; color: #888; align-self: center; margin-right: 12px; font-weight: 600; }
+
+  .sale-value-tag { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; }
+  .sv-low  { background: #e8f4fd; color: #1a5276; border: 1px solid #b8d8f0; }
+  .sv-mid  { background: #fff7e6; color: #9a6700; border: 1px solid #ffd591; }
+  .sv-high { background: #f6ffed; color: #389e0d; border: 1px solid #b7eb8f; }
+
+  .btn-edit { background:#f39c12; color:#fff; border:none; padding:4px 10px; border-radius:5px; cursor:pointer; font-size:12px; font-weight:700; margin-right:4px; }
+  .btn-edit:hover { background:#e67e22; }
+
+  .edit-form label { display: block; margin-top: 12px; font-weight: 700; color: #1a5276; font-size: 13px; }
+  .edit-form input, .edit-form select { width: 100%; padding: 10px; border: 1.5px solid #d0dae5; border-radius: 6px; margin-top: 5px; font-size: 14px; }
+  .edit-btns { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
 
   @media(max-width:640px){
     .meta-grid { grid-template-columns:1fr; }
@@ -798,6 +819,20 @@
         <div class="filter-bar" style="margin-bottom:0;">
           <div><label>From Date</label><input type="date" id="tsm-from"></div>
           <div><label>To Date</label><input type="date" id="tsm-to"></div>
+          <div>
+            <label>Agents</label>
+            <div class="multi-select-wrap" id="tsm-ms-wrap">
+              <button type="button" class="multi-select-trigger" id="tsm-agents-trigger">All agents</button>
+              <div class="multi-select-dropdown" id="tsm-agents-dropdown">
+                <div class="ms-search"><input type="text" placeholder="Search agents..." id="tsm-agent-search" onkeyup="filterAgentOptions('tsm')"></div>
+                <div class="ms-options" id="tsm-agent-options"></div>
+                <div class="ms-actions">
+                  <button type="button" onclick="selectAllAgents('tsm')">All</button>
+                  <button type="button" onclick="deselectAllAgents('tsm')">None</button>
+                </div>
+              </div>
+            </div>
+          </div>
           <button class="btn-filter" onclick="downloadTeamSummaryCSV()" style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team CSV</button>
         </div>
         <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads the <strong>Top Not Met items</strong> ranked by frequency, with a breakdown of which agents contributed most to each failure.</div>
@@ -830,11 +865,60 @@
         <button class="btn-clear-f" onclick="clearFilters()">✕ Clear</button>
       </div>
 
-      <div class="kpi-row">
-        <div class="kpi-card"><div class="kpi-val" id="kpi-total" style="color:#1a5276">0</div><div class="kpi-label">Total Assessments</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-avg" style="color:#27ae60">—</div><div class="kpi-label">Avg Score %</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-top" style="color:#e05c2a;font-size:18px">—</div><div class="kpi-label">Top Performer</div></div>
-        <div class="kpi-card"><div class="kpi-val" id="kpi-low" style="color:#c0392b;font-size:18px">—</div><div class="kpi-label">Needs Coaching</div></div>
+      <div class="kpi-grid-table">
+        <!-- ROW 1: TOTAL -->
+        <div class="kpi-grid-cell">
+          <div class="kpi-grid-val-cnt" id="kpi-total-cnt">0</div>
+          <div class="kpi-grid-label-small">TOTAL ASSESSMENTS</div>
+        </div>
+        <div class="kpi-grid-cell">
+          <div class="kpi-grid-val-pct" id="kpi-total-avg">—</div>
+          <div class="kpi-grid-label-small">AVG SCORE %</div>
+        </div>
+        <div class="kpi-grid-cell">
+          <div class="kpi-grid-val-top" id="kpi-total-top">—</div>
+          <div class="kpi-grid-label-small">TOP PERFORMER</div>
+        </div>
+        <div class="kpi-grid-cell">
+          <div class="kpi-grid-val-low" id="kpi-total-low">—</div>
+          <div class="kpi-grid-label-small">NEEDS COACHING</div>
+        </div>
+        
+        <!-- ROW 2: MANUAL -->
+        <div class="kpi-grid-cell" style="background:#fcfdff;">
+          <div class="kpi-grid-val-cnt" id="kpi-manual-cnt">0</div>
+          <div class="kpi-grid-label-small">MANUAL ASSESSMENTS</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#fcfdff;">
+          <div class="kpi-grid-val-pct" id="kpi-manual-avg">—</div>
+          <div class="kpi-grid-label-small">AVG SCORE %</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#fcfdff;">
+          <div class="kpi-grid-val-top" id="kpi-manual-top">—</div>
+          <div class="kpi-grid-label-small">TOP PERFORMER</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#fcfdff;">
+          <div class="kpi-grid-val-low" id="kpi-manual-low">—</div>
+          <div class="kpi-grid-label-small">NEEDS COACHING</div>
+        </div>
+
+        <!-- ROW 3: AI -->
+        <div class="kpi-grid-cell" style="background:#f8f9ff;">
+          <div class="kpi-grid-val-cnt" id="kpi-ai-cnt">0</div>
+          <div class="kpi-grid-label-small">AI ASSESSMENTS</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#f8f9ff;">
+          <div class="kpi-grid-val-pct" id="kpi-ai-avg">—</div>
+          <div class="kpi-grid-label-small">AVG SCORE %</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#f8f9ff;">
+          <div class="kpi-grid-val-top" id="kpi-ai-top">—</div>
+          <div class="kpi-grid-label-small">TOP PERFORMER</div>
+        </div>
+        <div class="kpi-grid-cell" style="background:#f8f9ff;">
+          <div class="kpi-grid-val-low" id="kpi-ai-low">—</div>
+          <div class="kpi-grid-label-small">NEEDS COACHING</div>
+        </div>
       </div>
 
       <div class="table-card">
@@ -849,14 +933,20 @@
       </div>
 
       <div class="table-card">
-        <div class="table-card-title">📞 Individual Call Log</div>
+        <div class="table-card-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span>📞 Individual Call Log</span>
+          <span style="font-size:12px;opacity:.8;font-weight:600;">Latest Assessments First</span>
+        </div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
             <th>Date</th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
-            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>📄 Summary</th><th>View</th>
+            <th onclick="toggleStatusSort()" style="cursor:pointer;white-space:nowrap;">Status <span id="status-sort-icon">↕️</span></th>
+            <th onclick="toggleSaleValueSort()" style="cursor:pointer;white-space:nowrap;">Sale Value <span id="sv-sort-icon">↕️</span></th>
+            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>📄 Summary</th><th>Actions</th>
           </tr></thead>
-          <tbody id="call-tbody"><tr><td colspan="11" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr></tbody></table>
+          <tbody id="call-tbody"><tr><td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr></tbody></table>
         </div>
+        <div id="call-pagination" class="pagination-wrap"></div>
       </div>
 
       <div class="charts-section">
@@ -1494,15 +1584,46 @@ async function submitForm(){
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
+// ═══ DEDUPLICATION FOR REPORTS ═══
+function deduplicateReportRecords(recs) {
+  if (!recs || !recs.length) return [];
+  const groups = {};
+  recs.forEach(r => {
+    const id = r.leadId || ('no-id-' + Math.random());
+    if (!groups[id]) groups[id] = [];
+    groups[id].push(r);
+  });
+  const result = [];
+  Object.values(groups).forEach(group => {
+    const manual = group.filter(r => r.evaluator !== 'Aarti - AI');
+    if (manual.length > 0) {
+      // Keep all manual assessments as per user request
+      manual.forEach(m => result.push(m));
+    } else {
+      // Keep only the latest AI assessment
+      group.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
+      result.push(group[0]);
+    }
+  });
+  return result;
+}
+
 // ═══ DASHBOARD ═══
-function getFiltered(){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;if(ag&&r.agent!==ag)return false;if(ct&&r.callType!==ct)return false;return true;}).sort((a,b)=>b.date.localeCompare(a.date));}
+function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
+    if(!DEFAULT_AGENTS.includes(r.agent))return false;
+    if(from&&r.date<from)return false;
+    if(to&&r.date>to)return false;
+    if(ag&&r.agent!==ag)return false;
+    if(ct&&r.callType!==ct)return false;
+    return true;
+  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
 function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
-function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));}
-function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));}
+function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
 
 function initMultiSelect(wrapId,triggerId,dropdownId){
   const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
@@ -1579,16 +1700,242 @@ function renderScoreChart(filtered){
   cl.innerHTML=legendHTML;
 }
 
+let currentPage = 1;
+const recordsPerPage = 10;
+let saleValueSortDir = null; // null, 'asc', 'desc'
+let statusSortDir = null;    // null, 'asc', 'desc'
+
+function getSaleValueScore(cat) {
+  if (!cat) return 0;
+  if (cat.includes('High')) return 3;
+  if (cat.includes('Mid')) return 2;
+  if (cat.includes('Low')) return 1;
+  return 0;
+}
+
+function toggleSaleValueSort() {
+  statusSortDir = null;
+  document.getElementById('status-sort-icon').textContent = '↕️';
+  if (!saleValueSortDir || saleValueSortDir === 'desc') saleValueSortDir = 'asc';
+  else saleValueSortDir = 'desc';
+  document.getElementById('sv-sort-icon').textContent = saleValueSortDir === 'asc' ? '🔼' : '🔽';
+  renderDashboard();
+}
+
+function toggleStatusSort() {
+  saleValueSortDir = null;
+  document.getElementById('sv-sort-icon').textContent = '↕️';
+  if (!statusSortDir || statusSortDir === 'desc') statusSortDir = 'asc';
+  else statusSortDir = 'desc';
+  document.getElementById('status-sort-icon').textContent = statusSortDir === 'asc' ? '🔼' : '🔽';
+  renderDashboard();
+}
+
+function renderPagination(total) {
+  const container = document.getElementById('call-pagination');
+  if (!container) return;
+  const pageCount = Math.ceil(total / recordsPerPage);
+  if (pageCount <= 1) { container.innerHTML = ''; return; }
+
+  let html = `<div class="pagination-info">Showing ${(currentPage-1)*recordsPerPage+1}-${Math.min(currentPage*recordsPerPage, total)} of ${total}</div>`;
+  html += `<button class="pagination-btn" onclick="changePage(${currentPage-1})" ${currentPage===1?'disabled':''}>Prev</button>`;
+  
+  const startPage = Math.max(1, currentPage - 2);
+  const endPage = Math.min(pageCount, startPage + 4);
+  
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="pagination-btn ${i===currentPage?'active':''}" onclick="changePage(${i})">${i}</button>`;
+  }
+  
+  html += `<button class="pagination-btn" onclick="changePage(${currentPage+1})" ${currentPage===pageCount?'disabled':''}>Next</button>`;
+  container.innerHTML = html;
+}
+
+function changePage(p) { currentPage = p; renderDashboard(); }
+
+function editCall(id) {
+  const r = records.find(rec => rec.id === id);
+  if (!r) return;
+  const body = document.getElementById('modal-body');
+  document.getElementById('modal-title').textContent = `📝 Edit Call Log: ${r.leadId || 'N/A'}`;
+  
+  body.innerHTML = `
+    <div class="edit-form">
+      <label>Lead ID</label><input type="text" id="e-lead" value="${r.leadId || ''}">
+      <label>Customer Name</label><input type="text" id="e-customer" value="${r.customer || ''}">
+      <label>Call Type</label>
+      <select id="e-calltype">
+        <option ${r.callType==='Inbound quote request'?'selected':''}>Inbound quote request</option>
+        <option ${r.callType==='Inbound follow up'?'selected':''}>Inbound follow up</option>
+        <option ${r.callType==='Outbound - Initial call'?'selected':''}>Outbound - Initial call</option>
+        <option ${r.callType==='Outbound - follow up'?'selected':''}>Outbound - follow up</option>
+        <option ${r.callType==='Pre Move Confirmation call'?'selected':''}>Pre Move Confirmation call</option>
+        <option ${r.callType==='Short calls less than 3 Mins'?'selected':''}>Short calls less than 3 Mins</option>
+      </select>
+      <label>Lead Status</label>
+      <select id="e-status">
+        <option value="Open" ${r.leadStatus==='Open'?'selected':''}>Open</option>
+        <option value="Closed" ${r.leadStatus==='Closed'?'selected':''}>Closed</option>
+        <option value="Booked" ${r.leadStatus==='Booked'?'selected':''}>Booked</option>
+      </select>
+      <label>Sale Value Category</label>
+      <select id="e-salevalue">
+        <option value="Low Value" ${r.moveValueCategory==='Low Value'?'selected':''}>Low Value</option>
+        <option value="Mid Value" ${r.moveValueCategory==='Mid Value'?'selected':''}>Mid Value</option>
+        <option value="High Value" ${r.moveValueCategory==='High Value'?'selected':''}>High Value</option>
+      </select>
+      <div class="edit-btns">
+        <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-submit" onclick="saveCallEdits(${id})">Save Changes</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+}
+
+function saveCallEdits(id) {
+  const r = records.find(rec => rec.id === id);
+  if (!r) return;
+  r.leadId = document.getElementById('e-lead').value;
+  r.customer = document.getElementById('e-customer').value;
+  r.callType = document.getElementById('e-calltype').value;
+  r.leadStatus = document.getElementById('e-status').value;
+  r.moveValueCategory = document.getElementById('e-salevalue').value;
+  localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  closeModal();
+  showToast('✅ Call record updated successfully!', '#27ae60');
+  renderDashboard();
+}
+
+function getMetricsForRecords(recs) {
+  if (!recs || !recs.length) return { cnt: 0, avg: '—', top: '—', low: '—' };
+  const cnt = recs.length;
+  const avg = Math.round(recs.reduce((s, r) => s + r.pct, 0) / cnt) + '%';
+  const agMap = {};
+  recs.forEach(r => { if (!agMap[r.agent]) agMap[r.agent] = []; agMap[r.agent].push(r); });
+  const agStats = Object.entries(agMap).map(([name, rcs]) => ({
+    name,
+    avgPct: Math.round(rcs.reduce((s, r) => s + r.pct, 0) / rcs.length)
+  })).sort((a, b) => b.avgPct - a.avgPct);
+  const top = agStats[0]?.name.split(' ')[0] || '—';
+  const lowList = agStats.filter(a => a.avgPct < 70);
+  const low = lowList.length ? lowList.map(a => a.name.split(' ')[0]).join(', ') : 'All Good ✅';
+  return { cnt, avg, top, low };
+}
+
 function renderDashboard(){
-  const filtered=getFiltered();document.getElementById('kpi-total').textContent=filtered.length;
-  if(!filtered.length){['kpi-avg','kpi-top','kpi-low'].forEach(id=>document.getElementById(id).textContent='—');document.getElementById('agent-tbody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr>';document.getElementById('call-tbody').innerHTML='<tr><td colspan="11" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());return;}
-  const avgPct=Math.round(filtered.reduce((s,r)=>s+r.pct,0)/filtered.length);document.getElementById('kpi-avg').textContent=avgPct+'%';
-  const agMap={};filtered.forEach(r=>{if(!agMap[r.agent])agMap[r.agent]=[];agMap[r.agent].push(r);});
-  const agStats=Object.entries(agMap).map(([name,recs])=>({name,calls:recs.length,avgMet:(recs.reduce((s,r)=>s+r.metCount,0)/recs.length).toFixed(1),avgNm:(recs.reduce((s,r)=>s+r.nmCount,0)/recs.length).toFixed(1),avgNi:(recs.reduce((s,r)=>s+r.niCount,0)/recs.length).toFixed(1),avgAss:(recs.reduce((s,r)=>s+r.assessed,0)/recs.length).toFixed(1),avgPct:Math.round(recs.reduce((s,r)=>s+r.pct,0)/recs.length),totMet:recs.reduce((s,r)=>s+r.metCount,0),totNm:recs.reduce((s,r)=>s+r.nmCount,0),totNi:recs.reduce((s,r)=>s+r.niCount,0),totAss:recs.reduce((s,r)=>s+r.assessed,0)})).sort((a,b)=>b.avgPct-a.avgPct);
-  document.getElementById('kpi-top').textContent=agStats[0]?.name.split(' ')[0]||'—';const low=agStats.filter(a=>a.avgPct<70);document.getElementById('kpi-low').textContent=low.length?low.map(a=>a.name.split(' ')[0]).join(', '):'All Good ✅';
+  const rawFiltered = getFiltered(true);
+  const dedupFiltered = getFiltered(false);
+  const manualFiltered = dedupFiltered.filter(r => r.evaluator !== 'Aarti - AI');
+  const aiFiltered = dedupFiltered.filter(r => r.evaluator === 'Aarti - AI');
+
+  const totalM = getMetricsForRecords(dedupFiltered);
+  const manualM = getMetricsForRecords(manualFiltered);
+  const aiM = getMetricsForRecords(aiFiltered);
+
+  document.getElementById('kpi-total-cnt').textContent = totalM.cnt;
+  document.getElementById('kpi-total-avg').textContent = totalM.avg;
+  document.getElementById('kpi-total-top').textContent = totalM.top;
+  document.getElementById('kpi-total-low').textContent = totalM.low;
+
+  document.getElementById('kpi-manual-cnt').textContent = manualM.cnt;
+  document.getElementById('kpi-manual-avg').textContent = manualM.avg;
+  document.getElementById('kpi-manual-top').textContent = manualM.top;
+  document.getElementById('kpi-manual-low').textContent = manualM.low;
+
+  document.getElementById('kpi-ai-cnt').textContent = aiM.cnt;
+  document.getElementById('kpi-ai-avg').textContent = aiM.avg;
+  document.getElementById('kpi-ai-top').textContent = aiM.top;
+  document.getElementById('kpi-ai-low').textContent = aiM.low;
+  
+  if(!rawFiltered.length){
+    // ... existing no-record logic ...
+    ['kpi-total-cnt','kpi-total-avg','kpi-total-top','kpi-total-low','kpi-manual-cnt','kpi-manual-avg','kpi-manual-top','kpi-manual-low','kpi-ai-cnt','kpi-ai-avg','kpi-ai-top','kpi-ai-low'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.textContent = id.includes('cnt') ? '0' : '—';
+    });
+    document.getElementById('agent-tbody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr>';
+    document.getElementById('call-tbody').innerHTML='<tr><td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';
+    document.getElementById('call-pagination').innerHTML='';
+    initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');
+    initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');
+    renderScoreChart(getTrendFiltered());
+    renderHeatmap(getHeatmapFiltered());
+    return;
+  }
+
+  // Sorting (for Call Log)
+  if (saleValueSortDir) {
+    rawFiltered.sort((a,b) => {
+      const vA = getSaleValueScore(a.moveValueCategory);
+      const vB = getSaleValueScore(b.moveValueCategory);
+      return saleValueSortDir === 'asc' ? vA - vB : vB - vA;
+    });
+  } else if (statusSortDir) {
+    rawFiltered.sort((a,b) => {
+      const sA = a.leadStatus || '';
+      const sB = b.leadStatus || '';
+      return statusSortDir === 'asc' ? sA.localeCompare(sB) : sB.localeCompare(sA);
+    });
+  }
+
+  // Pagination (for Call Log)
+  const total = rawFiltered.length;
+  const start = (currentPage - 1) * recordsPerPage;
+  const items = rawFiltered.slice(start, start + recordsPerPage);
+
+  const avgPct = totalM.avg.replace('%',''); // Using totalM.avg calculated above
+  
+  const agMap = {};
+  dedupFiltered.forEach(r => { if(!agMap[r.agent]) agMap[r.agent] = []; agMap[r.agent].push(r); });
+  
+  const agStats=Object.entries(agMap).map(([name,recs])=>({
+    name,
+    calls:recs.length,
+    avgMet:(recs.reduce((s,r)=>s+r.metCount,0)/recs.length).toFixed(1),
+    avgNm:(recs.reduce((s,r)=>s+r.nmCount,0)/recs.length).toFixed(1),
+    avgNi:(recs.reduce((s,r)=>s+r.niCount,0)/recs.length).toFixed(1),
+    avgAss:(recs.reduce((s,r)=>s+r.assessed,0)/recs.length).toFixed(1),
+    avgPct:Math.round(recs.reduce((s,r)=>s+r.pct,0)/recs.length),
+    totMet:recs.reduce((s,r)=>s+r.metCount,0),
+    totNm:recs.reduce((s,r)=>s+r.nmCount,0),
+    totNi:recs.reduce((s,r)=>s+r.niCount,0),
+    totAss:recs.reduce((s,r)=>s+r.assessed,0)
+  })).sort((a,b)=>b.avgPct-a.avgPct);
+
+  document.getElementById('kpi-total-top').textContent = agStats[0]?.name.split(' ')[0] || '—';
+  const low = agStats.filter(a => a.avgPct < 70);
+  document.getElementById('kpi-total-low').textContent = low.length ? low.map(a => a.name.split(' ')[0]).join(', ') : 'All Good ✅';
+
   document.getElementById('agent-tbody').innerHTML=agStats.map((a,i)=>`<tr><td><strong>${i+1}</strong></td><td><strong>${a.name}</strong></td><td>${a.calls}</td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','met')" style="color:#1e8449;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #27ae60;padding-bottom:1px;">${a.avgMet}</span></td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','notmet')" style="color:#c0392b;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #e74c3c;padding-bottom:1px;">${a.avgNm}</span></td><td><span class="stat-link" onclick="showAgentStatDrill('${a.name}','ni')" style="color:#7d6608;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #f0b429;padding-bottom:1px;">${a.avgNi}</span></td><td><strong style="color:${pctColor(a.avgPct)}">${a.avgPct}%</strong><small style="color:#999;display:block">${a.avgMet} met / ${a.avgAss} assessed</small></td><td style="min-width:110px">${segBar(a.totMet,a.totNm,a.totNi,a.totAss)}</td><td>${ratingBadge(a.avgPct)}</td><td><button onclick="showAgentDetail('${a.name}')" style="background:#1a5276;color:#fff;border:none;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:700;">Details</button></td></tr>`).join('');
-  document.getElementById('call-tbody').innerHTML=filtered.map(r=>`<tr><td>${r.date}</td><td>${r.agent} <span style="font-size:11px;background:#e8f4fd;color:#1a5276;padding:1px 6px;border-radius:10px;font-weight:700">✨ AI</span></td><td>${r.leadId||'—'}</td><td>${r.customer||'—'}</td><td>${r.callType||'—'}</td><td style="color:#1e8449;font-weight:700">${r.metCount}</td><td style="color:#c0392b;font-weight:700">${r.nmCount}</td><td style="color:#7d6608;font-weight:700">${r.niCount}</td><td><span class="badge badge-${r.pct>=80?'high':r.pct>=60?'mid':'low'}">${r.pct}%</span></td><td>${tskSummaryChip(r.id)}</td><td><button onclick="showCallDetail(${r.id})" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button></td></tr>`).join('');
-  initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());
+  
+  document.getElementById('call-tbody').innerHTML=items.map(r=>{
+    const svClass = r.moveValueCategory === 'High Value' ? 'sv-high' : r.moveValueCategory === 'Mid Value' ? 'sv-mid' : 'sv-low';
+    return `<tr>
+      <td>${r.date}</td>
+      <td>${r.agent} <span style="font-size:11px;background:#e8f4fd;color:#1a5276;padding:1px 6px;border-radius:10px;font-weight:700">✨ AI</span></td>
+      <td>${r.leadId||'—'}</td>
+      <td>${r.customer||'—'}</td>
+      <td style="font-size:12px;">${r.callType||'—'}</td>
+      <td><span style="font-weight:700;color:#555;font-size:12px;">${r.leadStatus||'—'}</span></td>
+      <td><span class="sale-value-tag ${svClass}">${r.moveValueCategory || 'Low Value'}</span></td>
+      <td style="color:#1e8449;font-weight:700">${r.metCount}</td>
+      <td style="color:#c0392b;font-weight:700">${r.nmCount}</td>
+      <td style="color:#7d6608;font-weight:700">${r.niCount}</td>
+      <td><span class="badge badge-${r.pct>=80?'high':r.pct>=60?'mid':'low'}">${r.pct}%</span></td>
+      <td>${tskSummaryChip(r.id)}</td>
+      <td style="white-space:nowrap;">
+        <button onclick="editCall(${r.id})" class="btn-edit">Edit</button>
+        <button onclick="showCallDetail(${r.id})" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  renderPagination(total);
+  initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');
+  initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');
+  renderScoreChart(getTrendFiltered());
+  renderHeatmap(getHeatmapFiltered());
 }
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');renderDashboard();}
 
@@ -1637,7 +1984,7 @@ function switchSubTab(tab){
   if(rptPanel)rptPanel.classList.toggle('active',tab==='reports');
   if(tab==='aoi')renderAOI();
   if(tab==='performance'){initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');renderScoreChart(getTrendFiltered());renderHeatmap(getHeatmapFiltered());}
-  if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown'); updateEvaluatorList();}
+  if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown'); initMultiSelect('tsm-ms-wrap','tsm-agents-trigger','tsm-agents-dropdown'); updateEvaluatorList();}
 }
 
 function downloadReportCSV(){
@@ -1645,13 +1992,14 @@ function downloadReportCSV(){
   const to=document.getElementById('rpt-to')?.value||'';
   const selectedAgents=getSelectedAgents('rpt-ms-wrap');
   const evalFilt=document.getElementById('rpt-evaluator')?.value||'';
-  const filtered=records.filter(r=>{
+  const rawFiltered=records.filter(r=>{
     if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
     if(evalFilt&&r.evaluator!==evalFilt)return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     return true;
   });
+  const filtered = deduplicateReportRecords(rawFiltered);
   if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
 
   const fmtDate=(dStr)=>{
@@ -1760,13 +2108,14 @@ async function sendReportEmail(){
   const to=document.getElementById('rpt-to')?.value||'';
   const selectedAgents=getSelectedAgents('rpt-ms-wrap');
   const evalFilt=document.getElementById('rpt-evaluator')?.value||'';
-  const filtered=records.filter(r=>{
+  const rawFiltered=records.filter(r=>{
     if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
     if(evalFilt&&r.evaluator!==evalFilt)return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     return true;
   });
+  const filtered = deduplicateReportRecords(rawFiltered);
   
   if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
 
@@ -1957,15 +2306,107 @@ async function sendReportEmail(){
       </tr>
     `;
 
+    htmlTable += `</tbody></table><br><br>`;
+    
+    // ── Generate Team Summary HTML Table ──
+    const agMap={};
+    filtered.forEach(r=>{
+      if(!agMap[r.agent]) agMap[r.agent]={name:r.agent,calls:0,totalParams:0,appParams:0,met:0,nm:0,ni:0};
+      const s=agMap[r.agent];
+      s.calls++;
+      const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,0);
+      s.totalParams+=totalParams;
+      s.appParams+=r.assessed;
+      s.met+=r.metCount;
+      s.nm+=r.nmCount;
+      s.ni+=r.niCount;
+    });
+
+    htmlTable += `<h2 style="font-family: Arial, sans-serif; color: #1a5276;">Team Summary Report</h2>`;
+    htmlTable += `<table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 12px; margin-bottom: 30px;">
+      <thead>
+        <tr style="background-color: #f2f2f2; text-align: left;">
+          <th style="border: 1px solid #ddd; padding: 8px;">Agent Name</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Audited</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">App. Params</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Met</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Not Met</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Needs Impr.</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Defect Rate</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Adherence %</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Grading</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    Object.values(agMap).sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
+      const defectRate=s.appParams>0?(((s.nm+s.ni)/s.appParams)*100).toFixed(1)+'%':'0%';
+      const adherence=s.appParams>0?Math.round((s.met/s.appParams)*100):0;
+      const grading=getGrading(adherence);
+      htmlTable += `<tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.name}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.calls}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.appParams}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.met}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.nm}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${s.ni}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(defectRate, 'defect')}">${defectRate}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(adherence + '%', 'adherence')}">${adherence}%</td>
+        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(grading, 'grading')}">${grading}</td>
+      </tr>`;
+    });
+    htmlTable += `</tbody></table><br><br>`;
+
+    // ── Generate Areas Of Improvement HTML Table ──
+    const itemMap={};
+    filtered.forEach(r=>{
+      if(!r.breakdown)return;
+      r.breakdown.forEach(sec=>{
+        sec.items.forEach(item=>{
+          if(item.rating==='met')return;
+          const k=item.label;
+          if(!itemMap[k])itemMap[k]={label:k,section:sec.title,notmet:0,ni:0,total:0};
+          if(item.rating==='notmet')itemMap[k].notmet++;
+          if(item.rating==='ni')itemMap[k].ni++;
+          itemMap[k].total++;
+        });
+      });
+    });
+    const sortedAOI=Object.values(itemMap).filter(x=>x.total>0).sort((a,b)=>b.total-a.total).slice(0,10);
+
+    htmlTable += `<h2 style="font-family: Arial, sans-serif; color: #c0392b;">Areas Of Improvement (Top 10 Coaching Needs)</h2>`;
+    htmlTable += `<table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 12px;">
+      <thead>
+        <tr style="background-color: #f2f2f2; text-align: left;">
+          <th style="border: 1px solid #ddd; padding: 8px;">Rank</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Coaching Item</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Section</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Not Met</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Needs Impr.</th>
+          <th style="border: 1px solid #ddd; padding: 8px;">Count</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    
+    sortedAOI.forEach((item,idx)=>{
+      htmlTable += `<tr>
+        <td style="border: 1px solid #ddd; padding: 8px;">${idx+1}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${item.label}</td>
+        <td style="border: 1px solid #ddd; padding: 8px;">${item.section}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; color: #c0392b; font-weight: bold;">${item.notmet}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; color: #d35400;">${item.ni}</td>
+        <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${item.total}</td>
+      </tr>`;
+    });
     htmlTable += `</tbody></table>`;
 
-    const response = await fetch('http://localhost:3000/api/send-report-email', {
+    const response = await fetch('https://tnvl-call-monitoring-form.onrender.com/api/send-report-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: 'saravanaraja@tnvl.ca',
         csvContent: csv,
-        fileName: fileName,
+        fileName: 'Full_Performance_Report_Bundle.csv',
         htmlContent: htmlTable
       })
     });
@@ -1975,7 +2416,7 @@ async function sendReportEmail(){
       throw new Error(err.error || 'Failed to send email');
     }
 
-    showToast(`✅ Report emailed to saravanaraja@tnvl.ca`,'#27ae60');
+    showToast(`✅ Report emailed to Saravana & Aarti`,'#27ae60');
   } catch (error) {
     showToast(`❌ Error: ${error.message}`, '#e74c3c');
   } finally {
@@ -1987,11 +2428,12 @@ async function sendReportEmail(){
 function downloadTeamPerformanceCSV(){
   const from=document.getElementById('tsm-perf-from')?.value||'';
   const to=document.getElementById('tsm-perf-to')?.value||'';
-  const filtered=records.filter(r=>{
+  const rawFiltered=records.filter(r=>{
     if(from && r.date < from) return false;
     if(to && r.date > to) return false;
     return true;
   });
+  const filtered = deduplicateReportRecords(rawFiltered);
   if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
 
   const getGrading=(pct)=>{
@@ -2065,11 +2507,15 @@ function downloadTeamPerformanceCSV(){
 function downloadTeamSummaryCSV(){
   const from=document.getElementById('tsm-from')?.value||'';
   const to=document.getElementById('tsm-to')?.value||'';
-  const filtered=records.filter(r=>{
+  const selAgents=getSelectedAgents('tsm-ms-wrap');
+  const rawFiltered=records.filter(r=>{
+    if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
+    if(selAgents.length && !selAgents.includes(r.agent))return false;
     return true;
   });
+  const filtered = deduplicateReportRecords(rawFiltered);
   if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
   const itemMap={};
   filtered.forEach(r=>{
