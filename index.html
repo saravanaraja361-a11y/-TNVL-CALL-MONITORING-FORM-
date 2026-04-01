@@ -2400,11 +2400,11 @@ async function sendReportEmail(){
     });
     htmlTable += `</tbody></table>`;
 
-    const response = await fetch('http://localhost:3000/api/send-report-email', {
+    const apiBase = window.location.origin;
+    const response = await fetch(`${apiBase}/api/send-report-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        email: 'saravanaraja@tnvl.ca',
         csvContent: csv,
         fileName: 'Full_Performance_Report_Bundle.csv',
         htmlContent: htmlTable
@@ -2416,7 +2416,7 @@ async function sendReportEmail(){
       throw new Error(err.error || 'Failed to send email');
     }
 
-    showToast(`✅ Report emailed to saravanaraja@tnvl.ca`,'#27ae60');
+    showToast(`✅ Report emailed successfully!`,'#27ae60');
   } catch (error) {
     showToast(`❌ Error: ${error.message}`, '#e74c3c');
   } finally {
