@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-const GROQ_API_KEY  = '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';
+const GROQ_API_KEY  = process.env.GROQ_API_KEY_1 || process.env.GROQ_API_KEY || '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';
 const GROQ_MODEL    = 'llama-3.3-70b-versatile';
 const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
 const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
