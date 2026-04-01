@@ -1533,7 +1533,7 @@ async function runRealAnalysis(){
     let fetchResponse;
     try{fetchResponse=await fetch('https://tnvl-call-monitoring-form.onrender.com/api/analyze-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
     catch(networkErr){throw new Error('Cannot reach backend server. Open a terminal and run: node server.js');}
-    if(!fetchResponse.ok){const errData=await fetchResponse.json().catch(()=>({}));const errMsg=errData?.error||`HTTP ${fetchResponse.status}`;if(fetchResponse.status===429)throw new Error('Rate limit hit. Wait 1 min then try again.');if(errMsg.includes('GROQ_API_KEY')||errMsg.includes('API key'))throw new Error('Groq API missing or invalid. Please check the backend keys.');throw new Error('Backend error: '+errMsg);}
+    if(!fetchResponse.ok){const errData=await fetchResponse.json().catch(()=>({}));const errMsg=errData?.error||`HTTP ${fetchResponse.status}`;if(fetchResponse.status===429)throw new Error('Rate limit hit. Wait 1 min then try again.');if(errMsg.includes('GEMINI_API_KEY')||errMsg.includes('API key'))throw new Error('Gemini API key missing or invalid. Check .env: GEMINI_API_KEY=AIza...');throw new Error('Backend error: '+errMsg);}
     const data=await fetchResponse.json();const serverRatings=data.ratings||{};
     let filled=0,skipped=0;
     for(let si=0;si<SECTIONS.length;si++){for(let ii=0;ii<SECTIONS[si].items.length;ii++){const key=`r_${si}_${ii}`;const aiRating=serverRatings[key];if(!aiRating||aiRating==='skip'){skipped++;continue;}const sel=document.getElementById(key);if(sel){sel.value=aiRating;ratings[key]=aiRating;sel.className='rating-select '+aiRating;const row=document.getElementById(`row_${si}_${ii}`);if(row){row.classList.remove('ai-filled');void row.offsetWidth;row.classList.add('ai-filled');}filled++;updateLiveScore();}await delay(12);}await delay(20);}
@@ -2400,11 +2400,11 @@ async function sendReportEmail(){
     });
     htmlTable += `</tbody></table>`;
 
-    const apiBase = window.location.origin;
-    const response = await fetch(`${apiBase}/api/send-report-email`, {
+    const response = await fetch('http://localhost:3000/api/send-report-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        email: 'saravanaraja@tnvl.ca',
         csvContent: csv,
         fileName: 'Full_Performance_Report_Bundle.csv',
         htmlContent: htmlTable
@@ -2416,7 +2416,7 @@ async function sendReportEmail(){
       throw new Error(err.error || 'Failed to send email');
     }
 
-    showToast(`✅ Report emailed successfully!`,'#27ae60');
+    showToast(`✅ Report emailed to saravanaraja@tnvl.ca`,'#27ae60');
   } catch (error) {
     showToast(`❌ Error: ${error.message}`, '#e74c3c');
   } finally {
