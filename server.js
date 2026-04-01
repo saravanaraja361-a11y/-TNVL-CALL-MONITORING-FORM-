@@ -547,7 +547,51 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
+
+// ── Email Sending Endpoint ────────────────────────────────────────────────────
+app.post('/api/send-report-email', async (req, res) => {
+  const { csvContent, fileName, htmlContent } = req.body;
+
+  if (!csvContent) {
+    return res.status(400).json({ error: 'CSV content is required' });
+  }
+
+  // Use EMAIL_RECIPIENTS env var (already set in Render: "saravanaraja@tnvl.ca, aarti.s@tnvl.ca")
+  // Fall back to EMAIL_USER if env var not set
+  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: process.env.EMAIL_PORT,
+      secure: process.env.EMAIL_PORT == 465,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const subject = `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: recipients,
+      subject,
+      text: `Please find the attached TNVL Call Quality Report Bundle.`,
+      html: htmlContent || `<p>Please find the attached report.</p>`,
+      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
+    });
+
+    console.log(`✅ Report emailed to: ${recipients}`);
+    res.json({ success: true, message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('❌ Email Error:', error);
+    res.status(500).json({ error: 'Failed to send email', details: error.message });
+  }
+});
+
 app.get('/api/health', (_req, res) => res.json({
+
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
   groqKey: GROQ_API_KEY ? `set (${GROQ_API_KEY.substring(0,8)}...)` : 'MISSING',
