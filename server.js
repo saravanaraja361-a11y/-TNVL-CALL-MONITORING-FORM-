@@ -608,8 +608,8 @@ app.get('/api/health', (_req, res) => res.json({
 }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`\n✅ TNVL Server → http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n✅ TNVL Server → http://0.0.0.0:${PORT}`);
   console.log(`   Engine : Groq FREE ✅`);
   console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
   console.log(`   Model2 : ${GROQ_MODEL_B2} (batch 2)`);
