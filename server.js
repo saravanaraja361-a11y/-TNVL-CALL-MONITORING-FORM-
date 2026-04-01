@@ -2,10 +2,19 @@ require('dotenv').config();
 const express = require('express');
 const fetch   = require('node-fetch');
 const cors    = require('cors');
+const path    = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Serve static files from the current directory (for index.html, logo.png, etc.)
+app.use(express.static(__dirname));
+
+// Explicit route to ensure index.html is sent for the root domain
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const GROQ_API_KEY  = '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';
 const GROQ_MODEL    = 'llama-3.3-70b-versatile';
