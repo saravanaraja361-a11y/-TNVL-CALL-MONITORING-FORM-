@@ -2,30 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const fetch   = require('node-fetch');
 const cors    = require('cors');
-const path    = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Serve static files from the current directory (for index.html, logo.png, etc.)
-app.use(express.static(__dirname));
-
-// Explicit route to ensure index.html is sent for the root domain
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-const GROQ_KEYS = [
-  process.env.GROQ_API_KEY_1 || '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',
-  process.env.GROQ_API_KEY_2 || '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',
-  process.env.GROQ_API_KEY_3 || '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',
-  process.env.GROQ_API_KEY_4 || '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',
-  process.env.GROQ_API_KEY_5 || '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'
-].filter(Boolean);
-
-let currentKeyIndex = 0;
-
+const GROQ_API_KEY  = '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';
 const GROQ_MODEL    = 'llama-3.3-70b-versatile';
 const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
 const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
@@ -33,41 +15,27 @@ const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
-  if (GROQ_KEYS.length === 0) throw new Error('No GROQ_API_KEY configured');
-
-  const attempts = GROQ_KEYS.length;
-  for (let i = 0; i < attempts; i++) {
-    const key = GROQ_KEYS[currentKeyIndex];
-    const res = await fetch(GROQ_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-      body: JSON.stringify({
-        model,
-        messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
-        temperature: 0.1,
-        max_tokens: maxTokens
-      })
-    });
-
-    if (res.status === 401 || res.status === 429) {
-      console.warn(`⚠️ Groq Key ${currentKeyIndex + 1} failed (${res.status}). Switching to next key...`);
-      currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length;
-      if (i === attempts - 1) { // If all keys failed
-        throw new Error(res.status === 401 ? 'All Groq API keys are invalid.' : 'RATE_LIMIT: All Groq API keys rate limited.');
-      }
-      continue; // Try next key
-    }
-
-    if (!res.ok) {
-      const e = await res.json().catch(() => ({}));
-      throw new Error(`Groq ${res.status}: ${e?.error?.message || 'unknown error'}`);
-    }
-
-    const data = await res.json();
-    const text = data?.choices?.[0]?.message?.content || '';
-    if (!text) throw new Error('Groq returned empty response. Please try again.');
-    return text;
+  if (!GROQ_API_KEY) throw new Error('GROQ_API_KEY not set');
+  const res = await fetch(GROQ_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${GROQ_API_KEY}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }],
+      temperature: 0.1,
+      max_tokens: maxTokens
+    })
+  });
+  if (res.status === 401) throw new Error('Invalid Groq API key. Get a free key at console.groq.com/keys');
+  if (res.status === 429) throw new Error('RATE_LIMIT: Groq quota hit. Wait 30 seconds and try again.');
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(`Groq ${res.status}: ${e?.error?.message || 'unknown error'}`);
   }
+  const data = await res.json();
+  const text = data?.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('Groq returned empty response. Please try again.');
+  return text;
 }
 
 function parseJSON(raw) {
@@ -579,64 +547,20 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
-
-// ── Email Sending Endpoint ────────────────────────────────────────────────────
-app.post('/api/send-report-email', async (req, res) => {
-  const { csvContent, fileName, htmlContent } = req.body;
-
-  if (!csvContent) {
-    return res.status(400).json({ error: 'CSV content is required' });
-  }
-
-  // Use EMAIL_RECIPIENTS env var (already set in Render: "saravanaraja@tnvl.ca, aarti.s@tnvl.ca")
-  // Fall back to EMAIL_USER if env var not set
-  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
-
-  try {
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      secure: process.env.EMAIL_PORT == 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const subject = `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: recipients,
-      subject,
-      text: `Please find the attached TNVL Call Quality Report Bundle.`,
-      html: htmlContent || `<p>Please find the attached report.</p>`,
-      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
-    });
-
-    console.log(`✅ Report emailed to: ${recipients}`);
-    res.json({ success: true, message: 'Email sent successfully' });
-  } catch (error) {
-    console.error('❌ Email Error:', error);
-    res.status(500).json({ error: 'Failed to send email', details: error.message });
-  }
-});
-
 app.get('/api/health', (_req, res) => res.json({
-
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
-  groqKeys: `${GROQ_KEYS.length} keys loaded`,
+  groqKey: GROQ_API_KEY ? `set (${GROQ_API_KEY.substring(0,8)}...)` : 'MISSING',
   port: process.env.PORT || 3000
 }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`\n✅ TNVL Server → http://0.0.0.0:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`\n✅ TNVL Server → http://localhost:${PORT}`);
   console.log(`   Engine : Groq FREE ✅`);
   console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
   console.log(`   Model2 : ${GROQ_MODEL_B2} (batch 2)`);
-  console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
+  console.log(`   Key    : ✅ set (${GROQ_API_KEY.substring(0,8)}...)`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
   console.log(`\n   Accuracy v2 — what changed:`);
