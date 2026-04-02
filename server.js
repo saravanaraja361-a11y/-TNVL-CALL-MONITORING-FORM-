@@ -498,10 +498,13 @@ async function rateChecklist(transcript, skipSet, allItems, ctx) {
   function buildBatchPrompt(batch) {
     const itemLines = batch.map(i => `${i.key}: ${i.label}`).join('\n');
     // Split combined text into summary and transcript parts
-    const summaryMatch = transcript.match(/AI SUMMARY[\s\S]*?─+\n([\s\S]*?)(?=🎙️ FULL TRANSCRIPT|$)/);
-    const transcriptMatch = transcript.match(/🎙️ FULL TRANSCRIPT[\s\S]*?─+\n([\s\S]*)$/);
-    const aiSummary = summaryMatch ? summaryMatch[1].trim() : transcript.substring(0, 3000);
-    const fullTranscript = transcriptMatch ? transcriptMatch[1].trim().substring(0, 5000) : transcript.substring(0, 5000);
+    // Robust splitter for AI Summary and Transcript
+    const summaryMatch = transcript.match(/(?:AI SUMMARY|Summary)[\s\S]*?[\n\r]([\s\S]*?)(?=(?:FULL TRANSCRIPT|Transcript)|$)/i);
+    const transcriptMatch = transcript.match(/(?:FULL TRANSCRIPT|Transcript)[\s\S]*?[\n\r]([\s\S]*)$/i);
+    
+    // Fallback if split fails
+    const aiSummary = summaryMatch ? summaryMatch[1].trim() : transcript.substring(0, 5000);
+    const fullTranscript = transcriptMatch ? transcriptMatch[1].trim().substring(0, 8000) : transcript.substring(Math.max(0, transcript.length - 8000));
 
     return `You are evaluating a sales call for a moving company. Rate each checklist item.
 
@@ -668,7 +671,7 @@ Include ALL ${batch.length} keys. Return ONLY the JSON object.`;
 // ── Main analysis ─────────────────────────────────────────────────────────────
 async function analyzeCall(callText) {
   const allItems = flattenChecklist();
-  const transcript = sampleTranscript(callText, 8500);
+  const transcript = sampleTranscript(callText, 25000);
   console.log(`  Transcript: ${callText.length} chars → sampled ${transcript.length} chars`);
 
   console.log('  Pass 1: context analysis...');
