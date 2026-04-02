@@ -1354,6 +1354,13 @@ const SECTIONS = [
   ]}
 ];
 
+// ── Dynamic API Base Detection (Local vs Deployed) ─────
+function getApiBase() {
+  return (window.location.origin === 'null' || !window.location.origin.startsWith('http')) 
+    ? 'http://localhost:3000' 
+    : window.location.origin;
+}
+
 let ratings = {}, records = [], selectedFile = null;
 
 function initRatings() {
@@ -1500,7 +1507,7 @@ async function toggleFileSelection(orderId,name,date) {
     let summaryText='';
     if(TSK_DEMO_SUMMARIES[orderId]){await new Promise(r=>setTimeout(r,500));summaryText=TSK_DEMO_SUMMARIES[orderId];}
     else{const key=localStorage.getItem('tnvl_tkey')||(document.getElementById('tsk-apikey-sum')&&document.getElementById('tsk-apikey-sum').value.trim())||'a4a5dc07173236c5eb303f42fc4af6945569fac88092b771de025ffd36b4512e0a774bfb70985333c5d942659a18e2f8eee65aebb4e3dc1356fd668dfefbd996';
-      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`http://localhost:3000/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
+      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`${getApiBase()}/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
     }
     const leadMatch=name.match(/(\d+)$/);const leadId=leadMatch?leadMatch[1]:null;
     tskSummaries[orderId]={fileName:name,fileDate:date,text:summaryText,leadId};saveTskSummaries();renderSummaries();
@@ -1531,7 +1538,7 @@ async function runRealAnalysis(){
   try {
     const flatChecklist=SECTIONS.flatMap((sec,si)=>sec.items.map((item,ii)=>`r_${si}_${ii}: ${item}`)).join('\n');
     let fetchResponse;
-    try{fetchResponse=await fetch('http://localhost:3000/api/analyze-text',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
+    try{fetchResponse=await fetch(`${getApiBase()}/api/analyze-text`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:combined})});}
     catch(networkErr){throw new Error('Cannot reach backend server. Open a terminal and run: node server.js');}
     if(!fetchResponse.ok){const errData=await fetchResponse.json().catch(()=>({}));const errMsg=errData?.error||`HTTP ${fetchResponse.status}`;if(fetchResponse.status===429)throw new Error('Rate limit hit. Wait 1 min then try again.');if(errMsg.includes('GROQ_API_KEY')||errMsg.includes('API key'))throw new Error('Groq API missing or invalid. Please check the backend keys.');throw new Error('Backend error: '+errMsg);}
     const data=await fetchResponse.json();const serverRatings=data.ratings||{};
@@ -1985,9 +1992,7 @@ function switchSubTab(tab){
   if(tab==='aoi')renderAOI();
 // ── Browser side health check helper ────────
 async function checkServerStatus() {
-  const apiBase = (window.location.origin === 'null' || !window.location.origin.startsWith('http')) 
-      ? 'http://localhost:3000' 
-      : window.location.origin;
+  const apiBase = getApiBase();
   try {
     const res = await fetch(`${apiBase}/api/health`);
     if(res.ok) {
@@ -2413,10 +2418,7 @@ async function sendReportEmail(){
     });
     htmlTable += `</tbody></table>`;
 
-    const apiBase = (window.location.origin === 'null' || !window.location.origin.startsWith('http')) 
-      ? 'http://localhost:3000' 
-      : window.location.origin;
-
+    const apiBase = getApiBase();
     const response = await fetch(`${apiBase}/api/send-report-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
