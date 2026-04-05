@@ -1446,13 +1446,8 @@ function toggleApiSettings() {
 }
 
 function saveGeminiKey(val) {
-  const acvlKey = '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';
-  if(val && val.trim() !== acvlKey) {
-    const el=document.getElementById('gemini-key-status');
-    if(el) el.innerHTML = '<span style="color:#fbbf24">⚠️ ACVL API key is locked. Using ACVL key.</span>';
-    setTimeout(() => { localStorage.setItem('groq_api_key', acvlKey); const ki=document.getElementById('gemini-key-input'); if(ki)ki.value=acvlKey; if(el)el.innerHTML='<span style="color:#5dde8a">✅ ACVL API key locked and active.</span>'; }, 1000);
-    return;
-  }
+  const el = document.getElementById('gemini-key-status');
+  if (el) el.innerHTML = '<span style="color:#5dde8a">✅ Keys managed by backend server.</span>';
 }
 
 function toggleGeminiKeyVisibility() { /* no-op */ }
@@ -1489,8 +1484,8 @@ async function toggleFileSelection(orderId,name,date) {
   if(!tskSummaries[orderId]){
     let summaryText='';
     if(TSK_DEMO_SUMMARIES[orderId]){await new Promise(r=>setTimeout(r,500));summaryText=TSK_DEMO_SUMMARIES[orderId];}
-    else{const key=localStorage.getItem('tnvl_tkey')||(document.getElementById('tsk-apikey-sum')&&document.getElementById('tsk-apikey-sum').value.trim())||'a4a5dc07173236c5eb303f42fc4af6945569fac88092b771de025ffd36b4512e0a774bfb70985333c5d942659a18e2f8eee65aebb4e3dc1356fd668dfefbd996';
-      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`${getApiBase()}/api/transkriptor/summary/${orderId}`,{method:'GET',headers:{'x-transkriptor-key':key}});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
+    else{
+      try{showToast('⏳ Fetching transcript…','#1a6bb5');const resp=await fetch(`${getApiBase()}/api/transkriptor/summary/${orderId}`,{method:'GET'});if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.details||e.error||`Error ${resp.status}`);}const data=await resp.json();summaryText=data.summary||'⚠️ No content returned.';}catch(err){summaryText=`❌ Could not load: ${err.message}`;showToast(`❌ ${err.message}`,'#e05c2a');}
     }
     const leadMatch=name.match(/(\d+)$/);const leadId=leadMatch?leadMatch[1]:null;
     tskSummaries[orderId]={fileName:name,fileDate:date,text:summaryText,leadId};saveTskSummaries();renderSummaries();
@@ -2571,14 +2566,12 @@ function removeSummaryById(orderId){if(!confirm('Remove this summary?'))return;d
 
 // ═══ TRANSKRIPTOR ═══
 async function tskLoadFilesFromSummary(){
-  const settingsInput=document.getElementById('tsk-apikey-sum'),key=(settingsInput&&settingsInput.value.trim())||localStorage.getItem('tnvl_tkey')||'a4a5dc07173236c5eb303f42fc4af6945569fac88092b771de025ffd36b4512e0a774bfb70985333c5d942659a18e2f8eee65aebb4e3dc1356fd668dfefbd996';
   showToast('⏳ Fetching your Transkriptor files…','#1a6bb5');
   try{
     const response = await fetch(`${getApiBase()}/api/transkriptor/files`,{
       method:'GET',
       headers:{
-        'Content-Type':'application/json',
-        'Authorization':`Bearer ${key}`
+        'Content-Type':'application/json'
       }
     });if(!response.ok){const err=await response.json();throw new Error(err.details||err.error||`Error ${response.status}`);}const data=await response.json();const files=data.data||data||[];if(!files.length){showToast('⚠️ No files found in your Transkriptor account','#e05c2a');return;}renderFileListInForm(files);showToast(`✅ ${files.length} files loaded — click a file to select it`,'#27ae60');}catch(err){showToast(`❌ Failed: ${err.message}`,'#e05c2a');}
 }
