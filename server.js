@@ -762,6 +762,11 @@ app.post('/api/analyze-text', async (req, res) => {
 
 app.get('/api/transkriptor/files', async (req, res) => {
   const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
+  console.log('🔑 Transkriptor API key check:', {
+    fromHeader: !!req.headers['x-transkriptor-key'],
+    fromEnv: !!process.env.TRANSKRIPTOR_API_KEY,
+    envKeyLength: process.env.TRANSKRIPTOR_API_KEY?.length || 0
+  });
   if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   try {
     const r = await fetch('https://api.tor.app/developer/files', {
