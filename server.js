@@ -761,8 +761,8 @@ app.post('/api/analyze-text', async (req, res) => {
 });
 
 app.get('/api/transkriptor/files', async (req, res) => {
-  const apiKey = req.headers['x-transkriptor-key'];
-  if (!apiKey) return res.status(400).json({ error: 'Missing x-transkriptor-key header' });
+  const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   try {
     const r = await fetch('https://api.tor.app/developer/files', {
       method: 'GET',
@@ -780,8 +780,8 @@ app.get('/api/transkriptor/files', async (req, res) => {
 });
 
 app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
-  const apiKey = req.headers['x-transkriptor-key'];
-  if (!apiKey) return res.status(400).json({ error: 'Missing x-transkriptor-key header' });
+  const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   const hdrs = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', Accept: 'application/json' };
   try {
     const cr = await fetch(`https://api.tor.app/developer/files/${req.params.orderId}/content`, { method: 'GET', headers: hdrs });
