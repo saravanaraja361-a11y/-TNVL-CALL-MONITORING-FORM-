@@ -663,9 +663,9 @@
         <div id="tsk-form-selected-name" style="font-size:14px;color:#fff;font-weight:800;margin-top:2px;"></div>
       </div>
 
-      <button class="ai-analyze-btn" id="ai-btn" onclick="runAnalysis()">
+      <button class="ai-analyze-btn" id="ai-btn" onclick="runRealAnalysis()">
         ✨ Analyze &amp; Auto-Fill with Gemini 2.0 Flash
-        <span style="font-size: 8px; opacity: 0.5; margin-left: 10px;">V2.4-STABLE</span>
+        <span style="font-size: 8px; opacity: 0.5; margin-left: 10px;">V2.6-ULTRA</span>
       </button>
 
       <div class="retry-countdown" id="retry-countdown"></div>
@@ -2432,12 +2432,12 @@ async function sendReportEmail(){
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.error || 'Failed to send email');
+      throw new Error(err.details || err.error || 'Failed to send email');
     }
 
     showToast(`✅ Report emailed successfully!`,'#27ae60');
   } catch (error) {
-    showToast(`❌ Error: ${error.message}`, '#e74c3c');
+    showToast(`❌ ${error.message}`, '#e74c3c');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
