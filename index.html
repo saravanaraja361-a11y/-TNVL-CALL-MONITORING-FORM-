@@ -943,7 +943,7 @@
             <th>Date</th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
             <th onclick="toggleStatusSort()" style="cursor:pointer;white-space:nowrap;">Status <span id="status-sort-icon">↕️</span></th>
             <th onclick="toggleSaleValueSort()" style="cursor:pointer;white-space:nowrap;">Sale Value <span id="sv-sort-icon">↕️</span></th>
-            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>📄 Summary</th><th>Actions</th>
+            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>Evaluator</th><th>Actions</th>
           </tr></thead>
           <tbody id="call-tbody"><tr><td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr></tbody></table>
         </div>
@@ -1823,7 +1823,7 @@ function renderDashboard(){
   document.getElementById('kpi-total-top').textContent = totalM.top;
   document.getElementById('kpi-total-low').textContent = totalM.low;
 
-  document.getElementById('kpi-manual-cnt').textContent = manualM.cnt;
+  document.getElementById('kpi-manual-cnt').innerHTML = `<span style="cursor:pointer; color:#1a6bb5; text-decoration:underline;" onclick="showManualAssessments()">${manualM.cnt}</span>`;
   document.getElementById('kpi-manual-avg').textContent = manualM.avg;
   document.getElementById('kpi-manual-top').textContent = manualM.top;
   document.getElementById('kpi-manual-low').textContent = manualM.low;
@@ -1840,7 +1840,7 @@ function renderDashboard(){
       if(el) el.textContent = id.includes('cnt') ? '0' : '—';
     });
     document.getElementById('agent-tbody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr>';
-    document.getElementById('call-tbody').innerHTML='<tr><td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';
+    document.getElementById('call-tbody').innerHTML='<tr><td colspan="12" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';
     document.getElementById('call-pagination').innerHTML='';
     initMultiSelect('trend-ms-wrap','trend-agents-trigger','trend-agents-dropdown');
     initMultiSelect('heatmap-ms-wrap','heatmap-agents-trigger','heatmap-agents-dropdown');
@@ -1896,6 +1896,8 @@ function renderDashboard(){
   
   document.getElementById('call-tbody').innerHTML=items.map(r=>{
     const svClass = r.moveValueCategory === 'High Value' ? 'sv-high' : r.moveValueCategory === 'Mid Value' ? 'sv-mid' : 'sv-low';
+    const evaluatorType = r.evaluator === 'Aarti - AI' ? 'AI Analysis' : 'Manual Analysis';
+    const evaluatorColor = r.evaluator === 'Aarti - AI' ? '#8e44ad' : '#27ae60';
     return `<tr>
       <td>${r.date}</td>
       <td>${r.agent} <span style="font-size:11px;background:#e8f4fd;color:#1a5276;padding:1px 6px;border-radius:10px;font-weight:700">✨ AI</span></td>
@@ -1908,7 +1910,7 @@ function renderDashboard(){
       <td style="color:#c0392b;font-weight:700">${r.nmCount}</td>
       <td style="color:#7d6608;font-weight:700">${r.niCount}</td>
       <td><span class="badge badge-${r.pct>=80?'high':r.pct>=60?'mid':'low'}">${r.pct}%</span></td>
-      <td>${tskSummaryChip(r.id)}</td>
+      <td><span style="background:${evaluatorColor};color:white;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${evaluatorType}</span></td>
       <td style="white-space:nowrap;">
         <button onclick="editCall(${r.id})" class="btn-edit">Edit</button>
         <button onclick="showCallDetail(${r.id})" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button>
@@ -2579,6 +2581,64 @@ function tskLoadDemoFromSummary(){renderFileListInForm(TSK_DEMO_FILES);showToast
 
 // ═══ MODAL ═══
 const ratingLabel=r=>r==='met'?'<span class="c-met">✅ Met</span>':r==='notmet'?'<span class="c-not">❌ Not Met</span>':r==='ni'?'<span class="c-ni">🔶 Needs Improvement</span>':'<span class="c-skip">— Not Assessed</span>';
+function showManualAssessments(){
+  const manualRecords = records.filter(r => r.evaluator !== 'Aarti - AI');
+  if (manualRecords.length === 0) {
+    openModal('📊 Manual Assessments', '<p style="color:#999;padding:20px;">No manual assessments found.</p>');
+    return;
+  }
+
+  // Sort by date (newest first)
+  manualRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let tableHTML = `
+    <div style="max-height: 60vh; overflow-y: auto;">
+      <div class="msec-title">📊 Manual Assessments (${manualRecords.length} records)</div>
+      <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+          <tr style="background: #f8f9ff; color: #1a3c5e;">
+            <th style="padding: 10px; text-align: left; border: 1px solid #dce8f5;">DATE</th>
+            <th style="padding: 10px; text-align: left; border: 1px solid #dce8f5;">LEAD ID</th>
+            <th style="padding: 10px; text-align: left; border: 1px solid #dce8f5;">AGENT</th>
+            <th style="padding: 10px; text-align: center; border: 1px solid #dce8f5;">ADHERENCE % (Score %)</th>
+            <th style="padding: 10px; text-align: center; border: 1px solid #dce8f5;">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  manualRecords.forEach(record => {
+    const adherenceScore = record.pct || 0;
+    const scoreColor = adherenceScore >= 80 ? '#27ae60' : adherenceScore >= 60 ? '#f39c12' : '#e74c3c';
+    
+    tableHTML += `
+      <tr style="border-bottom: 1px solid #f3f3f3; cursor: pointer;" onmouseover="this.style.background='#f0f8ff'" onmouseout="this.style.background='white'">
+        <td style="padding: 10px; border: 1px solid #dce8f5;">${record.date}</td>
+        <td style="padding: 10px; border: 1px solid #dce8f5; font-weight: 600;">${record.leadId || 'N/A'}</td>
+        <td style="padding: 10px; border: 1px solid #dce8f5;">${record.agent}</td>
+        <td style="padding: 10px; border: 1px solid #dce8f5; text-align: center;">
+          <span style="background: ${scoreColor}; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;">
+            ${adherenceScore}%
+          </span>
+        </td>
+        <td style="padding: 10px; border: 1px solid #dce8f5; text-align: center;">
+          <button onclick="showCallDetail(${record.id})" style="background: #1a5276; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+            📋 Details
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  openModal('📊 Manual Assessments Drill-Down', tableHTML);
+}
+
 function showAgentDetail(name){
   const recs=records.filter(r=>r.agent===name).sort((a,b)=>b.date.localeCompare(a.date));if(!recs.length){openModal(`📋 ${name} — Details`,'<p style="color:#999;padding:20px;">No records found.</p>');return;}
   const secMap={};recs.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!secMap[sec.title])secMap[sec.title]={nm:0,ni:0,met:0};secMap[sec.title].nm+=sec.notmet||0;secMap[sec.title].ni+=sec.ni||0;secMap[sec.title].met+=sec.met||0;});});
