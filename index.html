@@ -940,14 +940,17 @@
         </div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
-            <th>Date</th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
+            <th onclick="toggleDateSort()" style="cursor:pointer;white-space:nowrap;">Date <span id="date-sort-icon">↕️</span></th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
             <th onclick="toggleStatusSort()" style="cursor:pointer;white-space:nowrap;">Status <span id="status-sort-icon">↕️</span></th>
             <th onclick="toggleSaleValueSort()" style="cursor:pointer;white-space:nowrap;">Sale Value <span id="sv-sort-icon">↕️</span></th>
-            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th>Evaluator</th><th>Actions</th>
+            <th>✅ Met</th><th>❌ Not Met</th><th>🔶 Needs Impr.</th><th>Score %</th><th onclick="toggleEvaluatorSort()" style="cursor:pointer;white-space:nowrap;">Evaluator <span id="evaluator-sort-icon">↕️</span></th><th>Actions</th>
           </tr></thead>
           <tbody id="call-tbody"><tr><td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr></tbody></table>
         </div>
-        <div id="call-pagination" class="pagination-wrap"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div id="call-pagination" class="pagination-wrap"></div>
+          <button onclick="downloadIndividualCallLogCSV()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:8px 16px;border-radius:6px;font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;">📥 Export Call Log</button>
+        </div>
       </div>
 
       <div class="charts-section">
@@ -1047,9 +1050,11 @@
           <p>Aggregated "Not Met" counts across all monitored calls. Focus coaching on these top issues.</p>
         </div>
         <div class="aoi-kpi-mini" id="aoi-kpi-row">
-          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Calls Analysed</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Total Calls</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-unique-calls">0</div><div class="aoi-kpi-label">Unique Calls</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-nm">0</div><div class="aoi-kpi-label">Total Not Met</div></div>
-          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-nm">—</div><div class="aoi-kpi-label">Avg Not Met / Call</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-ni">0</div><div class="aoi-kpi-label">Total Needs Impr.</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-failures">—</div><div class="aoi-kpi-label">Avg Failures / Call</div></div>
         </div>
       </div>
 
@@ -1689,6 +1694,8 @@ let currentPage = 1;
 const recordsPerPage = 10;
 let saleValueSortDir = null; // null, 'asc', 'desc'
 let statusSortDir = null;    // null, 'asc', 'desc'
+let dateSortDir = null;      // null, 'asc', 'desc'
+let evaluatorSortDir = null; // null, 'asc', 'desc'
 
 function getSaleValueScore(cat) {
   if (!cat) return 0;
@@ -1713,6 +1720,28 @@ function toggleStatusSort() {
   if (!statusSortDir || statusSortDir === 'desc') statusSortDir = 'asc';
   else statusSortDir = 'desc';
   document.getElementById('status-sort-icon').textContent = statusSortDir === 'asc' ? '🔼' : '🔽';
+  renderDashboard();
+}
+
+function toggleDateSort() {
+  saleValueSortDir = null;
+  statusSortDir = null;
+  document.getElementById('sv-sort-icon').textContent = '↕️';
+  document.getElementById('status-sort-icon').textContent = '↕️';
+  if (!dateSortDir || dateSortDir === 'desc') dateSortDir = 'asc';
+  else dateSortDir = 'desc';
+  document.getElementById('date-sort-icon').textContent = dateSortDir === 'asc' ? '🔼' : '🔽';
+  renderDashboard();
+}
+
+function toggleEvaluatorSort() {
+  saleValueSortDir = null;
+  statusSortDir = null;
+  document.getElementById('sv-sort-icon').textContent = '↕️';
+  document.getElementById('status-sort-icon').textContent = '↕️';
+  if (!evaluatorSortDir || evaluatorSortDir === 'desc') evaluatorSortDir = 'asc';
+  else evaluatorSortDir = 'desc';
+  document.getElementById('evaluator-sort-icon').textContent = evaluatorSortDir === 'asc' ? '🔼' : '🔽';
   renderDashboard();
 }
 
@@ -1862,6 +1891,18 @@ function renderDashboard(){
       const sB = b.leadStatus || '';
       return statusSortDir === 'asc' ? sA.localeCompare(sB) : sB.localeCompare(sA);
     });
+  } else if (dateSortDir) {
+    rawFiltered.sort((a,b) => {
+      const dA = a.date || '';
+      const dB = b.date || '';
+      return dateSortDir === 'asc' ? dA.localeCompare(dB) : dB.localeCompare(dA);
+    });
+  } else if (evaluatorSortDir) {
+    rawFiltered.sort((a,b) => {
+      const eA = a.evaluator || '';
+      const eB = b.evaluator || '';
+      return evaluatorSortDir === 'asc' ? eA.localeCompare(eB) : eB.localeCompare(eA);
+    });
   }
 
   // Pagination (for Call Log)
@@ -1924,6 +1965,71 @@ function renderDashboard(){
   renderScoreChart(getTrendFiltered());
   renderHeatmap(getHeatmapFiltered());
 }
+function downloadIndividualCallLogCSV() {
+  const from = document.getElementById('d-from')?.value || '';
+  const to = document.getElementById('d-to')?.value || '';
+  const ag = document.getElementById('d-agent')?.value || '';
+  const ct = document.getElementById('d-calltype')?.value || '';
+  
+  const filtered = records.filter(r => {
+    if (ag && r.agent !== ag) return false;
+    if (from && r.date < from) return false;
+    if (to && r.date > to) return false;
+    if (ct && r.callType !== ct) return false;
+    if (!DEFAULT_AGENTS.includes(r.agent)) return false;
+    return true;
+  });
+
+  if (!filtered.length) {
+    showToast('⚠️ No records match the current filters', '#e05c2a');
+    return;
+  }
+
+  const headers = [
+    'Date', 'Agent', 'Lead ID', 'Customer', 'Call Type', 'Lead Status', 
+    'Sale Value Category', 'Move Value', 'Met Count', 'Not Met Count', 'Needs Improvement Count', 
+    'Score %', 'Evaluator', 'Recording Link'
+  ];
+
+  const esc = v => {
+    const s = String(v == null ? '' : v);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+
+  const rows = filtered.map((r, i) => {
+    const evaluatorType = r.evaluator === 'Aarti - AI' ? 'AI Analysis' : 'Manual Analysis';
+    return [
+      esc(r.date || ''),
+      esc(r.agent || ''),
+      esc(r.leadId || ''),
+      esc(r.customer || ''),
+      esc(r.callType || ''),
+      esc(r.leadStatus || ''),
+      esc(r.moveValueCategory || ''),
+      esc(r.moveValueAmount || ''),
+      esc(r.metCount || 0),
+      esc(r.nmCount || 0),
+      esc(r.niCount || 0),
+      esc(r.pct + '%'),
+      esc(evaluatorType),
+      esc(r.recordingLink || '')
+    ].join(',');
+  });
+
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `Individual_Call_Log_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  
+  showToast(`✅ Exported ${filtered.length} call records to CSV!`, '#27ae60');
+}
+
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
@@ -1934,9 +2040,20 @@ function renderAOI(){
         totalNM=filtered.reduce((s,r)=>s+r.nmCount,0),
         totalNI=filtered.reduce((s,r)=>s+r.niCount,0),
         totalCombined=totalNM+totalNI;
+  
+  // Calculate unique calls by Lead ID
+  const uniqueLeadIds = new Set(filtered.map(r => r.leadId).filter(id => id));
+  const uniqueCallsCount = uniqueLeadIds.size;
+  
+  // Calculate average failures per unique call
+  const avgFailuresPerUniqueCall = uniqueCallsCount > 0 ? (totalCombined / uniqueCallsCount).toFixed(1) : '—';
+  
   document.getElementById('aoi-total-calls').textContent=filtered.length;
-  document.getElementById('aoi-total-nm').textContent=totalCombined;
-  document.getElementById('aoi-avg-nm').textContent=filtered.length?(totalCombined/filtered.length).toFixed(1):'—';
+  document.getElementById('aoi-unique-calls').textContent=uniqueCallsCount;
+  document.getElementById('aoi-total-nm').textContent=totalNM;
+  document.getElementById('aoi-total-ni').textContent=totalNI;
+  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerUniqueCall;
+  
   const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${filtered.length} call${filtered.length!==1?'s':''} — ${agentLabel}`;
   if(!filtered.length||filtered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
   const itemCounts={},sectionCounts={};
