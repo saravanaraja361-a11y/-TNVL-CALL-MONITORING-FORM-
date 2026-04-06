@@ -2033,7 +2033,7 @@ function downloadIndividualCallLogCSV() {
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
-function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
+function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
   const filtered=getAOIFiltered(),
