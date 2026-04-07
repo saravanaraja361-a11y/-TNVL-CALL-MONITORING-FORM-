@@ -518,8 +518,6 @@
         <div><label>Agent Name</label>
           <select id="f-agent">
             <option value="">— Select Agent —</option>
-            <option>Myles</option><option>Dustin</option><option>Thomas</option>
-            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
           </select></div>
         <div><label>Customer Name / Number</label>
           <input type="text" id="f-customer" placeholder="Customer name or number"></div>
@@ -2007,7 +2005,6 @@ function downloadIndividualCallLogCSV() {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (ct && r.callType !== ct) return false;
-    if (!DEFAULT_AGENTS.includes(r.agent)) return false;
     return true;
   });
 
@@ -2064,7 +2061,7 @@ function downloadIndividualCallLogCSV() {
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');evaluatorFilter='all';document.getElementById('eval-filter-all').style.background='#1a5276';document.getElementById('eval-filter-ai').style.background='#3498db';document.getElementById('eval-filter-manual').style.background='#3498db';renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
-function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
+function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!r.agent)return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
   // Use the same filtered data as Agent Performance for consistency
@@ -2651,7 +2648,7 @@ function downloadTeamSummaryCSV(){
   const to=document.getElementById('tsm-to')?.value||'';
   const selAgents=getSelectedAgents('tsm-ms-wrap');
   const rawFiltered=records.filter(r=>{
-    if(!DEFAULT_AGENTS.includes(r.agent))return false;
+    if(!r.agent)return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(selAgents.length && !selAgents.includes(r.agent))return false;
@@ -2837,6 +2834,15 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   initRatings();buildChecklist();updateLiveScore();
+  
+  // Populate form agent dropdown dynamically
+  const formAgentSelect = document.getElementById('f-agent');
+  if (formAgentSelect) {
+    const agents = getAllAgents();
+    formAgentSelect.innerHTML = '<option value="">— Select Agent —</option>' + 
+      agents.map(a => `<option>${escHtml(a)}</option>`).join('');
+  }
+  
   if(Object.keys(tskSummaries).length)saveTskSummaries();
 })();
 // ═══════════════════════════════════════════════════════
