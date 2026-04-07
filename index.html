@@ -1871,6 +1871,27 @@ function getMetricsForRecords(recs) {
   return { cnt, avg, top, low };
 }
 
+// Function to recalculate percentages for all records
+function recalculateAllPercentages() {
+  records.forEach(record => {
+    if (record.assessed && record.assessed > 0) {
+      record.pct = Math.round((record.metCount / record.assessed) * 100);
+    } else {
+      record.pct = 0;
+    }
+  });
+  // Save updated records
+  try {
+    localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  } catch (e) {}
+  // Re-render dashboard
+  renderDashboard();
+}
+
+// Call this function when dashboard loads to fix existing records
+// Uncomment the line below to run once, then comment it out
+recalculateAllPercentages();
+
 function renderDashboard(){
   const rawFiltered = getFiltered(true);
   const dedupFiltered = getFiltered(false);
