@@ -518,6 +518,8 @@
         <div><label>Agent Name</label>
           <select id="f-agent">
             <option value="">— Select Agent —</option>
+            <option>Myles</option><option>Dustin</option><option>Thomas</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
           </select></div>
         <div><label>Customer Name / Number</label>
           <input type="text" id="f-customer" placeholder="Customer name or number"></div>
@@ -847,8 +849,9 @@
         <div><label>Agent</label>
           <select id="d-agent">
             <option value="">All Agents</option>
-          </select>
-        </div>
+            <option>Myles</option><option>Dustin</option><option>Thomas</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+          </select></div>
         <div><label>Call Type</label>
           <select id="d-calltype">
             <option value="">All Types</option>
@@ -936,9 +939,9 @@
           <span style="font-size:12px;opacity:.8;font-weight:600;">Latest Assessments First</span>
         </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;padding:0 10px;">
-          <button id="eval-filter-all" onclick="filterByEvaluatorType('all')" style="background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">📊 All Evaluators</button>
-          <button id="eval-filter-ai" onclick="filterByEvaluatorType('ai')" style="background:#8e44ad;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">🤖 AI Analysis</button>
-          <button id="eval-filter-manual" onclick="filterByEvaluatorType('manual')" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">👤 Manual Analysis</button>
+          <button id="eval-filter-all" onclick="filterByEvaluator('all')" style="background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">📊 All Evaluators</button>
+          <button id="eval-filter-ai" onclick="filterByEvaluator('ai')" style="background:#8e44ad;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">🤖 AI Analysis</button>
+          <button id="eval-filter-manual" onclick="filterByEvaluator('manual')" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">👤 Manual Analysis</button>
         </div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
@@ -1053,6 +1056,7 @@
         </div>
         <div class="aoi-kpi-mini" id="aoi-kpi-row">
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Total Calls</div></div>
+          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-unique-calls">0</div><div class="aoi-kpi-label">Unique Calls</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-nm">0</div><div class="aoi-kpi-label">Total Not Met</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-ni">0</div><div class="aoi-kpi-label">Total Needs Impr.</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-failures">—</div><div class="aoi-kpi-label">Avg Failures / Call</div></div>
@@ -1590,12 +1594,17 @@ function deduplicateReportRecords(recs) {
     const ai = group.filter(r => r.evaluator === 'Aarti - AI');
     
     if (manual.length > 0 && ai.length > 0) {
-      // If both manual and AI exist, keep all manual and all AI
+      // If both manual and AI exist, keep all manual and only latest AI
       manual.forEach(m => result.push(m));
-      ai.forEach(a => result.push(a));
+      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
+      result.push(ai[0]);
+    } else if (manual.length > 0) {
+      // Only manual assessments exist, keep all manual
+      manual.forEach(m => result.push(m));
     } else {
-      // Only one type exists - keep ALL records
-      result.push(...group);
+      // Only AI assessments exist, keep only latest AI
+      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
+      result.push(ai[0]);
     }
   });
   return result;
@@ -1603,7 +1612,7 @@ function deduplicateReportRecords(recs) {
 
 // ═══ DASHBOARD ═══
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
-    if(!r.agent)return false;
+    if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(ag&&r.agent!==ag)return false;
@@ -1613,14 +1622,14 @@ function getFiltered(isRaw=false){const from=document.getElementById('d-from').v
       if(evaluatorFilter==='manual'&&r.evaluator==='Aarti - AI')return false;
     }
     return true;
-  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
+  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);filterByEvaluator(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
-function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>r.agent).forEach(r=>s.add(r.agent));return[...s].sort();}
+function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
 function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
-function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!r.agent)return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
-function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!r.agent)return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
 
 function initMultiSelect(wrapId,triggerId,dropdownId){
   const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
@@ -1659,7 +1668,7 @@ function scoreToHeatColor(pct){if(pct==null||isNaN(pct))return'rgba(80,90,110,.5
 function renderHeatmap(filtered){
   const wrap=document.getElementById('heatmapWrap'),noData=document.getElementById('heatmapNoData'),table=document.getElementById('heatmapTable');if(!wrap||!table)return;
   if(!filtered||!filtered.length){table.style.display='none';if(noData)noData.style.display='flex';return;}
-  const dates=[...new Set(filtered.map(r=>r.date))].sort(),agents=[...new Set(filtered.map(r=>r.agent))].sort(),lookup={};
+  const dates=[...new Set(filtered.map(r=>r.date))].sort(),agents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
   filtered.forEach(r=>{if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
   const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
   let html='<thead><tr><th>Agent</th>';dates.forEach(d=>{html+=`<th>${fmtDate(d)}</th>`;});html+='</tr></thead><tbody>';
@@ -1671,7 +1680,7 @@ function renderScoreChart(filtered){
   const canvas=document.getElementById('scoreChart'),noDataEl=document.getElementById('chart-no-data');if(!canvas)return;
   if(!filtered||!filtered.length){try{if(scoreChartInstance){scoreChartInstance.destroy();scoreChartInstance=null;}}catch(e){scoreChartInstance=null;}canvas.style.display='none';if(noDataEl)noDataEl.style.display='flex';const cl=document.getElementById('trend-custom-legend');if(cl)cl.innerHTML='';return;}
   canvas.style.display='block';if(noDataEl)noDataEl.style.display='none';
-  const allDatesRaw=[...new Set(filtered.map(r=>r.date))].sort(),last7dates=allDatesRaw.slice(-7),allAgents=[...new Set(filtered.map(r=>r.agent))].sort(),lookup={};
+  const allDatesRaw=[...new Set(filtered.map(r=>r.date))].sort(),last7dates=allDatesRaw.slice(-7),allAgents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
   filtered.forEach(r=>{if(!last7dates.includes(r.date))return;if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
   allAgents.forEach(ag=>{last7dates.forEach(dt=>{if(lookup[ag]?.[dt]){const vals=lookup[ag][dt];lookup[ag][dt]=Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);}});});
   const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
@@ -1775,7 +1784,7 @@ function renderPagination(total) {
 
 function changePage(p) { currentPage = p; renderDashboard(); }
 
-function filterByEvaluatorType(type) {
+function filterByEvaluator(type) {
   evaluatorFilter = type;
   
   // Update button styles
@@ -1863,14 +1872,6 @@ function renderDashboard(){
   const dedupFiltered = getFiltered(false);
   const manualFiltered = dedupFiltered.filter(r => r.evaluator !== 'Aarti - AI');
   const aiFiltered = dedupFiltered.filter(r => r.evaluator === 'Aarti - AI');
-
-  // Populate main dashboard agent dropdown
-  const agentSelect = document.getElementById('d-agent');
-  if (agentSelect) {
-    const agents = getAllAgents();
-    agentSelect.innerHTML = '<option value="">All Agents</option>' + 
-      agents.map(a => `<option>${escHtml(a)}</option>`).join('');
-  }
 
   const totalM = getMetricsForRecords(dedupFiltered);
   const manualM = getMetricsForRecords(manualFiltered);
@@ -2005,6 +2006,7 @@ function downloadIndividualCallLogCSV() {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (ct && r.callType !== ct) return false;
+    if (!DEFAULT_AGENTS.includes(r.agent)) return false;
     return true;
   });
 
@@ -2061,22 +2063,27 @@ function downloadIndividualCallLogCSV() {
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');evaluatorFilter='all';document.getElementById('eval-filter-all').style.background='#1a5276';document.getElementById('eval-filter-ai').style.background='#3498db';document.getElementById('eval-filter-manual').style.background='#3498db';renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
-function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!r.agent)return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
+function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
-  // Use the same filtered data as Agent Performance for consistency
-  const dedupFiltered = getFiltered(false);
-  const totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0);
-  const totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0);
-  const totalCombined=totalNM+totalNI;
+  const rawFiltered = getAOIFiltered(),
+        dedupFiltered = deduplicateReportRecords(rawFiltered),
+        totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0),
+        totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0),
+        totalCombined=totalNM+totalNI;
   
-  // Calculate average failures per call
-  const avgFailuresPerCall = dedupFiltered.length > 0 ? (totalCombined / dedupFiltered.length).toFixed(1) : '—';
+  // Calculate unique calls by Lead ID
+  const uniqueLeadIds = new Set(dedupFiltered.map(r => r.leadId).filter(id => id));
+  const uniqueCallsCount = uniqueLeadIds.size;
+  
+  // Calculate average failures per unique call
+  const avgFailuresPerUniqueCall = uniqueCallsCount > 0 ? (totalCombined / uniqueCallsCount).toFixed(1) : '—';
   
   document.getElementById('aoi-total-calls').textContent=dedupFiltered.length;
+  document.getElementById('aoi-unique-calls').textContent=uniqueCallsCount;
   document.getElementById('aoi-total-nm').textContent=totalNM;
   document.getElementById('aoi-total-ni').textContent=totalNI;
-  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerCall;
+  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerUniqueCall;
   
   const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${dedupFiltered.length} call${dedupFiltered.length!==1?'s':''} — ${agentLabel}`;
   if(!dedupFiltered.length||dedupFiltered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
@@ -2648,7 +2655,7 @@ function downloadTeamSummaryCSV(){
   const to=document.getElementById('tsm-to')?.value||'';
   const selAgents=getSelectedAgents('tsm-ms-wrap');
   const rawFiltered=records.filter(r=>{
-    if(!r.agent)return false;
+    if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(selAgents.length && !selAgents.includes(r.agent))return false;
@@ -2834,15 +2841,6 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
   document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
   initRatings();buildChecklist();updateLiveScore();
-  
-  // Populate form agent dropdown dynamically
-  const formAgentSelect = document.getElementById('f-agent');
-  if (formAgentSelect) {
-    const agents = getAllAgents();
-    formAgentSelect.innerHTML = '<option value="">— Select Agent —</option>' + 
-      agents.map(a => `<option>${escHtml(a)}</option>`).join('');
-  }
-  
   if(Object.keys(tskSummaries).length)saveTskSummaries();
 })();
 // ═══════════════════════════════════════════════════════

@@ -813,88 +813,81 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
-// ── Email Route (Fixed for Zoho Mail) ────────────────────────────────────────
+// ── Email Route (Resend API - works through firewalls) ────────────────────────
 app.post('/api/send-report-email', async (req, res) => {
   const { csvContent, fileName, htmlContent } = req.body;
+  
+  console.log('📧 Email request received:', {
+    hasCsv: !!csvContent,
+    csvLength: csvContent?.length || 0,
+    hasHtml: !!htmlContent,
+    fileName: fileName || 'no-filename'
+  });
 
   if (!csvContent) {
     return res.status(400).json({ error: 'CSV content is required' });
   }
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
+  
+  console.log('🔍 Email config check:', {
+    hasResendKey: !!process.env.RESEND_API_KEY,
+    hasEmailFrom: !!process.env.EMAIL_FROM,
+    recipients: recipients
+  });
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    console.error('❌ Email failed: Missing RESEND_API_KEY or EMAIL_FROM in .env');
     return res.status(500).json({ error: 'Email configuration missing in server .env' });
   }
 
   try {
-    const port = parseInt(process.env.EMAIL_PORT) || 587;
-
-    // Zoho Mail SMTP config:
-    // Port 465 → SSL (secure: true, no STARTTLS)
-    // Port 587 → STARTTLS (secure: false, requireTLS: true)
-    const isSSL = port === 465;
-
-    const transportConfig = {
-      host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-      port: port,
-      secure: isSSL,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-        minVersion: 'TLSv1.2'
-      }
+    // Use Resend API instead of SMTP
+    const emailData = {
+      from: process.env.EMAIL_FROM,
+      to: recipients.split(',').map(email => email.trim()),
+      subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
+      html: htmlContent || `<p>Please find the attached report.</p>`,
+      attachments: [{
+        filename: fileName || 'AgentSummary.csv',
+        content: csvContent.split(',').map(row => row.join(',')).join('\n'), // Convert to CSV string
+        contentType: 'text/csv'
+      }]
     };
 
-    // Only add requireTLS for STARTTLS (port 587), not for SSL (port 465)
-    if (!isSSL) {
-      transportConfig.requireTLS = true;
-    }
-
-    console.log(`📧 Connecting to ${transportConfig.host}:${port} (${isSSL ? 'SSL' : 'STARTTLS'})...`);
-
-    const transporter = nodemailer.createTransport(transportConfig);
-
-    // Verify connection before sending
-    await transporter.verify();
-    console.log('✅ SMTP connection verified');
-
-    const subject = `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: recipients,
-      subject,
-      text: `Please find the attached TNVL Call Quality Report Bundle.`,
-      html: htmlContent || `<p>Please find the attached report.</p>`,
-      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
+    console.log('📧 Sending via Resend API...');
+    
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
     });
 
-    console.log(`✅ Report emailed to: ${recipients}`);
-    res.json({ success: true, message: 'Email sent successfully' });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Resend API error: ${error.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Report emailed via Resend:`, result.id);
+    res.json({ success: true, message: 'Email sent successfully via Resend', emailId: result.id });
 
   } catch (error) {
     console.error('❌ Email Error:', error);
 
-    // Give a more specific error message based on the error type
     let userMessage = 'Failed to send email';
-    if (error.code === 'ECONNECTION' || error.code === 'ESOCKET') {
-      userMessage = `Cannot connect to mail server (${process.env.EMAIL_HOST}:${process.env.EMAIL_PORT}). Check EMAIL_HOST and EMAIL_PORT in your .env`;
-    } else if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check EMAIL_USER and EMAIL_PASS (use App-Specific Password from Zoho)';
-    } else if (error.code === 'ETIMEDOUT') {
-      userMessage = 'Connection timed out. Your server may be blocking outbound SMTP. Try port 465 instead of 587.';
+    if (error.message.includes('Resend API error')) {
+      userMessage = 'Email service error. Check RESEND_API_KEY and EMAIL_FROM configuration.';
+    } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      userMessage = 'Cannot connect to email service. Check internet connection.';
     }
 
     res.status(500).json({
       error: userMessage,
-      details: error.message,
-      code: error.code,
-      command: error.command
+      details: error.message
     });
   }
 });
