@@ -939,9 +939,9 @@
           <span style="font-size:12px;opacity:.8;font-weight:600;">Latest Assessments First</span>
         </div>
         <div style="display:flex;gap:10px;margin-bottom:12px;padding:0 10px;">
-          <button id="eval-filter-all" onclick="filterByEvaluator('all')" style="background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">📊 All Evaluators</button>
-          <button id="eval-filter-ai" onclick="filterByEvaluator('ai')" style="background:#8e44ad;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">🤖 AI Analysis</button>
-          <button id="eval-filter-manual" onclick="filterByEvaluator('manual')" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">👤 Manual Analysis</button>
+          <button id="eval-filter-all" onclick="filterByEvaluatorType('all')" style="background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">📊 All Evaluators</button>
+          <button id="eval-filter-ai" onclick="filterByEvaluatorType('ai')" style="background:#8e44ad;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">🤖 AI Analysis</button>
+          <button id="eval-filter-manual" onclick="filterByEvaluatorType('manual')" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">👤 Manual Analysis</button>
         </div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
@@ -1593,30 +1593,18 @@ function deduplicateReportRecords(recs) {
     const ai = group.filter(r => r.evaluator === 'Aarti - AI');
     
     if (manual.length > 0 && ai.length > 0) {
-      // If both manual and AI exist for the same Lead ID, keep both
-      manual.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(manual[0]);  // Keep latest manual
-      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(ai[0]);  // Keep latest AI
-    } else if (manual.length > 0) {
-      // Only manual assessments exist, exclude them (count = 1)
-      // Don't add anything to result
+      // If both manual and AI exist, keep all manual and all AI
+      manual.forEach(m => result.push(m));
+      ai.forEach(a => result.push(a));
     } else {
-      // Only AI assessments exist, keep all AI records
-      result.push(...ai);
+      // Only one type exists - keep ALL records
+      result.push(...group);
     }
   });
   return result;
 }
 
 // ═══ DASHBOARD ═══
-function filterByEvaluator(recs) {
-  if (evaluatorFilter === 'all') return recs;
-  if (evaluatorFilter === 'ai') return recs.filter(r => r.evaluator === 'Aarti - AI');
-  if (evaluatorFilter === 'manual') return recs.filter(r => r.evaluator !== 'Aarti - AI');
-  return recs;
-}
-
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
     if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
@@ -1790,7 +1778,7 @@ function renderPagination(total) {
 
 function changePage(p) { currentPage = p; renderDashboard(); }
 
-function filterByEvaluator(type) {
+function filterByEvaluatorType(type) {
   evaluatorFilter = type;
   
   // Update button styles
