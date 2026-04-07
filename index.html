@@ -849,9 +849,8 @@
         <div><label>Agent</label>
           <select id="d-agent">
             <option value="">All Agents</option>
-            <option>Myles</option><option>Dustin</option><option>Thomas</option>
-            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
-          </select></div>
+          </select>
+        </div>
         <div><label>Call Type</label>
           <select id="d-calltype">
             <option value="">All Types</option>
@@ -1606,7 +1605,7 @@ function deduplicateReportRecords(recs) {
 
 // ═══ DASHBOARD ═══
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
-    if(!DEFAULT_AGENTS.includes(r.agent))return false;
+    if(!r.agent)return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(ag&&r.agent!==ag)return false;
@@ -1619,11 +1618,11 @@ function getFiltered(isRaw=false){const from=document.getElementById('d-from').v
   }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
-function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
+function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>r.agent).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
 function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
-function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
-function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!r.agent)return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!r.agent)return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
 
 function initMultiSelect(wrapId,triggerId,dropdownId){
   const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
@@ -1662,7 +1661,7 @@ function scoreToHeatColor(pct){if(pct==null||isNaN(pct))return'rgba(80,90,110,.5
 function renderHeatmap(filtered){
   const wrap=document.getElementById('heatmapWrap'),noData=document.getElementById('heatmapNoData'),table=document.getElementById('heatmapTable');if(!wrap||!table)return;
   if(!filtered||!filtered.length){table.style.display='none';if(noData)noData.style.display='flex';return;}
-  const dates=[...new Set(filtered.map(r=>r.date))].sort(),agents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
+  const dates=[...new Set(filtered.map(r=>r.date))].sort(),agents=[...new Set(filtered.map(r=>r.agent))].sort(),lookup={};
   filtered.forEach(r=>{if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
   const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
   let html='<thead><tr><th>Agent</th>';dates.forEach(d=>{html+=`<th>${fmtDate(d)}</th>`;});html+='</tr></thead><tbody>';
@@ -1674,7 +1673,7 @@ function renderScoreChart(filtered){
   const canvas=document.getElementById('scoreChart'),noDataEl=document.getElementById('chart-no-data');if(!canvas)return;
   if(!filtered||!filtered.length){try{if(scoreChartInstance){scoreChartInstance.destroy();scoreChartInstance=null;}}catch(e){scoreChartInstance=null;}canvas.style.display='none';if(noDataEl)noDataEl.style.display='flex';const cl=document.getElementById('trend-custom-legend');if(cl)cl.innerHTML='';return;}
   canvas.style.display='block';if(noDataEl)noDataEl.style.display='none';
-  const allDatesRaw=[...new Set(filtered.map(r=>r.date))].sort(),last7dates=allDatesRaw.slice(-7),allAgents=[...new Set(filtered.map(r=>r.agent))].filter(a=>DEFAULT_AGENTS.includes(a)).sort(),lookup={};
+  const allDatesRaw=[...new Set(filtered.map(r=>r.date))].sort(),last7dates=allDatesRaw.slice(-7),allAgents=[...new Set(filtered.map(r=>r.agent))].sort(),lookup={};
   filtered.forEach(r=>{if(!last7dates.includes(r.date))return;if(!lookup[r.agent])lookup[r.agent]={};if(!lookup[r.agent][r.date])lookup[r.agent][r.date]=[];lookup[r.agent][r.date].push(r.pct);});
   allAgents.forEach(ag=>{last7dates.forEach(dt=>{if(lookup[ag]?.[dt]){const vals=lookup[ag][dt];lookup[ag][dt]=Math.round(vals.reduce((s,v)=>s+v,0)/vals.length);}});});
   const fmtDate=d=>{const p=d.split('-');return p.length===3?`${p[2]}/${p[1]}`:d;};
@@ -1866,6 +1865,14 @@ function renderDashboard(){
   const dedupFiltered = getFiltered(false);
   const manualFiltered = dedupFiltered.filter(r => r.evaluator !== 'Aarti - AI');
   const aiFiltered = dedupFiltered.filter(r => r.evaluator === 'Aarti - AI');
+
+  // Populate main dashboard agent dropdown
+  const agentSelect = document.getElementById('d-agent');
+  if (agentSelect) {
+    const agents = getAllAgents();
+    agentSelect.innerHTML = '<option value="">All Agents</option>' + 
+      agents.map(a => `<option>${escHtml(a)}</option>`).join('');
+  }
 
   const totalM = getMetricsForRecords(dedupFiltered);
   const manualM = getMetricsForRecords(manualFiltered);
