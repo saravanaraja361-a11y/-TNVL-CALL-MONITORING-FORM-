@@ -2036,29 +2036,30 @@ function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id
 function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
-  const filtered=getAOIFiltered(),
-        totalNM=filtered.reduce((s,r)=>s+r.nmCount,0),
-        totalNI=filtered.reduce((s,r)=>s+r.niCount,0),
+  const rawFiltered = getAOIFiltered(),
+        dedupFiltered = deduplicateReportRecords(rawFiltered),
+        totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0),
+        totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0),
         totalCombined=totalNM+totalNI;
   
   // Calculate unique calls by Lead ID
-  const uniqueLeadIds = new Set(filtered.map(r => r.leadId).filter(id => id));
+  const uniqueLeadIds = new Set(dedupFiltered.map(r => r.leadId).filter(id => id));
   const uniqueCallsCount = uniqueLeadIds.size;
   
   // Calculate average failures per unique call
   const avgFailuresPerUniqueCall = uniqueCallsCount > 0 ? (totalCombined / uniqueCallsCount).toFixed(1) : '—';
   
-  document.getElementById('aoi-total-calls').textContent=filtered.length;
+  document.getElementById('aoi-total-calls').textContent=dedupFiltered.length;
   document.getElementById('aoi-unique-calls').textContent=uniqueCallsCount;
   document.getElementById('aoi-total-nm').textContent=totalNM;
   document.getElementById('aoi-total-ni').textContent=totalNI;
   document.getElementById('aoi-avg-failures').textContent=avgFailuresPerUniqueCall;
   
-  const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${filtered.length} call${filtered.length!==1?'s':''} — ${agentLabel}`;
-  if(!filtered.length||filtered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
+  const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${dedupFiltered.length} call${dedupFiltered.length!==1?'s':''} — ${agentLabel}`;
+  if(!dedupFiltered.length||dedupFiltered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
   const itemCounts={},sectionCounts={};
   SECTIONS.forEach((sec,si)=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sec.items.forEach((item,ii)=>{const k=`${si}_${ii}`;if(!itemCounts[k])itemCounts[k]={label:item,section:sec.title,notmet:0,ni:0,total:0};});});
-  filtered.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sectionCounts[sec.title].met+=sec.met||0;sectionCounts[sec.title].notmet+=sec.notmet||0;sectionCounts[sec.title].ni+=sec.ni||0;sectionCounts[sec.title].assessed+=sec.assessed||0;sec.items.forEach(item=>{const found=Object.keys(itemCounts).find(k=>itemCounts[k].label===item.label);if(!found)return;if(item.rating==='notmet')itemCounts[found].notmet++;if(item.rating==='ni')itemCounts[found].ni++;itemCounts[found].total++;});});});
+  dedupFiltered.forEach(r=>{if(!r.breakdown)return;r.breakdown.forEach(sec=>{if(!sectionCounts[sec.title])sectionCounts[sec.title]={met:0,notmet:0,ni:0,assessed:0,title:sec.title};sectionCounts[sec.title].met+=sec.met||0;sectionCounts[sec.title].notmet+=sec.notmet||0;sectionCounts[sec.title].ni+=sec.ni||0;sectionCounts[sec.title].assessed+=sec.assessed||0;sec.items.forEach(item=>{const found=Object.keys(itemCounts).find(k=>itemCounts[k].label===item.label);if(!found)return;if(item.rating==='notmet')itemCounts[found].notmet++;if(item.rating==='ni')itemCounts[found].ni++;itemCounts[found].total++;});});});
   const sorted=Object.values(itemCounts).filter(x=>(x.notmet+x.ni)>0).sort((a,b)=>(b.notmet+b.ni)-(a.notmet+a.ni)).slice(0,10),maxCombined=sorted.length?(sorted[0].notmet+sorted[0].ni):1;
   const rankClass=i=>i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other',rankLabel=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
   document.getElementById('aoi-list-body').innerHTML=!sorted.length?`<div class="no-data-aoi" style="padding:40px"><div class="icon">🎉</div><h3>No "Not Met" items!</h3></div>`:sorted.map((item,i)=>{const combined=item.notmet+item.ni;const p=Math.round(combined/maxCombined*100);return `<div class="aoi-item"><div class="aoi-rank ${rankClass(i)}">${rankLabel(i)}</div><div class="aoi-item-info"><div class="aoi-item-label">${escHtml(item.label)}</div><div class="aoi-item-section">📂 ${escHtml(item.section)}</div></div><div class="aoi-count-badge" style="background:rgba(192,57,43,0.1);color:#c0392b">❌ ${combined}×</div><div class="aoi-bar-wrap"><div class="aoi-bar-bg"><div class="aoi-bar-fill" style="width:${p}%"></div></div><div class="aoi-bar-pct">${p}%</div></div></div>`}).join('');
