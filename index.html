@@ -1593,11 +1593,7 @@ function deduplicateReportRecords(recs) {
     const ai = group.filter(r => r.evaluator === 'Aarti - AI');
     
     if (manual.length > 0 && ai.length > 0) {
-      // If both manual and AI exist, keep only latest manual and only latest AI
-      manual.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(manual[0]);  // Only latest manual assessment
-      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(ai[0]);  // Only latest AI assessment
+      // If both manual and AI exist for the same Lead ID, exclude them completely
     } else if (manual.length > 0) {
       // Only manual assessments exist, keep only latest manual
       manual.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
