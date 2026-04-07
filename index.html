@@ -938,6 +938,11 @@
           <span>📞 Individual Call Log</span>
           <span style="font-size:12px;opacity:.8;font-weight:600;">Latest Assessments First</span>
         </div>
+        <div style="display:flex;gap:10px;margin-bottom:12px;padding:0 10px;">
+          <button id="eval-filter-all" onclick="filterByEvaluator('all')" style="background:#3498db;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">📊 All Evaluators</button>
+          <button id="eval-filter-ai" onclick="filterByEvaluator('ai')" style="background:#8e44ad;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">🤖 AI Analysis</button>
+          <button id="eval-filter-manual" onclick="filterByEvaluator('manual')" style="background:#27ae60;color:#fff;border:none;padding:6px 14px;border-radius:5px;font-weight:600;font-size:12px;cursor:pointer;">👤 Manual Analysis</button>
+        </div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
             <th onclick="toggleDateSort()" style="cursor:pointer;white-space:nowrap;">Date <span id="date-sort-icon">↕️</span></th><th>Agent</th><th>Lead ID</th><th>Customer</th><th>Type</th>
@@ -1599,14 +1604,25 @@ function deduplicateReportRecords(recs) {
 }
 
 // ═══ DASHBOARD ═══
+function filterByEvaluator(recs) {
+  if (evaluatorFilter === 'all') return recs;
+  if (evaluatorFilter === 'ai') return recs.filter(r => r.evaluator === 'Aarti - AI');
+  if (evaluatorFilter === 'manual') return recs.filter(r => r.evaluator !== 'Aarti - AI');
+  return recs;
+}
+
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
     if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(ag&&r.agent!==ag)return false;
     if(ct&&r.callType!==ct)return false;
+    if(evaluatorFilter!=='all'){
+      if(evaluatorFilter==='ai'&&r.evaluator!=='Aarti - AI')return false;
+      if(evaluatorFilter==='manual'&&r.evaluator==='Aarti - AI')return false;
+    }
     return true;
-  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
+  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);filterByEvaluator(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
@@ -1696,6 +1712,7 @@ let saleValueSortDir = null; // null, 'asc', 'desc'
 let statusSortDir = null;    // null, 'asc', 'desc'
 let dateSortDir = null;      // null, 'asc', 'desc'
 let evaluatorSortDir = null; // null, 'asc', 'desc'
+let evaluatorFilter = 'all'; // 'all', 'ai', 'manual'
 
 function getSaleValueScore(cat) {
   if (!cat) return 0;
@@ -1766,6 +1783,19 @@ function renderPagination(total) {
 }
 
 function changePage(p) { currentPage = p; renderDashboard(); }
+
+function filterByEvaluator(type) {
+  evaluatorFilter = type;
+  
+  // Update button styles
+  document.getElementById('eval-filter-all').style.background = type === 'all' ? '#1a5276' : '#3498db';
+  document.getElementById('eval-filter-ai').style.background = type === 'ai' ? '#8e44ad' : '#3498db';
+  document.getElementById('eval-filter-manual').style.background = type === 'manual' ? '#27ae60' : '#3498db';
+  
+  // Reset to page 1 and re-render
+  currentPage = 1;
+  renderDashboard();
+}
 
 function editCall(id) {
   const r = records.find(rec => rec.id === id);
@@ -2030,7 +2060,7 @@ function downloadIndividualCallLogCSV() {
   showToast(`✅ Exported ${filtered.length} call records to CSV!`, '#27ae60');
 }
 
-function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');renderDashboard();}
+function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');evaluatorFilter='all';document.getElementById('eval-filter-all').style.background='#1a5276';document.getElementById('eval-filter-ai').style.background='#3498db';document.getElementById('eval-filter-manual').style.background='#3498db';renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
 function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
