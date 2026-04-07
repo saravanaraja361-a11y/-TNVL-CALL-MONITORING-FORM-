@@ -1056,7 +1056,6 @@
         </div>
         <div class="aoi-kpi-mini" id="aoi-kpi-row">
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Total Calls</div></div>
-          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-unique-calls">0</div><div class="aoi-kpi-label">Unique Calls</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-nm">0</div><div class="aoi-kpi-label">Total Not Met</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-ni">0</div><div class="aoi-kpi-label">Total Needs Impr.</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-failures">—</div><div class="aoi-kpi-label">Avg Failures / Call</div></div>
@@ -1591,13 +1590,19 @@ function deduplicateReportRecords(recs) {
   const result = [];
   Object.values(groups).forEach(group => {
     const manual = group.filter(r => r.evaluator !== 'Aarti - AI');
-    if (manual.length > 0) {
-      // Keep all manual assessments as per user request
+    const ai = group.filter(r => r.evaluator === 'Aarti - AI');
+    
+    if (manual.length > 0 && ai.length > 0) {
+      // If both manual and AI exist, keep all manual and all AI
+      manual.forEach(m => result.push(m));
+      ai.forEach(a => result.push(a));
+    } else if (manual.length > 0) {
+      // Only manual assessments exist, keep all manual
       manual.forEach(m => result.push(m));
     } else {
-      // Keep only the latest AI assessment
-      group.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(group[0]);
+      // Only AI assessments exist, keep only latest AI
+      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
+      result.push(ai[0]);
     }
   });
   return result;
@@ -1622,7 +1627,7 @@ function getFiltered(isRaw=false){const from=document.getElementById('d-from').v
       if(evaluatorFilter==='manual'&&r.evaluator==='Aarti - AI')return false;
     }
     return true;
-  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);filterByEvaluator(res);}
+  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
@@ -2066,24 +2071,19 @@ function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id
 function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
-  const rawFiltered = getAOIFiltered(),
-        dedupFiltered = deduplicateReportRecords(rawFiltered),
-        totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0),
-        totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0),
-        totalCombined=totalNM+totalNI;
+  // Use the same filtered data as Agent Performance for consistency
+  const dedupFiltered = getFiltered(false);
+  const totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0);
+  const totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0);
+  const totalCombined=totalNM+totalNI;
   
-  // Calculate unique calls by Lead ID
-  const uniqueLeadIds = new Set(dedupFiltered.map(r => r.leadId).filter(id => id));
-  const uniqueCallsCount = uniqueLeadIds.size;
-  
-  // Calculate average failures per unique call
-  const avgFailuresPerUniqueCall = uniqueCallsCount > 0 ? (totalCombined / uniqueCallsCount).toFixed(1) : '—';
+  // Calculate average failures per call
+  const avgFailuresPerCall = dedupFiltered.length > 0 ? (totalCombined / dedupFiltered.length).toFixed(1) : '—';
   
   document.getElementById('aoi-total-calls').textContent=dedupFiltered.length;
-  document.getElementById('aoi-unique-calls').textContent=uniqueCallsCount;
   document.getElementById('aoi-total-nm').textContent=totalNM;
   document.getElementById('aoi-total-ni').textContent=totalNI;
-  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerUniqueCall;
+  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerCall;
   
   const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${dedupFiltered.length} call${dedupFiltered.length!==1?'s':''} — ${agentLabel}`;
   if(!dedupFiltered.length||dedupFiltered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
