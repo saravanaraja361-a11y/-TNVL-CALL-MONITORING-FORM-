@@ -498,21 +498,6 @@
 </head>
 <body>
 
-<!-- User Identification Panel -->
-<div id="user-panel" style="position: fixed; top: 10px; right: 10px; background: #fff; border: 2px solid #1a5276; border-radius: 8px; padding: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1000; display: none;">
-  <div style="font-size: 12px; font-weight: 700; color: #1a5276; margin-bottom: 8px;">🔐 Select Your Name</div>
-  <select id="user-selector" onchange="switchUser()" style="width: 150px; padding: 6px; border: 1px solid #d0dae5; border-radius: 4px; font-size: 12px;">
-    <option value="">-- Select User --</option>
-    <option value="Aarti - AI">Aarti - AI</option>
-    <option value="Aarti - Verified">Aarti - Verified</option>
-    <option value="Sachin">Sachin</option>
-    <option value="Solomon">Solomon</option>
-    <option value="Daniel">Daniel</option>
-    <option value="Saravana J">Saravana J</option>
-  </select>
-  <button onclick="clearUserSelection()" style="margin-left: 8px; padding: 4px 8px; background: #e74c3c; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">Clear</button>
-</div>
-
 <div class="tabs">
   <button class="tab-btn active" onclick="switchTab('form')">📋 Call Monitoring Form</button>
   <button class="tab-btn" onclick="switchTab('dashboard')">📊 Agent Scoreboard</button>
@@ -1588,7 +1573,24 @@ async function submitForm(){
   if(!agent){showToast('⚠️ Please select an agent!','#e05c2a');return;}if(!date){showToast('⚠️ Please enter a date!','#e05c2a');return;}
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
-  records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
+  // Save to server API
+  try{
+    const response = await fetch(`${getApiBase()}/api/calls`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+    if(response.ok){
+      records.push(record); // Add to local array after successful server save
+      console.log('Record saved to server successfully');
+    } else {
+      throw new Error('Server save failed');
+    }
+  }catch(err){
+    console.error('Failed to save to server, using localStorage fallback:', err);
+    records.push(record);
+    try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
+  }
   const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
   try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
@@ -2854,74 +2856,49 @@ function saveTskSummaries(){try{const ids=Object.keys(tskSummaries);localStorage
 function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_tsum_ids')||'[]');ids.forEach(id=>{if(tskSummaries[id])return;try{const raw=localStorage.getItem('tnvl_tsum_'+id);if(raw){tskSummaries[id]=JSON.parse(raw);}}catch(e){}});}catch(e){}try{const legacy=localStorage.getItem('tnvl_tsummaries');if(legacy){const parsed=JSON.parse(legacy);Object.entries(parsed).forEach(([id,s])=>{if(!tskSummaries[id])tskSummaries[id]=s;});}}catch(e){}}
 window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
 
-// ═══ USER IDENTIFICATION ═══
-let currentUser = null;
-
-function switchUser() {
-  const userSelector = document.getElementById('user-selector');
-  currentUser = userSelector.value;
-  
-  if (currentUser) {
-    localStorage.setItem('tnvl_current_user', currentUser);
-    showToast(`🔐 Switched to: ${currentUser}`, '#27ae60');
-    // Reload data for the selected user
-    loadUserData();
-    // Re-render dashboard if it's active
-    if (document.getElementById('panel-dashboard').classList.contains('active')) {
-      renderDashboard();
-    }
-  }
-}
-
-function clearUserSelection() {
-  currentUser = null;
-  localStorage.removeItem('tnvl_current_user');
-  document.getElementById('user-selector').value = '';
-  document.getElementById('user-panel').style.display = 'none';
-  showToast('🔐 User selection cleared', '#e74c3c');
-  // Reload all data
-  loadAllUserData();
-  if (document.getElementById('panel-dashboard').classList.contains('active')) {
-    renderDashboard();
-  }
-}
-
-function loadUserData() {
+// Migration function to transfer localStorage data to server
+async function migrateLocalStorageToServer(localRecords) {
   try {
-    const allRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
-    // Filter records for current user
-    records = currentUser ? allRecords.filter(r => r.evaluator === currentUser) : allRecords;
-  } catch(e) {
-    records = [];
-  }
-}
-
-function loadAllUserData() {
-  try {
-    records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
-  } catch(e) {
-    records = [];
-  }
-}
-
-// ═══ INIT ═══
-(function init(){
-  // Check for saved user
-  currentUser = localStorage.getItem('tnvl_current_user');
-  
-  // Load all records first
-  try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
-  
-  // Show user panel if there are records
-  if (records.length > 0) {
-    document.getElementById('user-panel').style.display = 'block';
-    // Set current user if exists
-    if (currentUser) {
-      document.getElementById('user-selector').value = currentUser;
-      loadUserData(); // Filter for current user
+    for (const record of localRecords) {
+      const response = await fetch(`${getApiBase()}/api/calls`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      if (!response.ok) {
+        console.warn('Failed to migrate record:', record.id);
+      }
     }
+    console.log(`Successfully migrated ${localRecords.length} records to server`);
+    // Clear localStorage after successful migration
+    localStorage.removeItem('tnvl_calls');
+  } catch (error) {
+    console.error('Migration failed:', error);
   }
-  
+}
+
+// Load records from server API instead of localStorage
+(async function init(){
+  try{
+    const response = await fetch(`${getApiBase()}/api/calls`);
+    if(response.ok){
+      records = await response.json();
+      
+      // Check if we need to migrate localStorage data
+      const localRecords = JSON.parse(localStorage.getItem('tnvl_calls')||'[]');
+      if(localRecords.length > 0 && records.length === 0){
+        console.log('Migrating localStorage data to server...');
+        await migrateLocalStorageToServer(localRecords);
+        records = localRecords; // Use migrated data
+      }
+    } else {
+      console.error('Failed to load records from server:', response.status);
+      records = JSON.parse(localStorage.getItem('tnvl_calls')||'[]'); // Fallback to localStorage
+    }
+  }catch(e){
+    console.error('Error loading records from server:', e);
+    records = JSON.parse(localStorage.getItem('tnvl_calls')||'[]'); // Fallback to localStorage
+  }
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
