@@ -892,55 +892,6 @@ app.post('/api/send-report-email', async (req, res) => {
   }
 });
 
-const fs = require('fs');
-const CALLS_FILE = path.join(__dirname, 'calls_data.json');
-
-// Load existing records or create empty array
-function loadCallRecords() {
-  try {
-    if (fs.existsSync(CALLS_FILE)) {
-      const data = fs.readFileSync(CALLS_FILE, 'utf8');
-      return JSON.parse(data);
-    }
-    return [];
-  } catch (error) {
-    console.error('Error loading call records:', error);
-    return [];
-  }
-}
-
-// Save records to file
-function saveCallRecords(records) {
-  try {
-    fs.writeFileSync(CALLS_FILE, JSON.stringify(records, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error saving call records:', error);
-    return false;
-  }
-}
-
-app.get('/api/calls', (_req, res) => {
-  try {
-    const records = loadCallRecords();
-    res.json(records);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-app.post('/api/calls', (req, res) => {
-  try {
-    const newRecord = req.body;
-    const records = loadCallRecords();
-    records.push(newRecord);
-    saveCallRecords(records);
-    res.json({ success: true, message: 'Call record saved successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 app.get('/api/health', (_req, res) => res.json({
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,

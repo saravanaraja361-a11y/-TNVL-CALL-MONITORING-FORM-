@@ -1056,7 +1056,6 @@
         </div>
         <div class="aoi-kpi-mini" id="aoi-kpi-row">
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-calls">0</div><div class="aoi-kpi-label">Total Calls</div></div>
-          <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-unique-calls">0</div><div class="aoi-kpi-label">Unique Calls</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-nm">0</div><div class="aoi-kpi-label">Total Not Met</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-total-ni">0</div><div class="aoi-kpi-label">Total Needs Impr.</div></div>
           <div class="aoi-kpi"><div class="aoi-kpi-val" id="aoi-avg-failures">—</div><div class="aoi-kpi-label">Avg Failures / Call</div></div>
@@ -1573,24 +1572,7 @@ async function submitForm(){
   if(!agent){showToast('⚠️ Please select an agent!','#e05c2a');return;}if(!date){showToast('⚠️ Please enter a date!','#e05c2a');return;}
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
-  // Save to server API
-  try{
-    const response = await fetch(`${getApiBase()}/api/calls`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-    if(response.ok){
-      records.push(record); // Add to local array after successful server save
-      console.log('Record saved to server successfully');
-    } else {
-      throw new Error('Server save failed');
-    }
-  }catch(err){
-    console.error('Failed to save to server, using localStorage fallback:', err);
-    records.push(record);
-    try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
-  }
+  records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
   const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
   try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
@@ -1611,10 +1593,9 @@ function deduplicateReportRecords(recs) {
     const ai = group.filter(r => r.evaluator === 'Aarti - AI');
     
     if (manual.length > 0 && ai.length > 0) {
-      // If both manual and AI exist, keep all manual and only latest AI
+      // If both manual and AI exist, keep all manual and all AI
       manual.forEach(m => result.push(m));
-      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(ai[0]);
+      ai.forEach(a => result.push(a));
     } else if (manual.length > 0) {
       // Only manual assessments exist, keep all manual
       manual.forEach(m => result.push(m));
@@ -1628,6 +1609,13 @@ function deduplicateReportRecords(recs) {
 }
 
 // ═══ DASHBOARD ═══
+function filterByEvaluator(recs) {
+  if (evaluatorFilter === 'all') return recs;
+  if (evaluatorFilter === 'ai') return recs.filter(r => r.evaluator === 'Aarti - AI');
+  if (evaluatorFilter === 'manual') return recs.filter(r => r.evaluator !== 'Aarti - AI');
+  return recs;
+}
+
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
     if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
@@ -1635,17 +1623,11 @@ function getFiltered(isRaw=false){const from=document.getElementById('d-from').v
     if(ag&&r.agent!==ag)return false;
     if(ct&&r.callType!==ct)return false;
     if(evaluatorFilter!=='all'){
-      const evaluator = (r.evaluator || '').trim();
-      if(evaluatorFilter==='ai'){
-        // Show only AI evaluations
-        if(evaluator!=='Aarti - AI')return false;
-      } else if(evaluatorFilter==='manual'){
-        // Show only manual evaluations (all evaluators except AI)
-        if(evaluator==='Aarti - AI')return false;
-      }
+      if(evaluatorFilter==='ai'&&r.evaluator!=='Aarti - AI')return false;
+      if(evaluatorFilter==='manual'&&r.evaluator==='Aarti - AI')return false;
     }
     return true;
-  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);filterByEvaluator(res);}
+  }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
 const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
@@ -2089,24 +2071,19 @@ function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id
 function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
-  const rawFiltered = getAOIFiltered(),
-        dedupFiltered = deduplicateReportRecords(rawFiltered),
-        totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0),
-        totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0),
-        totalCombined=totalNM+totalNI;
+  // Use the same filtered data as Agent Performance for consistency
+  const dedupFiltered = getFiltered(false);
+  const totalNM=dedupFiltered.reduce((s,r)=>s+r.nmCount,0);
+  const totalNI=dedupFiltered.reduce((s,r)=>s+r.niCount,0);
+  const totalCombined=totalNM+totalNI;
   
-  // Calculate unique calls by Lead ID
-  const uniqueLeadIds = new Set(dedupFiltered.map(r => r.leadId).filter(id => id));
-  const uniqueCallsCount = uniqueLeadIds.size;
-  
-  // Calculate average failures per unique call
-  const avgFailuresPerUniqueCall = uniqueCallsCount > 0 ? (totalCombined / uniqueCallsCount).toFixed(1) : '—';
+  // Calculate average failures per call
+  const avgFailuresPerCall = dedupFiltered.length > 0 ? (totalCombined / dedupFiltered.length).toFixed(1) : '—';
   
   document.getElementById('aoi-total-calls').textContent=dedupFiltered.length;
-  document.getElementById('aoi-unique-calls').textContent=uniqueCallsCount;
   document.getElementById('aoi-total-nm').textContent=totalNM;
   document.getElementById('aoi-total-ni').textContent=totalNI;
-  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerUniqueCall;
+  document.getElementById('aoi-avg-failures').textContent=avgFailuresPerCall;
   
   const agentLabel=document.getElementById('aoi-agent').value||'all agents';document.getElementById('aoi-list-subtitle').textContent=`${dedupFiltered.length} call${dedupFiltered.length!==1?'s':''} — ${agentLabel}`;
   if(!dedupFiltered.length||dedupFiltered.every(r=>!r.breakdown||!r.breakdown.length)){document.getElementById('aoi-list-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📭</div><h3>No data yet</h3><p>Submit call assessments to see the most common "Not Met" areas.</p></div>`;document.getElementById('aoi-section-body').innerHTML=`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3><p>Submit assessments to see section-level breakdowns.</p></div>`;return;}
@@ -2856,49 +2833,9 @@ function saveTskSummaries(){try{const ids=Object.keys(tskSummaries);localStorage
 function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_tsum_ids')||'[]');ids.forEach(id=>{if(tskSummaries[id])return;try{const raw=localStorage.getItem('tnvl_tsum_'+id);if(raw){tskSummaries[id]=JSON.parse(raw);}}catch(e){}});}catch(e){}try{const legacy=localStorage.getItem('tnvl_tsummaries');if(legacy){const parsed=JSON.parse(legacy);Object.entries(parsed).forEach(([id,s])=>{if(!tskSummaries[id])tskSummaries[id]=s;});}}catch(e){}}
 window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
 
-// Migration function to transfer localStorage data to server
-async function migrateLocalStorageToServer(localRecords) {
-  try {
-    for (const record of localRecords) {
-      const response = await fetch(`${getApiBase()}/api/calls`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
-      });
-      if (!response.ok) {
-        console.warn('Failed to migrate record:', record.id);
-      }
-    }
-    console.log(`Successfully migrated ${localRecords.length} records to server`);
-    // Clear localStorage after successful migration
-    localStorage.removeItem('tnvl_calls');
-  } catch (error) {
-    console.error('Migration failed:', error);
-  }
-}
-
-// Load records from server API instead of localStorage
-(async function init(){
-  try{
-    const response = await fetch(`${getApiBase()}/api/calls`);
-    if(response.ok){
-      records = await response.json();
-      
-      // Check if we need to migrate localStorage data
-      const localRecords = JSON.parse(localStorage.getItem('tnvl_calls')||'[]');
-      if(localRecords.length > 0 && records.length === 0){
-        console.log('Migrating localStorage data to server...');
-        await migrateLocalStorageToServer(localRecords);
-        records = localRecords; // Use migrated data
-      }
-    } else {
-      console.error('Failed to load records from server:', response.status);
-      records = JSON.parse(localStorage.getItem('tnvl_calls')||'[]'); // Fallback to localStorage
-    }
-  }catch(e){
-    console.error('Error loading records from server:', e);
-    records = JSON.parse(localStorage.getItem('tnvl_calls')||'[]'); // Fallback to localStorage
-  }
+// ═══ INIT ═══
+(function init(){
+  try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
