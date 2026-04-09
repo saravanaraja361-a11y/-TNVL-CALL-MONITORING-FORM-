@@ -48,6 +48,26 @@ const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
+// ── Email Transporter (Zoho SMTP) ───────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtppro.zoho.com',
+  port: parseInt(process.env.EMAIL_PORT) || 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+// Verify connection configuration
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ SMTP Connection Error:', error);
+  } else {
+    console.log('✅ SMTP Server is ready to take our messages');
+  }
+});
+
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
@@ -795,8 +815,16 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
     if (!cr.ok) return res.status(cr.status).json({ error: 'Transkriptor error', details: await cr.text() });
     const cd = await cr.json();
     let tx = '', ai = '';
-    if (cd.content && Array.isArray(cd.content))
+    if (cd.content && Array.isArray(cd.content)) {
       tx = cd.content.map(s => `${s.Speaker || s.speaker || 'Agent'}: ${s.text || s.Text || ''}`).join('\n');
+      console.log('📝 Processing array content, items:', cd.content.length);
+    } else if (cd.content && typeof cd.content === 'string') {
+      tx = cd.content;
+      console.log('📝 Processing string content, length:', tx.length);
+    } else {
+      console.log('⚠️ No content or invalid content type');
+      tx = '';
+    }
     if (cd.summary_link) {
       try {
         const sr = await fetch(cd.summary_link);
@@ -815,15 +843,15 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
-// ── Email Route (Resend API - works through firewalls) ────────────────────────
+// ── Email Route (Zoho SMTP) ──────────────────────────────────────────────────
 app.post('/api/send-report-email', async (req, res) => {
   const { csvContent, fileName, htmlContent } = req.body;
   
   console.log('📧 Email request received:', {
     hasCsv: !!csvContent,
-    csvLength: csvContent?.length || 0,
+    csvLength: csvContent ? csvContent.length : 0,
     hasHtml: !!htmlContent,
-    fileName: fileName || 'no-filename'
+    fileName: fileName || 'AgentSummary.csv'
   });
 
   if (!csvContent) {
@@ -831,64 +859,34 @@ app.post('/api/send-report-email', async (req, res) => {
   }
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
-  
-  console.log('🔍 Email config check:', {
-    hasResendKey: !!process.env.RESEND_API_KEY,
-    hasEmailFrom: !!process.env.EMAIL_FROM,
-    recipients: recipients
-  });
 
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
-    console.error('❌ Email failed: Missing RESEND_API_KEY or EMAIL_FROM in .env');
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ Email failed: Missing SMTP credentials in .env');
     return res.status(500).json({ error: 'Email configuration missing in server .env' });
   }
 
   try {
-    // Use Resend API instead of SMTP
-    const emailData = {
-      from: process.env.EMAIL_FROM,
-      to: recipients.split(',').map(email => email.trim()),
+    const mailOptions = {
+      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      to: recipients,
       subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
       html: htmlContent || `<p>Please find the attached report.</p>`,
       attachments: [{
         filename: fileName || 'AgentSummary.csv',
-        content: csvContent.split(',').map(row => row.join(',')).join('\n'), // Convert to CSV string
+        content: csvContent || '',
         contentType: 'text/csv'
       }]
     };
 
-    console.log('📧 Sending via Resend API...');
-    
-    const response = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(emailData)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(`Resend API error: ${error.message || 'Unknown error'}`);
-    }
-
-    const result = await response.json();
-    console.log(`✅ Report emailed via Resend:`, result.id);
-    res.json({ success: true, message: 'Email sent successfully via Resend', emailId: result.id });
+    console.log(`📧 Sending email via SMTP to: ${recipients}...`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent:', info.messageId);
+    res.json({ success: true, message: 'Email sent successfully via Zoho SMTP', messageId: info.messageId });
 
   } catch (error) {
-    console.error('❌ Email Error:', error);
-
-    let userMessage = 'Failed to send email';
-    if (error.message.includes('Resend API error')) {
-      userMessage = 'Email service error. Check RESEND_API_KEY and EMAIL_FROM configuration.';
-    } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
-      userMessage = 'Cannot connect to email service. Check internet connection.';
-    }
-
+    console.error('❌ SMTP Error:', error);
     res.status(500).json({
-      error: userMessage,
+      error: 'Failed to send email via SMTP',
       details: error.message
     });
   }
