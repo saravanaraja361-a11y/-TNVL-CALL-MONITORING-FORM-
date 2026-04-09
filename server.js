@@ -57,6 +57,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
+  authMethod: 'LOGIN', // Forces old-style login to avoid Zoho decoding errors
+  debug: true,         // See actual traffic in Render logs
+  logger: true,        // See actual traffic in Render logs
   tls: {
     rejectUnauthorized: false // Helps in cloud handshakes
   }
@@ -911,7 +914,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
-  console.log(`\n   Accuracy v6 — what changed:`);
+  console.log(`\n   Accuracy v7 — what changed:`);
   console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
   console.log(`   • DISPUTE MODE: when true, soft skills rated with strict NI criteria (target 1-3 met, 6-9 ni)`);
   console.log(`   • Fixes Lead 2123/2321 Cheryl call: AI was 87%, manual was 44%`);
