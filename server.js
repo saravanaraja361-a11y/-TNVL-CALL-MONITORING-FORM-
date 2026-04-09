@@ -33,11 +33,13 @@ app.get('/', (req, res) => {
 });
 
 const GROQ_KEYS = [
-  process.env.GROQ_API_KEY_1 || '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',
-  process.env.GROQ_API_KEY_2 || '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',
-  process.env.GROQ_API_KEY_3 || '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',
-  process.env.GROQ_API_KEY_4 || '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',
-  process.env.GROQ_API_KEY_5 || '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'
+  process.env.GROQ_API_KEY_1,
+  process.env.GROQ_API_KEY_2,
+  process.env.GROQ_API_KEY_3,
+  process.env.GROQ_API_KEY_4,
+  process.env.GROQ_API_KEY_5,
+  process.env.GROQ_API_KEY_6,
+  process.env.GROQ_API_KEY_7
 ].filter(Boolean);
 
 let currentKeyIndex = 0;
