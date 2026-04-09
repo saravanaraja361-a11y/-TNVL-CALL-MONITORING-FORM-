@@ -1784,7 +1784,7 @@ function filterByEvaluator(type) {
 }
 
 function editCall(id) {
-  const r = records.find(rec => rec.id === id);
+  const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   const body = document.getElementById('modal-body');
   document.getElementById('modal-title').textContent = `📝 Edit Call Log: ${r.leadId || 'N/A'}`;
@@ -1808,6 +1808,10 @@ function editCall(id) {
         <option value="Closed" ${r.leadStatus==='Closed'?'selected':''}>Closed</option>
         <option value="Booked" ${r.leadStatus==='Booked'?'selected':''}>Booked</option>
       </select>
+      <label>Evaluator Name</label>
+      <select id="e-evaluator">
+        ${DEFAULT_EVALUATORS.map(e => `<option value="${e}" ${r.evaluator === e ? 'selected' : ''}>${e}</option>`).join('')}
+      </select>
       <label>Sale Value Category</label>
       <select id="e-salevalue">
         <option value="Low Value" ${r.moveValueCategory==='Low Value'?'selected':''}>Low Value</option>
@@ -1816,7 +1820,7 @@ function editCall(id) {
       </select>
       <div class="edit-btns">
         <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
-        <button class="btn btn-submit" onclick="saveCallEdits(${id})">Save Changes</button>
+        <button class="btn btn-submit" onclick="saveCallEdits('${id}')">Save Changes</button>
       </div>
     </div>
   `;
@@ -1824,12 +1828,13 @@ function editCall(id) {
 }
 
 function saveCallEdits(id) {
-  const r = records.find(rec => rec.id === id);
+  const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   r.leadId = document.getElementById('e-lead').value;
   r.customer = document.getElementById('e-customer').value;
   r.callType = document.getElementById('e-calltype').value;
   r.leadStatus = document.getElementById('e-status').value;
+  r.evaluator = document.getElementById('e-evaluator').value;
   r.moveValueCategory = document.getElementById('e-salevalue').value;
   localStorage.setItem('tnvl_calls', JSON.stringify(records));
   closeModal();
@@ -2783,16 +2788,16 @@ function showAgentStatDrill(name,type){
   openModal(`${c.icon} ${name} — All "${c.label}" Items (${items.length})`,`<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;"><span style="font-size:36px;font-weight:900;color:${c.color}">${items.length}</span><div><div style="font-size:15px;font-weight:800;color:${c.color}">${c.icon} Total "${c.label}" items</div><div style="font-size:13px;color:#666;margin-top:2px;">Across all ${recs.length} monitored call${recs.length!==1?'s':''} for <strong>${escHtml(name)}</strong></div></div></div>${items.length===0?`<p style="color:#aaa;font-style:italic;text-align:center;padding:20px;">No items found.</p>`:`<ol style="margin:0;padding-left:22px;">${items.map(label=>`<li style="padding:9px 4px;border-bottom:1px solid #f0f0f0;font-size:15px;color:#2c3e50;">${escHtml(label)}</li>`).join('')}</ol>`}`);
 }
 function showCallDetail(id){
-  const r=records.find(x=>x.id===id);if(!r)return;
+  const r=records.find(x=>String(x.id)===String(id));if(!r)return;
   const rows=[['Agent',r.agent],['Date',r.date],['Customer',r.customer||'N/A'],['Lead ID',r.leadId||'N/A'],['Call Type',r.callType||'N/A'],['Duration',r.duration||'N/A'],['✅ Met',r.metCount],['❌ Not Met',r.nmCount],['🔶 Needs Impr.',r.niCount],['Final Score',`${r.metCount} / ${r.assessed} = ${r.pct}%`]];
   openModal(`📋 Call Detail — ${r.agent}`,`<div class="msec-title">Call Summary</div>${rows.map(([k,v])=>`<div class="mrow"><span>${k}</span><span style="font-weight:${k==='Final Score'?700:400}">${v}</span></div>`).join('')}${r.breakdown.map(sec=>`<div class="msec-title">${sec.title} — ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni} / ${sec.assessed} assessed</div>${sec.items.map(item=>`<div class="mrow"><span>${item.label}</span>${ratingLabel(item.rating)}</div>`).join('')}`).join('')}`);
 }
 function openModal(title,body){document.getElementById('modal-title').textContent=title;document.getElementById('modal-body').innerHTML=body;document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
 
-function tskSummaryChip(recordId){const r=records.find(x=>x.id===recordId);if(r&&r.tskSummary)return`<span class="sum-chip" onclick="tskViewSummary(${recordId})">📄 View Summary</span>`;if(r&&r.leadId){const match=Object.values(tskSummaries).find(s=>s.leadId&&s.leadId===r.leadId.replace(/\D/g,''));if(match){r.tskSummary=match;return`<span class="sum-chip" onclick="tskViewSummary(${recordId})">📄 View Summary</span>`;}}return`<span class="no-sum">—</span>`;}
-function tskViewSummary(recordId){const r=records.find(x=>x.id===recordId);if(!r||!r.tskSummary)return;const s=r.tskSummary;openModal(`📄 Call Summary — ${s.fileName||r.agent}`,`<div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:#f0f6ff;border-radius:7px;margin-bottom:14px;font-size:13px;"><div>📄 File: <strong>${s.fileName||'—'}</strong></div><div>👤 Agent: <strong>${r.agent}</strong></div><div>📅 Date: <strong>${r.date}</strong></div>${r.leadId?`<div>🔖 Lead: <strong>${r.leadId}</strong></div>`:''}</div><div class="sum-modal-body">${escHtml(s.text)}</div><button class="sum-copy-btn" onclick="tskCopySummary(${recordId})">📋 Copy Summary</button>`);}
-function tskCopySummary(recordId){const r=records.find(x=>x.id===recordId);if(!r?.tskSummary?.text)return;navigator.clipboard.writeText(r.tskSummary.text).then(()=>showToast('✅ Summary copied!','#27ae60')).catch(()=>showToast('❌ Copy failed','#e05c2a'));}
+function tskSummaryChip(recordId){const r=records.find(x=>String(x.id)===String(recordId));if(r&&r.tskSummary)return`<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`;if(r&&r.leadId){const match=Object.values(tskSummaries).find(s=>s.leadId&&s.leadId===r.leadId.replace(/\D/g,''));if(match){r.tskSummary=match;return`<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`;}}return`<span class="no-sum">—</span>`;}
+function tskViewSummary(recordId){const r=records.find(x=>String(x.id)===String(recordId));if(!r||!r.tskSummary)return;const s=r.tskSummary;openModal(`📄 Call Summary — ${s.fileName||r.agent}`,`<div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:#f0f6ff;border-radius:7px;margin-bottom:14px;font-size:13px;"><div>📄 File: <strong>${s.fileName||'—'}</strong></div><div>👤 Agent: <strong>${r.agent}</strong></div><div>📅 Date: <strong>${r.date}</strong></div>${r.leadId?`<div>🔖 Lead: <strong>${r.leadId}</strong></div>`:''}</div><div class="sum-modal-body">${escHtml(s.text)}</div><button class="sum-copy-btn" onclick="tskCopySummary('${recordId}')">📋 Copy Summary</button>`);}
+function tskCopySummary(recordId){const r=records.find(x=>String(x.id)===String(recordId));if(!r?.tskSummary?.text)return;navigator.clipboard.writeText(r.tskSummary.text).then(()=>showToast('✅ Summary copied!','#27ae60')).catch(()=>showToast('❌ Copy failed','#e05c2a'));}
 
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach((btn,i)=>btn.classList.toggle('active',(i===0&&tab==='form')||(i===1&&tab==='dashboard')||(i===2&&tab==='summaries')));
