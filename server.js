@@ -50,12 +50,15 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 // ── Email Transporter (Zoho SMTP) ───────────────────────────────────────────
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtppro.zoho.com',
-  port: parseInt(process.env.EMAIL_PORT) || 465,
-  secure: true, // true for 465, false for other ports
+  host: process.env.EMAIL_HOST || 'smtp.zoho.com',
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false, // true for 465, false for 587 (uses STARTTLS)
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false // Helps in cloud handshakes
   }
 });
 
