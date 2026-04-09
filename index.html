@@ -1581,31 +1581,13 @@ async function submitForm(){
 // ═══ DEDUPLICATION FOR REPORTS ═══
 function deduplicateReportRecords(recs) {
   if (!recs || !recs.length) return [];
-  const groups = {};
-  recs.forEach(r => {
-    const id = r.leadId || ('no-id-' + Math.random());
-    if (!groups[id]) groups[id] = [];
-    groups[id].push(r);
+  const seen = new Set();
+  return recs.filter(r => {
+    const key = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
-  const result = [];
-  Object.values(groups).forEach(group => {
-    const manual = group.filter(r => r.evaluator !== 'Aarti - AI');
-    const ai = group.filter(r => r.evaluator === 'Aarti - AI');
-    
-    if (manual.length > 0 && ai.length > 0) {
-      // If both manual and AI exist, keep all manual and all AI
-      manual.forEach(m => result.push(m));
-      ai.forEach(a => result.push(a));
-    } else if (manual.length > 0) {
-      // Only manual assessments exist, keep all manual
-      manual.forEach(m => result.push(m));
-    } else {
-      // Only AI assessments exist, keep only latest AI
-      ai.sort((a, b) => (b.datetime || b.date || '').localeCompare(a.datetime || a.date || ''));
-      result.push(ai[0]);
-    }
-  });
-  return result;
 }
 
 // ═══ DASHBOARD ═══
@@ -1617,7 +1599,6 @@ function filterByEvaluator(recs) {
 }
 
 function getFiltered(isRaw=false){const from=document.getElementById('d-from').value,to=document.getElementById('d-to').value,ag=document.getElementById('d-agent').value,ct=document.getElementById('d-calltype').value;const res=records.filter(r=>{
-    if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(ag&&r.agent!==ag)return false;
@@ -1633,8 +1614,8 @@ const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Da
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
 function parseDateForCompare(d){if(!d)return null;const s=String(d).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m2)return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');return s;}
-function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
-function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getTrendFiltered(){const fromVal=document.getElementById('trend-from')?.value?.trim(),toVal=document.getElementById('trend-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('trend-ms-wrap');const raw=records.filter(r=>{const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
+function getHeatmapFiltered(){const fromVal=document.getElementById('heatmap-from')?.value?.trim(),toVal=document.getElementById('heatmap-to')?.value?.trim(),from=parseDateForCompare(fromVal)||fromVal,to=parseDateForCompare(toVal)||toVal,sel=getSelectedAgents('heatmap-ms-wrap');const raw=records.filter(r=>{const rd=parseDateForCompare(r.date)||r.date;if(from&&rd<from)return false;if(to&&rd>to)return false;if(sel.length&&!sel.includes(r.agent))return false;return true;}).sort((a,b)=>(parseDateForCompare(b.date)||b.date).localeCompare(parseDateForCompare(a.date)||a.date));return deduplicateReportRecords(raw);}
 
 function initMultiSelect(wrapId,triggerId,dropdownId){
   const wrap=document.getElementById(wrapId),trigger=document.getElementById(triggerId),drop=document.getElementById(dropdownId);if(!wrap||!trigger||!drop)return;
@@ -1875,10 +1856,10 @@ function getMetricsForRecords(recs) {
 function renderDashboard(){
   const rawFiltered = getFiltered(true);
   const dedupFiltered = getFiltered(false);
-  const manualFiltered = dedupFiltered.filter(r => r.evaluator !== 'Aarti - AI');
-  const aiFiltered = dedupFiltered.filter(r => r.evaluator === 'Aarti - AI');
+  const manualFiltered = rawFiltered.filter(r => r.evaluator !== 'Aarti - AI');
+  const aiFiltered = rawFiltered.filter(r => r.evaluator === 'Aarti - AI');
 
-  const totalM = getMetricsForRecords(dedupFiltered);
+  const totalM = getMetricsForRecords(rawFiltered);
   const manualM = getMetricsForRecords(manualFiltered);
   const aiM = getMetricsForRecords(aiFiltered);
 
@@ -1948,7 +1929,7 @@ function renderDashboard(){
   const avgPct = totalM.avg.replace('%',''); // Using totalM.avg calculated above
   
   const agMap = {};
-  dedupFiltered.forEach(r => { if(!agMap[r.agent]) agMap[r.agent] = []; agMap[r.agent].push(r); });
+  rawFiltered.forEach(r => { if(!agMap[r.agent]) agMap[r.agent] = []; agMap[r.agent].push(r); });
   
   const agStats=Object.entries(agMap).map(([name,recs])=>({
     name,
@@ -1988,8 +1969,8 @@ function renderDashboard(){
       <td><span class="badge badge-${r.pct>=80?'high':r.pct>=60?'mid':'low'}">${r.pct}%</span></td>
       <td><span style="background:${evaluatorColor};color:white;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${evaluatorType}</span></td>
       <td style="white-space:nowrap;">
-        <button onclick="editCall(${r.id})" class="btn-edit">Edit</button>
-        <button onclick="showCallDetail(${r.id})" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button>
+        <button onclick="editCall('${r.id}')" class="btn-edit">Edit</button>
+        <button onclick="showCallDetail('${r.id}')" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button>
       </td>
     </tr>`;
   }).join('');
@@ -2011,7 +1992,7 @@ function downloadIndividualCallLogCSV() {
     if (from && r.date < from) return false;
     if (to && r.date > to) return false;
     if (ct && r.callType !== ct) return false;
-    if (!DEFAULT_AGENTS.includes(r.agent)) return false;
+    if(false) return false; // removed DEFAULT_AGENTS filter
     return true;
   });
 
@@ -2068,7 +2049,7 @@ function downloadIndividualCallLogCSV() {
 function clearFilters(){['d-from','d-to'].forEach(id=>document.getElementById(id).value='');['d-agent','d-calltype'].forEach(id=>document.getElementById(id).value='');evaluatorFilter='all';document.getElementById('eval-filter-all').style.background='#1a5276';document.getElementById('eval-filter-ai').style.background='#3498db';document.getElementById('eval-filter-manual').style.background='#3498db';renderDashboard();}
 
 // ═══ AREAS OF IMPROVEMENT ═══
-function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(!DEFAULT_AGENTS.includes(r.agent))return false;if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
+function getAOIFiltered(){const ag=document.getElementById('aoi-agent').value,from=document.getElementById('aoi-from').value,to=document.getElementById('aoi-to').value;return records.filter(r=>{if(ag&&r.agent!==ag)return false;if(from&&r.date<from)return false;if(to&&r.date>to)return false;return true;});}
 function clearAOIFilters(){document.getElementById('aoi-agent').value='';document.getElementById('aoi-from').value='';document.getElementById('aoi-to').value='';renderAOI();}
 function renderAOI(){
   // Use the same filtered data as Agent Performance for consistency
@@ -2655,7 +2636,7 @@ function downloadTeamSummaryCSV(){
   const to=document.getElementById('tsm-to')?.value||'';
   const selAgents=getSelectedAgents('tsm-ms-wrap');
   const rawFiltered=records.filter(r=>{
-    if(!DEFAULT_AGENTS.includes(r.agent))return false;
+    // if(!DEFAULT_AGENTS.includes(r.agent))return false;
     if(from&&r.date<from)return false;
     if(to&&r.date>to)return false;
     if(selAgents.length && !selAgents.includes(r.agent))return false;
@@ -2836,6 +2817,10 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
 // ═══ INIT ═══
 (function init(){
   try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
+  
+  // Data is loaded from localStorage. 
+  // No fake data generated here.
+  
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
