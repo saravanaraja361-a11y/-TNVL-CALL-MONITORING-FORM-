@@ -112,6 +112,13 @@ function sampleTranscript(text, maxChars = 8500) {
   );
 }
 
+// Estimate word count from transcript portion only
+function estimateWordCount(text) {
+  const transcriptMatch = text.match(/(?:FULL TRANSCRIPT|Transcript)[\s\S]*?[\n\r]([\s\S]*)$/i);
+  const transcriptText = transcriptMatch ? transcriptMatch[1] : text;
+  return transcriptText.split(/\s+/).filter(Boolean).length;
+}
+
 const SECTIONS = [
   {
     title: "Call Opening & Contact Verification", items: [
@@ -384,21 +391,40 @@ Return ONLY this JSON with true/false values:
   "inventoryWasDiscussed": true or false,
   "packingWasDiscussed": true or false,
   "accessWasDiscussed": true or false,
-  "trustBuildingWasDiscussed": true or false
+  "trustBuildingWasDiscussed": true or false,
+  "callDurationCategory": "short" or "medium" or "long",
+  "customerIsSelfPacking": true or false,
+  "dismantlingWasDiscussed": true or false,
+  "elevatorWasMentioned": true or false,
+  "stairsAtDeliveryMentioned": true or false,
+  "addressCapturedInCall": true or false,
+  "moveTypeExplainedInDetail": true or false,
+  "bothPricingTypesDiscussed": true or false,
+  "isDisputeOrComplaintCall": true or false
 }
 
-DEFINITIONS:
-- isFollowUpCall: true if this is a dispatch, confirmation, pre-move, or follow-up call (customer already booked; agent is calling to confirm documents, inform about charges, schedule crew, or check on existing booking). false if this is an initial sales/quote call where agent is asking inventory, pricing, and selling the service.
-- agentGaveEstimate: agent provided a price, time estimate, or quote
-- agentDiscussedPayment: agent mentioned deposit, payment terms, or booking process  
-- agentDiscussedPreMoveConf: agent explicitly mentioned a confirmation call before move day
-- inventoryWasDiscussed: agent asked about furniture or items to be moved
-- packingWasDiscussed: agent asked about packing needs, boxes, or packing services
-- accessWasDiscussed: agent asked about stairs, elevator, parking, or access
-- trustBuildingWasDiscussed: agent explained billing, timing, transparency, or how things work
-- customerAskedToDelay: true if customer says "shopping around", "comparing quotes", "discuss with wife/partner", or "need a week".`;
+CRITICAL INSTRUCTIONS:
+- isFollowUpCall=true ONLY when: customer has already booked AND paid a deposit AND this call is about confirming move day / dispatch / handling a pre-move issue. NOT for initial quote calls.
+- inventoryWasDiscussed=true if agent asks about furniture/items
+- packingWasDiscussed=true if agent asks about packing/boxes
+- accessWasDiscussed=true if agent asks about stairs/elevator/parking
+- trustBuildingWasDiscussed=true if agent explains billing/timing/transparency
+- agentGaveEstimate=true if agent provides any price/quote
+- agentDiscussedPayment=true if agent mentions deposit/payment
+- agentDiscussedPreMoveConf=true if agent mentions confirmation call
+- callDurationCategory: "short" = under 800 words in transcript, "medium" = 800-1800 words, "long" = over 1800 words
+- customerIsSelfPacking=true if customer explicitly says they will pack their own items themselves
+- dismantlingWasDiscussed=true if agent specifically asked about or discussed bed/furniture dismantling/assembly
+- elevatorWasMentioned=true if elevator was specifically mentioned in the call
+- stairsAtDeliveryMentioned=true if stairs at the delivery/destination address were discussed
+- addressCapturedInCall=true if agent explicitly asked for and received street-level addresses during the call (cities alone do not count)
+- moveTypeExplainedInDetail=true if agent explicitly described what basic moving includes OR what full-service moving includes
+- bothPricingTypesDiscussed=true if agent discussed BOTH hourly/local pricing AND weight-based/long-distance pricing in the same call
+- isDisputeOrComplaintCall=true if ANY of these are true: (1) customer expresses frustration, anger, or feeling misled during the call, (2) agent is delivering unexpected bad news (extra charges, delays, policy changes), (3) customer says words like "outrageous", "shaken down", "confused", "not happy", "I was told differently", (4) call involves a dispute about pricing, charges, or service promises made earlier
 
-  const raw = await callGroq(GROQ_MODEL, sys, usr, 500);
+IMPORTANT: Default to FALSE unless you find CLEAR EVIDENCE in transcript.`;
+
+  const raw = await callGroq(GROQ_MODEL, sys, usr, 600);
   const parsed = parseJSON(raw);
   return parsed || {
     moveType: 'local', callDirection: 'outbound', isFollowUpCall: false,
@@ -410,7 +436,12 @@ DEFINITIONS:
     agentPlacedOnHold: false, agentGaveEstimate: false,
     agentDiscussedPayment: false, agentDiscussedPreMoveConf: false,
     inventoryWasDiscussed: false, packingWasDiscussed: false,
-    accessWasDiscussed: false, trustBuildingWasDiscussed: false
+    accessWasDiscussed: false, trustBuildingWasDiscussed: false,
+    callDurationCategory: 'medium',
+    customerIsSelfPacking: false, dismantlingWasDiscussed: false,
+    elevatorWasMentioned: false, stairsAtDeliveryMentioned: false,
+    addressCapturedInCall: false, moveTypeExplainedInDetail: false,
+    bothPricingTypesDiscussed: false, isDisputeOrComplaintCall: false
   };
 }
 
@@ -418,19 +449,19 @@ DEFINITIONS:
 function buildSkipList(ctx) {
   const skip = new Set();
   const isLD = ctx.moveType === 'longdistance';
+  const isShort = ctx.callDurationCategory === 'short';
+  const isMedium = ctx.callDurationCategory === 'medium';
 
-  // ── Follow-up / Dispatch Call: skip all sales/discovery sections ──────────
-  // Only Call Opening (si=0), Permission item 0 (si=1,ii=0), and Soft Skills are rated
   if (ctx.isFollowUpCall) {
     SECTIONS.forEach((sec, si) => {
       if (sec.manualOnly) return;
       sec.items.forEach((_, ii) => {
         const key = `r_${si}_${ii}`;
-        // Keep: si=0 (Call Opening), si=1 ii=0 (clearly stated purpose), si=20 (Soft Skills)
-        const keepCallOpening = (si === 0);
+        const keepIntro = (si === 0 && ii === 0);
+        const keepGreeting = (si === 0 && ii === 1);
         const keepPurpose = (si === 1 && ii === 0);
         const keepSoftSkills = (si === 20);
-        if (!keepCallOpening && !keepPurpose && !keepSoftSkills) skip.add(key);
+        if (!keepIntro && !keepGreeting && !keepPurpose && !keepSoftSkills) skip.add(key);
       });
     });
     return skip;
@@ -440,32 +471,36 @@ function buildSkipList(ctx) {
     sec.items.forEach((_, ii) => {
       const key = `r_${si}_${ii}`;
 
-      // s0: wrong-number items
-      if (si === 0 && [3, 6, 7].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
-      // s0: callback item
-      if (si === 0 && ii === 5 && ctx.customerAvailable) skip.add(key);
+      if (si === 0 && [2, 3, 5, 6].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
+      if (si === 0 && ii === 4 && ctx.customerAvailable) skip.add(key);
 
-      // s1 Permission: skip callback/timing items when customer was available
       if (si === 1 && [4, 5, 6].includes(ii) && ctx.customerAvailable) skip.add(key);
+      if (si === 1 && ii === 2) skip.add(key);
 
-      // s4 Inventory: skip whole section if inventory never discussed
+      if (si === 2 && [1, 2].includes(ii) && !ctx.moveTypeExplainedInDetail) skip.add(key);
+
+      if (si === 3 && !ctx.addressCapturedInCall) skip.add(key);
+      if (si === 3 && ii === 3 && isShort) skip.add(key);
+
       if (si === 4 && !ctx.inventoryWasDiscussed) skip.add(key);
 
-      // s5 Access: skip whole section if access never discussed
       if (si === 5 && !ctx.accessWasDiscussed) skip.add(key);
+      if (si === 5 && [5, 6].includes(ii) && !ctx.elevatorWasMentioned) skip.add(key);
+      if (si === 5 && ii === 1 && !ctx.stairsAtDeliveryMentioned) skip.add(key);
+      if (si === 5 && ii === 4) skip.add(key);
+      if (si === 5 && ii === 7 && isShort) skip.add(key);
 
-      // s7 Packing: skip detail items if packing was not discussed
       if (si === 6 && !ctx.packingWasDiscussed && ii >= 2) skip.add(key);
+      if (si === 6 && ctx.customerIsSelfPacking) {
+        if ([3, 4, 8].includes(ii)) skip.add(key);
+      }
+      if (si === 6 && !ctx.dismantlingWasDiscussed && [5, 6, 7].includes(ii)) skip.add(key);
 
-      // s8 Local pricing: skip for LD
-      if (si === 7 && isLD) skip.add(key);
-      // s9 LD pricing: skip for local
-      if (si === 8 && !isLD) skip.add(key);
+      if (si === 7 && isLD && !ctx.bothPricingTypesDiscussed) skip.add(key);
+      if (si === 8 && !isLD && !ctx.bothPricingTypesDiscussed) skip.add(key);
 
-      // s10 Trust: skip whole section if trust building not discussed
       if (si === 9 && !ctx.trustBuildingWasDiscussed) skip.add(key);
 
-      // s11-s17 Objection sections: skip unless objection raised
       if (si === 10 && !ctx.customerRaisedTrustObjection) skip.add(key);
       if (si === 11 && !ctx.customerRaisedPriceObjection) skip.add(key);
       if (si === 12 && !ctx.customerRaisedSafetyObjection) skip.add(key);
@@ -474,15 +509,10 @@ function buildSkipList(ctx) {
       if (si === 15 && !ctx.customerAskedToDelay) skip.add(key);
       if (si === 16 && !ctx.customerRaisedChargesObjection) skip.add(key);
 
-      // s18 Booking: only skip very specific payment sub-items if the call never reached booking at all
-      // Do NOT skip the whole section — agents MUST be rated on whether they attempted to close
-      // Only skip payment-detail sub-items (deposit, cancellation, 50%, balance) if no booking was discussed at all
       if (si === 17 && !ctx.agentDiscussedPayment && ii >= 3) skip.add(key);
 
-      // s19 Pre-Move Confirmation: skip if never discussed
       if (si === 18 && !ctx.agentDiscussedPreMoveConf) skip.add(key);
 
-      // s20 Cancellation: skip unless customer requested
       if (si === 19 && !ctx.cancellationRequested) skip.add(key);
     });
   });
@@ -500,173 +530,171 @@ async function rateChecklist(transcript, skipSet, allItems, ctx) {
 
   function buildBatchPrompt(batch) {
     const itemLines = batch.map(i => `${i.key}: ${i.label}`).join('\n');
-    // Split combined text into summary and transcript parts
-    // Robust splitter for AI Summary and Transcript
+
     const summaryMatch = transcript.match(/(?:AI SUMMARY|Summary)[\s\S]*?[\n\r]([\s\S]*?)(?=(?:FULL TRANSCRIPT|Transcript)|$)/i);
     const transcriptMatch = transcript.match(/(?:FULL TRANSCRIPT|Transcript)[\s\S]*?[\n\r]([\s\S]*)$/i);
-    
-    // Fallback if split fails
+
     const aiSummary = summaryMatch ? summaryMatch[1].trim() : transcript.substring(0, 5000);
     const fullTranscript = transcriptMatch ? transcriptMatch[1].trim().substring(0, 8000) : transcript.substring(Math.max(0, transcript.length - 8000));
 
-    return `You are evaluating a sales call for a moving company. Rate each checklist item.
+    return `You are evaluating a sales call for a moving company. Rate each checklist item carefully.
 
 CALL CONTEXT:
 - Move type: ${ctx.moveType} | Call direction: ${ctx.callDirection || 'outbound'}
+- Call length: ${ctx.callDurationCategory || 'medium'}
+- Customer self-packing: ${ctx.customerIsSelfPacking} | Dismantling discussed: ${ctx.dismantlingWasDiscussed}
 - Inventory discussed: ${ctx.inventoryWasDiscussed} | Packing discussed: ${ctx.packingWasDiscussed}
 - Access discussed: ${ctx.accessWasDiscussed} | Trust building: ${ctx.trustBuildingWasDiscussed}
 - Estimate given: ${ctx.agentGaveEstimate} | Payment discussed: ${ctx.agentDiscussedPayment}
-- Pre-move confirmation discussed: ${ctx.agentDiscussedPreMoveConf}
+- Move type explained in detail: ${ctx.moveTypeExplainedInDetail}
+- Elevator mentioned: ${ctx.elevatorWasMentioned} | Stairs at delivery: ${ctx.stairsAtDeliveryMentioned}
+- ⚠️ DISPUTE/COMPLAINT CALL: ${ctx.isDisputeOrComplaintCall}
 
-AI SUMMARY (PRIMARY SOURCE — use this to determine IF a topic was covered):
+AI SUMMARY (use to determine IF a topic was covered):
 ${aiSummary}
 
-FULL TRANSCRIPT (use this ONLY to judge HOW WELL the agent spoke — tone, quality, fillers):
+FULL TRANSCRIPT (use to judge HOW WELL — tone, quality, fillers, confidence):
 ${fullTranscript}
 
 ITEMS TO RATE:
 ${itemLines}
 
-TWO-STAGE RATING PROCESS — FOLLOW IN ORDER:
+═══════════════════════════════════════════════════════
+RATING SYSTEM — 3 POSSIBLE VALUES: met / notmet / ni
+═══════════════════════════════════════════════════════
 
-⚠️ CRITICAL SKIP RULE — READ FIRST:
-Items that should be skipped due to call type or context have ALREADY been removed from your list.
-Do NOT return "skip" for items in your list UNLESS the item is about:
-  - Hold explanation when agent never placed a hold
-  - Elevator booking when there is no elevator
-  - Wrong-number/callback items when the right person answered and call proceeded
-For ALL other items — return "met", "ni", or "notmet". NEVER return "skip" as a way to avoid rating.
+"met"    = Agent did it. May be brief but clear. Task was accomplished.
+"notmet" = Agent did NOT do it at all. Topic absent from call.
+"ni"     = Agent did it BUT delivery was clearly poor (robotic, heavy fillers, no benefit explanation)
 
-══════════════════════════════════════════════════
-STAGE 1: DID THE AGENT DO IT? (Use AI Summary)
-══════════════════════════════════════════════════
-Read the AI SUMMARY first. It is the authoritative record of what happened in the call.
+═══════════════════════════════════════════════════════
+STAGE 1: DID AGENT DO IT? (Read AI Summary first)
+═══════════════════════════════════════════════════════
 
-IF the topic IS confirmed in the AI Summary → proceed to Stage 2 to judge quality
-IF the topic is NOT in the AI Summary:
-  → "notmet" — if it is a standard expected part of this type of call
-  → "skip"   — if the item is conditional and the condition did not apply
+RULE OF SILENCE: If the topic is clearly NOT in the AI Summary → "notmet"
 
-CALIBRATION — HOW TO MATCH SUMMARY CONTENT TO CHECKLIST ITEMS:
+Read the AI Summary first. It is the authoritative record of what happened.
+- If a topic IS in the summary → go to Stage 2
+- If a topic is NOT in the summary → "notmet"
+- EXCEPTION: For call opening items (intro, greeting), give benefit of the doubt — transcripts
+  sometimes miss the first few seconds. If agent name appears anywhere in the call and the call
+  flow seems normal, assume introduction happened → "met" unless you see clear evidence otherwise.
 
-Address Items:
-  → "Captured complete pickup address" = "met" if ANY origin location is mentioned (city, region, province)
-    For long-distance moves, city/province IS a complete address. Street number is NOT required.
-    EXAMPLE: "Montreal" is a complete pickup address. "Saskatchewan" is a complete pickup address.
-  → "Captured complete delivery address" = "met" if ANY destination location is mentioned.
-    EXAMPLE: "Moncton, New Brunswick" is complete. "Mississauga, Ontario" is complete.
+═══════════════════════════════════════════════════════
+STAGE 2: HOW WELL? (Read Full Transcript for quality)
+═══════════════════════════════════════════════════════
 
-Permission Items (VERY IMPORTANT — READ CAREFULLY):
-  → "Asked for permission to proceed" = "met" if agent asked "Is this a good time?" or "Is now a good time to talk?"
-    This phrasing in the transcript counts as asking permission.
-  → "If not a good time, accepted politely and did not push" = "skip" whenever the customer WAS available and the call proceeded normally.
-    Only "notmet" if agent pushed back when customer said it was NOT a good time.
-  → Callback items ("Confirmed callback timing", "Scheduled callback") = "skip" if customer was available and call went ahead.
-    Only assess callback items if the call was actually rescheduled.
+RULE OF QUALITY: A topic covered clearly → "met". Only downgrade to "ni" if quality was NOTABLY poor.
 
-Packing Items — SELF-PACKING CUSTOMER GUIDANCE:
-  IF the AI Summary shows the customer is doing their own packing (pre-packed, self-packing, loading/unloading only requested):
-    → "Checked if customer prefers self-packing" = met (confirmed customer preference)
-    → "Acknowledged customer's packing preference" = met (preference clearly recorded)
-    → "Offered packing materials for self-pack customers" = met ONLY if agent offered boxes or bubble wrap
-      If agent did NOT offer packing materials = notmet
-    → "If packing service requested, confirmed full or partial" = notmet (this is an expected upsell even for self-pack)
-    → "Explained packing time inclusion in crew hours" = notmet (agent should explain this regardless)
-    → "Asked about dismantling and reassembly" = met ONLY if explicitly discussed in transcript
-      If not discussed at all = notmet
-    → "Documented dismantling requirements" = met if agent noted requirements; notmet if no dismantling discussed
-    → "Offered packing tips or guidance for fragile items" = notmet unless agent explicitly gave tips
-    → "Recorded add-ons accurately" = met if agent recorded all items discussed (even just loading/unloading)
+Mark "ni" ONLY when you see CLEAR evidence of poor delivery:
+- Agent uses heavy fillers throughout (not occasional "um" but pervasive "like", "you know", "basically")
+- Agent sounds completely robotic or scripted with no natural flow
+- Agent gave an answer that was so brief it clearly didn't serve the customer's understanding
+- Agent explicitly shows confusion or uncertainty ("I think...", "I'm not sure but...")
+- Agent missed an obvious opportunity to explain something critical
 
-Inventory — ROOM-BY-ROOM DEFINITION (VERY IMPORTANT):
-  → "Followed structured room-to-room approach" = met ONLY if agent explicitly named and navigated through rooms
-    ("In the living room, what do you have?", "Moving to the bedroom now...")
-    Simply asking "What items do you need to move?" or "Give me a list" = notmet
-    Partially going room-by-room (one or two rooms named) = ni
-  → "Covered all major rooms" = met ONLY if living room, bedroom(s), AND kitchen were all explicitly visited
-    If only one room was discussed = notmet
-  → "Asked about storage, garage, balcony, and outdoor items" = met ONLY if agent specifically asked about any of these areas
-    If agent only discussed main furniture without probing outdoor/storage = notmet
-  → "Confirmed appliances to be moved" = met if appliances were asked about (even if customer said none or just microwave)
-  → "Checked if any items were missed" = met ONLY if agent explicitly asked "Did I miss anything?" or "Anything else?"
-  → "Set clear follow-up if inventory was incomplete" = met if agent said customer can update or confirm the list later
+DO NOT mark "ni" for:
+- Occasional filler words (every agent uses some fillers)
+- Brief but clear answers (brevity ≠ poor quality)
+- Informal but friendly language
+- Answers that accomplished the task even if not perfectly worded
 
-Trust Builders — MET vs NI THRESHOLD:
-  → "met" for trust items: Agent stated the policy CLEARLY AND customers can understand it without extra research.
-    If the summary confirms the topic was covered, and the transcript shows the agent delivered it more than one sentence → met
-    The agent does NOT need to give a full lecture with "why" for trust items to be met.
-  → "ni" for trust items: Agent was very brief (one sentence only), or used heavy fillers, or sounded confused
-    EXAMPLE of met: Agent explained billing start time clearly with all details
-    EXAMPLE of ni: "We don't charge for breaks." (single brief statement, no context)
-  → Do NOT apply NI to all trust items by default. If the summary confirms trust items were covered → met is the expected rating unless transcript shows quality issues
+═══════════════════════════════════════════════════════
+NI CALIBRATION — REALISTIC TARGETS
+═══════════════════════════════════════════════════════
 
-Move Date:
-  → "Confirmed move date clearly" = "met" if ANY target date or timeframe is mentioned (e.g., "May 1st", "last week of April")
-  → "Checked flexibility on dates" = "met" if there was any discussion about timing flexibility or urgency around the date
+REALISTIC NI PER CALL: 5-10 NI items for a full 15-22 minute call. Shorter calls have fewer.
 
-══════════════════════════════════════════════════
-STAGE 2: HOW WELL? (Use Full Transcript for quality)
-══════════════════════════════════════════════════
-Only apply Stage 2 when the topic IS confirmed in the AI Summary.
+SOFT SKILLS — typical distribution:
+- 5-7 "met" items (most agents are reasonably professional)
+- 3-5 "ni" items (real quality issues)
+- 0-2 "notmet" items (agent was actively bad at something)
 
-"met" → Topic confirmed AND transcript shows quality delivery:
-  ✔ Agent explained WHY it matters — not just stating the bare fact
-  ✔ Natural, confident language — not scripted or robotic
-  ✔ No heavy fillers (um, uh, okay okay, alright alright)
-  ✔ Connected the point to the customer's specific situation
-  EXAMPLE met: "We pause the timer during breaks so you're never charged for downtime."
-  EXAMPLE ni:  "We don't charge for breaks." (fact only, no WHY)
+TRUST BUILDERS — typical distribution:
+- 2-4 "met" items (topics they covered well)
+- 2-3 "ni" items (topics covered but not explained well)
+- 1-3 "notmet" items (topics not discussed at all)
 
-"ni" (Needs Improvement) → Confirmed in Summary BUT transcript shows poor execution:
-  ✗ Agent stated facts without explaining WHY
-  ✗ Brief, mechanical, or scripted delivery
-  ✗ Heavy fillers or repeated phrases
-  → Use NI freely — it is the EXPECTED rating for items done but done poorly
+SPECIFIC GUIDANCE:
+- "Introduced self with agent name and company name" → "met" if agent said name AND company name
+  (even if transcript starts mid-call — assume intro happened if call flow is normal)
+- "Used professional greeting, confirmed identity" → "met" if agent greeted by name and confirmed
+- "Avoided vague/filler language" → "ni" only if fillers are PERVASIVE, not occasional
+- "Built rapport using customer name" → "met" if agent uses name at least 2 times naturally
+- "Spoke clearly and confidently" → "ni" if agent sounds notably unsure or rushed throughout
+- "Showed empathy" → "ni" if agent acknowledged concern but in a formulaic/dismissive way
 
-══════════════════════════════════════════════════
-SOFT SKILLS — CALIBRATED RULES
-══════════════════════════════════════════════════
-"met"    → Skill CONSISTENTLY demonstrated throughout the entire call with natural, varied, error-free language
-"ni"     → Skill attempted but inconsistent, mechanical, OR any quality issue listed below — USE FREELY
-"notmet" → Skill completely absent throughout the entire call
-"skip"   → Only for hold-related items when no hold was placed
+CALIBRATION TARGETS (manual analysis benchmarks):
+- Jessica (Lead 2109, 14 min): ~68% — good call with some packing/trust gaps
+- Daniel (Lead 1999, 22 min): ~73% — thorough call, minor NI issues in soft skills
+- Noah (Lead 1810, 10 min): ~59% — short call, missed booking/inventory depth
+- Daniel (Lead 2321, 7 min): ~44% — short dispatch/issue call, soft skills need work
 
-NI TRIGGER — Any of these in the transcript pushes a soft skill item to "ni":
-  ✗ Repeated phrases in the same turn ("I can, I can, I can", "okay okay", "alright alright")
-  ✗ Word errors or malapropisms ("hazel free" instead of "hassle-free", wrong terminology)
-  ✗ Scripted / formulaic empathy ("I completely understand" with no personalised follow-up)
-  ✗ Vague commitments ("I'll try my best", "hopefully", "we'll see")
-  ✗ Deflecting or dismissive phrases ("just trust me", "don't worry about it")
-  ✗ Filler words used frequently ("you know", "um", "uh", "like")
-  ✗ Sounded defensive or apologetic rather than confident and solution-focused
-  ✗ Failed to use the customer's name more than once or twice in the entire call
-  ✗ Guided call but missed natural opportunities to build trust or rapport
+═══════════════════════════════════════════════════════
+DISPUTE / COMPLAINT CALL — STRICT SOFT SKILLS MODE
+═══════════════════════════════════════════════════════
 
-EXPECTED RANGE: Most calls have 5-8 NI items in Soft Skills.
-If you find fewer than 5 NI → re-read the transcript carefully for the quality issues above.
-If you are unsure between "met" and "ni" for any soft skill item → give "ni".
+${ctx.isDisputeOrComplaintCall ? `⚠️ THIS IS A DISPUTE OR COMPLAINT CALL.
 
-══════════════════════════════════════════════════
-PRE-MOVE CONFIRMATION — RULES
-══════════════════════════════════════════════════
-"met"  → Agent stated it clearly AND explained WHY it matters
-"ni"   → Agent mentioned it but just stated facts — USE FREELY
-"skip" → Pre-move confirmation was never discussed
+When a customer is upset, frustrated, or an agent is delivering unexpected bad news, the bar for "met" in Soft Skills is MUCH higher. Most soft skill items should be "ni" not "met" in these calls.
 
-Return JSON: {"r_X_X": "met", ...}
-Include ALL ${batch.length} keys. Return ONLY the JSON object.`;
+APPLY THESE STRICT RULES FOR SOFT SKILLS:
+
+"Spoke clearly, confidently, and at an appropriate pace"
+→ "ni" if agent sounds at all defensive, hesitant, or rushes through the bad news
+→ "ni" if agent uses phrases like "you know", "I understand but", "like" frequently
+
+"Used professional and customer-friendly language"
+→ "ni" if agent uses informal phrases, sounds unprepared, or repeats themselves
+→ "ni" if agent says things like "you know what I mean", "basically", "like I said"
+
+"Avoided vague, unsure, or filler language"
+→ "notmet" if agent uses heavy fillers throughout the call
+→ "ni" if agent sounds uncertain about the reason for the charge
+
+"Did not interrupt and listened actively to the customer"
+→ "ni" if agent jumps in before customer finishes their complaint
+→ "ni" if agent does not acknowledge what the customer said before responding
+
+"Showed empathy and reassurance during customer concerns"
+→ "ni" if agent says "I understand" but immediately moves to justifying the charge
+→ "ni" if empathy feels formulaic ("I completely understand but...")
+→ "notmet" if agent shows no genuine empathy at all
+
+"Guided the conversation and kept it focused on next steps"
+→ "ni" if agent loses control of the conversation or becomes reactive
+→ "ni" if agent fails to proactively offer a clear resolution path
+
+"Built rapport and trust using the customer's name and natural conversation"
+→ "ni" if agent uses customer name fewer than 3 times OR tone feels transactional
+→ "ni" if agent does not acknowledge the customer's frustration genuinely
+
+"Summarized key details and encouraged commitment or next steps"
+→ "ni" if agent does not clearly confirm what was agreed at end of call
+→ "ni" if agent closes without ensuring customer understands what happens next
+
+"Confidently responded to customer questions without deflection"
+→ "ni" if agent deflects blame to another agent (e.g., "Noah should have told you")
+→ "ni" if agent cannot clearly explain why the charge is legitimate
+
+EXPECTED DISTRIBUTION for dispute/complaint calls:
+- Soft Skills: 1-3 "met", 6-9 "ni", 0-2 "notmet"
+- Overall call score for a 7-minute dispute call: typically 40-55%` : `No special dispute/complaint rules apply to this call.`}
+
+Return ONLY this JSON format:
+{"ratings": {"r_0_0": "met", "r_0_1": "notmet", "r_1_2": "ni", ...}}`;
   }
 
   console.log(`  Batch 1: ${batch1.length} items (${GROQ_MODEL})...`);
   const raw1 = await callGroq(GROQ_MODEL, sys, buildBatchPrompt(batch1), 1500);
-  const result1 = parseJSON(raw1) || {};
+  const result1 = parseJSON(raw1)?.ratings || parseJSON(raw1) || {};
 
   console.log(`  Waiting 5s between batches...`);
   await delay(5000);
 
   console.log(`  Batch 2: ${batch2.length} items (${GROQ_MODEL})...`);
   const raw2 = await callGroq(GROQ_MODEL, sys, buildBatchPrompt(batch2), 1500);
-  const result2 = parseJSON(raw2) || {};
+  const result2 = parseJSON(raw2)?.ratings || parseJSON(raw2) || {};
 
   return { ...result1, ...result2 };
 }
@@ -679,10 +707,19 @@ async function analyzeCall(callText) {
 
   console.log('  Pass 1: context analysis...');
   const ctx = await analyzeContext(transcript);
+
+  if (!ctx.callDurationCategory) {
+    const wc = estimateWordCount(transcript);
+    ctx.callDurationCategory = wc < 800 ? 'short' : wc < 1800 ? 'medium' : 'long';
+  }
+
   const skip = buildSkipList(ctx);
-  console.log(`  Context: ${ctx.moveType} | ${ctx.callDirection} | followUp=${ctx.isFollowUpCall} | inv=${ctx.inventoryWasDiscussed} pack=${ctx.packingWasDiscussed} access=${ctx.accessWasDiscussed} trust=${ctx.trustBuildingWasDiscussed}`);
-  console.log(`  Booking: est=${ctx.agentGaveEstimate} pay=${ctx.agentDiscussedPayment} premove=${ctx.agentDiscussedPreMoveConf}`);
-  console.log(`  Skipping ${skip.size} items → rating ${allItems.length - skip.size} items`);
+  console.log(`  Context: ${ctx.moveType} | ${ctx.callDirection} | followUp=${ctx.isFollowUpCall} | dispute=${ctx.isDisputeOrComplaintCall}`);
+  console.log(`  Topics: inv=${ctx.inventoryWasDiscussed} pack=${ctx.packingWasDiscussed} access=${ctx.accessWasDiscussed} trust=${ctx.trustBuildingWasDiscussed}`);
+  console.log(`  Packing: selfPack=${ctx.customerIsSelfPacking} dismantling=${ctx.dismantlingWasDiscussed} | Address captured=${ctx.addressCapturedInCall}`);
+  console.log(`  Access: elevator=${ctx.elevatorWasMentioned} stairsDelivery=${ctx.stairsAtDeliveryMentioned} | MoveTypeDetail=${ctx.moveTypeExplainedInDetail}`);
+  console.log(`  Booking: est=${ctx.agentGaveEstimate} pay=${ctx.agentDiscussedPayment} premove=${ctx.agentDiscussedPreMoveConf} | bothPricing=${ctx.bothPricingTypesDiscussed}`);
+  console.log(`  Duration: ${ctx.callDurationCategory} | Skipping ${skip.size} items → rating ${allItems.length - skip.size} items`);
 
   console.log('  Pass 2: rating checklist (2 batches)...');
   const batchRatings = await rateChecklist(transcript, skip, allItems, ctx);
@@ -726,8 +763,13 @@ app.post('/api/analyze-text', async (req, res) => {
 });
 
 app.get('/api/transkriptor/files', async (req, res) => {
-  const apiKey = req.headers['x-transkriptor-key'];
-  if (!apiKey) return res.status(400).json({ error: 'Missing x-transkriptor-key header' });
+  const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
+  console.log('🔑 Transkriptor API key check:', {
+    fromHeader: !!req.headers['x-transkriptor-key'],
+    fromEnv: !!process.env.TRANSKRIPTOR_API_KEY,
+    envKeyLength: process.env.TRANSKRIPTOR_API_KEY?.length || 0
+  });
+  if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   try {
     const r = await fetch('https://api.tor.app/developer/files', {
       method: 'GET',
@@ -745,8 +787,8 @@ app.get('/api/transkriptor/files', async (req, res) => {
 });
 
 app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
-  const apiKey = req.headers['x-transkriptor-key'];
-  if (!apiKey) return res.status(400).json({ error: 'Missing x-transkriptor-key header' });
+  const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
+  if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   const hdrs = { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json', Accept: 'application/json' };
   try {
     const cr = await fetch(`https://api.tor.app/developer/files/${req.params.orderId}/content`, { method: 'GET', headers: hdrs });
@@ -773,56 +815,81 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
+// ── Email Route (Resend API - works through firewalls) ────────────────────────
 app.post('/api/send-report-email', async (req, res) => {
   const { csvContent, fileName, htmlContent } = req.body;
+  
+  console.log('📧 Email request received:', {
+    hasCsv: !!csvContent,
+    csvLength: csvContent?.length || 0,
+    hasHtml: !!htmlContent,
+    fileName: fileName || 'no-filename'
+  });
 
   if (!csvContent) {
     return res.status(400).json({ error: 'CSV content is required' });
   }
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
+  
+  console.log('🔍 Email config check:', {
+    hasResendKey: !!process.env.RESEND_API_KEY,
+    hasEmailFrom: !!process.env.EMAIL_FROM,
+    recipients: recipients
+  });
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) {
+    console.error('❌ Email failed: Missing RESEND_API_KEY or EMAIL_FROM in .env');
     return res.status(500).json({ error: 'Email configuration missing in server .env' });
   }
 
   try {
-    const port = parseInt(process.env.EMAIL_PORT) || 587;
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST,
-      port: port,
-      secure: false, // Use STARTTLS for 587
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      requireTLS: true
-    });
-
-    const subject = `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
-      to: recipients,
-      subject,
-      text: `Please find the attached TNVL Call Quality Report Bundle.`,
+    // Use Resend API instead of SMTP
+    const emailData = {
+      from: process.env.EMAIL_FROM,
+      to: recipients.split(',').map(email => email.trim()),
+      subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
       html: htmlContent || `<p>Please find the attached report.</p>`,
-      attachments: [{ filename: fileName || 'AgentSummary.csv', content: csvContent }],
+      attachments: [{
+        filename: fileName || 'AgentSummary.csv',
+        content: csvContent.split(',').map(row => row.join(',')).join('\n'), // Convert to CSV string
+        contentType: 'text/csv'
+      }]
+    };
+
+    console.log('📧 Sending via Resend API...');
+    
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(emailData)
     });
 
-    console.log(`✅ Report emailed to: ${recipients}`);
-    res.json({ success: true, message: 'Email sent successfully' });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Resend API error: ${error.message || 'Unknown error'}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Report emailed via Resend:`, result.id);
+    res.json({ success: true, message: 'Email sent successfully via Resend', emailId: result.id });
+
   } catch (error) {
     console.error('❌ Email Error:', error);
-    res.status(500).json({ 
-      error: 'Failed to send email', 
-      details: error.message,
-      code: error.code,
-      command: error.command
+
+    let userMessage = 'Failed to send email';
+    if (error.message.includes('Resend API error')) {
+      userMessage = 'Email service error. Check RESEND_API_KEY and EMAIL_FROM configuration.';
+    } else if (error.message.includes('ENOTFOUND') || error.message.includes('ECONNREFUSED')) {
+      userMessage = 'Cannot connect to email service. Check internet connection.';
+    }
+
+    res.status(500).json({
+      error: userMessage,
+      details: error.message
     });
   }
 });
@@ -843,9 +910,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
-  console.log(`\n   Accuracy v3 — what changed:`);
-  console.log(`   • RULE OF SILENCE: no transcript evidence = skip or notmet, never met`);
-  console.log(`   • RULE OF QUALITY: present but robotic/brief/no-why = ni, not met`);
-  console.log(`   • BENEFIT STATEMENT TEST: must explain WHY, not just state the fact`);
-  console.log(`   • NI enforced: brief/filler-heavy/scripted delivery = ni not met\n`);
+  console.log(`\n   Accuracy v6 — what changed:`);
+  console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
+  console.log(`   • DISPUTE MODE: when true, soft skills rated with strict NI criteria (target 1-3 met, 6-9 ni)`);
+  console.log(`   • Fixes Lead 2123/2321 Cheryl call: AI was 87%, manual was 44%`);
+  console.log(`   • All other leads unaffected — dispute mode only triggers when customer is upset\n`);
 });
