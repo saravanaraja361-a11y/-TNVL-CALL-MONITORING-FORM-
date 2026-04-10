@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TNVL Call Monitoring Form</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #222; font-size: 15px; }
@@ -755,7 +755,12 @@
 <!-- ═══════════ DASHBOARD TAB ═══════════ -->
 <div id="panel-dashboard" class="panel">
   <div class="dash-wrap">
-    <div class="dash-title">📊 Agent Scoreboard</div>
+    <div class="dash-title" style="display:flex; justify-content:space-between; align-items:center;">
+      <span>📊 Agent Scoreboard</span>
+      <button class="btn-filter" id="btn-sync-data" onclick="syncRecordsWithServer()" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
+        <span id="sync-icon">🔄</span> Sync Data
+      </button>
+    </div>
     <input type="hidden" id="tsk-apikey">
     <div style="display:none" id="tsk-files"><div id="tsk-file-grid"></div></div>
 
@@ -1367,17 +1372,13 @@ const SECTIONS = [
 ];
 
 // ── Dynamic API Base Detection (Local vs Deployed) ─────
-// ── Dynamic API Base Detection (Local vs Deployed) ─────
 function getApiBase() {
   return (window.location.origin === 'null' || !window.location.origin.startsWith('http')) 
     ? 'http://localhost:3000' 
     : window.location.origin;
 }
 
-// ── PDF Generation & Organization Logo ──────────────────────────────────────
-const TNVL_LOGO = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA+4AAAH8CAYAAAD9GvF8qUeRWA8A220LYeF+Nx2449uB54D8UAABAASURBVBhRhXhxvwJKCRxwVsG3RfKJ85wMucTYvC98J0+bi917D8JfsvGh51KuJ0+eSx138PjxUxw8eBRz5i0BFWlDyZAw204jjo5ctGhRjOH2XJxmruGmE8jgAg3ZZEkTI2LECKHFggGI2+Losx10xkN33JKM2Lbte/Dk6VM8lW3p8jUm0EPjmFmvquKw58yZDRnFmY4fL645jVPOnzx9Bp7Xo/cQjBg1CXTcKR+d56jijNOA48ExY0bDIWG5cvUGkzFjRoq//35jYOnU6XOg8UmHNbYYwRxEvLy8cVmCB0FBgXB3d5MMd4hhtm37bsM8YYI4YJuWidxb5TcnqxUciFh+jBjRxFi1Gtn4/c3t6dPnIJPSJb9FA3HKOSsidL+f9MeevYewYdN26YMn4lzHR4B/oCjgndi3/zCeS9AgNO7PeyRIsnxsL++Z5SvXY+u23UgtAREGa44eOyXX1U7cEUOeAQ63cOEwY9ZCbNy8Q5z1QOTPmwP+kvHcJNfevv1HwPaybCdxUNKnS4OvJWtWuWIZZBHjPEP61MZxCJWTx5JbTgmo8PiHnp7CJxir1mxEJgkKVK1cFpyBwWs1UDL8u/bsx0ZpE2e/0AD3iBAePKZmjYpgEINMnOT6jvUfnrUQKpO+K4H3JcBh54Y4kMz6p02bChE8Xuqx7aJTeS3nyf0NEiaIJwHRMxK483636qTwh56Psf/AETC4+fuTb966hVw5sqNRgxrILg5pQEAgqDe5hR7r5+uHPaK3x8v4wVkMlCn2P9wzdPCpl3j/beK9LzojcaL4YFCubu0qZj1/6tTJTWDitATk5i9cjitXb5jgJgMDRSTQGVo/xwAGKbp1HyAG9yO0aFYfP0sQO3T/n76z3Q8fGd25a88BxIwZHXVqVpb6k8PDI7yMQf6ip49h+aoNePjgEW7dugu/AH+zzIL6kXqIgfAdu/aBMwE5kyKWlAELUL9uVRM85RhkFf3LgMC9e/cRL95XyJQhjVk6SP2VIH4801/LV6wDx0eOmckkAMFZHGRGf56MXjKWjRzSpJmSReNY1KiRcEDGvz9tj/6oBJSAzRIIEg6Br8SJI0mMRvSkoS9SJKvX9mP9h2cthMqkb0rgfQlw2LkhDiSz/mnTpkIEj5d6bLvoVF7LeXJ/g4QJ4klA9IwE7rzfrTop/KHnY+w/cASMfP7+5Ju3biFXju9RpjhkFIO0Gf7+mJEjmDJ5EsSIHhV0ul6d+tZbkGTqudFJs1gsYJ6+mZlp9v2ZOfS9WTLm7eXzRMePn2L+/EUmU577MTM5f8Eiyf0HjsTPvX4E2zT/Wz45uWfMc0SPl4By0vX82XMcOnKC6cljZiaM9fC97Ofnj6DyQmMylSyeIs6evwhm9f6kY7DoxKBBg3Hv3n0ULloZe24vnSe6YmYyM9rOnj0HZio5O7vAl5lXtm/7HowYOfL669t/KKhInT063pL7m/0GDoNlZub9vX0XU6ZOBTMMfOn98DImDIs0F9GDBn6S7Zp85Xpw+N2GTVvA9mY57969f6B///FglizZ/vLuPrO+P23ZshPs+/79B6DP99/j77/fGFgyZfocnIqOfv77jYGlW7fuAm9vbyxfuR5fHzeTMeH3P3zkhJn1wIwSZz04OVkluunhZLFYwf0mU+fp9XyE9u37gzN06tRpIM0ZMJ86dQaMKZ4rFis4E7H8GDGiiXHjxrUnTJwi6TDPn78IZnDeKvAnX6jI+N84G9O6tWvBMeiz948ZDUfGjx8vOvef0eXHmZlY8mC87OnpCaeInz/7X7p06Zr77X7sPnbtOmD08f0H1679B7Fz565X7Y9eD9u3bwf79P2vWzBv3mKzkM5p5hpuNoEMGvDInp7eYJmZ6ZpZAnTo4YvXLv+f9vHz98f7H7uDl8f8f9unPyqBJWCzCHDJmTHpS5CgepXCuC0W9YvnT/vT6scfO9pYpZfOunffIZMpx/vX9YceYf0K9f77xG8mK6ZMm0u99V3H8+fOw8nZ9Upu/DdbndyKZOqfXmS/rZ+MDbtXzD6/q9vI0ZNBvczW16pSGYW/LAdnN3Xp3AsO/s0X9mNwXvA8r8X0U59RY9YvYvixL/X26fsfLBYL5kyOEv6iX/l6un+f8HLG9u27EDNmDFas2oDjx0+ZQf3m9TeZ3Lp9F28fN7Ncw8f9p9uePXuBPXpMBp++v56fOnUW+Uof70tmWfK3VyzmgHljfWks66N9eH+zfvSlvugrY2T//sNQv34bMKD/s78v6pZMBfV68+YtInBySjL8+Y97RAd99pMx78sM0t8fK5ctQ9y4X4FTVLeoOInFSU6JmN0jUf9YfN0fOu608D9u/CwwS79u/SYwWHLp0lUwyHGr6NfH5969ByhRshY4O7ZkyVpwCUX0mIkmk8HzvK1p2vRXUyb1I984VbNmOZiH6vW8eYuRL/+mXv84KteuPXNfU65Zs+Zj/YdvDbe/BKeZ86Qe6qD6e676zJkLpG6pLz62rF17BkOGjgX7R6L7h08zN+kU75Whg09RovS36NGzJ/p8Pxb+9fph85bdBvfI9mZ5BvU2Z/pU1JnUBy3adyUOfT6aM7gvmEFr1LgjHsssz7GvGBy5f//h61mEshVqofp7tfB8D6vXbUbxMjXN70tUrWXOvR7L779/Wpzx0B46V33E6P6of68v9N0mU+drZ67332y98v87DAt3zG986rL0P/vR6S/J3fUbt0OHTt0we+4S0/5pB2I0fOQEsC+69RiAvIUrIDAs2MzB8vPzB/uID7pijun5S01AAYpAnS9AnN4vDshfCHzW37p1K3AJSv6CP6BOnTo4duI0mD9L1m7C3v2Hwa7jNfksQY8Y4R8N3X6reN1o1LgjAov8B9vD8v5770E8f6EBN86P9/E1M9oHDhyG746ZqZ9+O2jVpgOOHD0B/s8BvK8/Tf7YOfOnvX8S0p6An7v3YPr0OZCRr0vX7mBf86f+1OfvP0090I30K3Xi9Y+YfOzay3N9eU/9/z89/0XpD6f2OnT8FTKz17nzG7VfXF+68H7pS/1Qp/r8/U8//RScvj+F0/G0e3p08I8/vgFzL+V69uw5Zs9dgm/K1ULpcnXxW2oX+L90G3+gqFuvXshbrDI6dvpZAh/YV3zQFTNdG7VsZzI0ffsNw+279/D6AOPX/l7VHT40keX6G596D8ZxeXQv7K8v0N0XHOZ3+iYfFSpWG9WqNQQ/S6ZMm8tZf8aM019pIscYOnRcApxl0HPr+m9mNgn9w9fF60+fPsczSdbEiP9N7ovZsjFjxhmVn1O00Wf0KVPmjHAsS8YMuP+v9ZEnmEFr2vRXfPXVaKRK+T38ff1Ag0b76XN8W6G0Of8499n0WfPQrdcg8F4YMWoy5s5fCr52vGf8fP0M93p1G+N7id89fPDRXF86+G9Vbt3+G/66/hvzSjImS54itUStZ65fLpU8X28qPrr2+PZdB/G9RE+Fv9N50Wf0P7r8WFLf8vX093/p7P3qM07p5Z766Xv3HyBt2iyga9tODH86vGf4unid0eeL509FjW9mG/5D6vLOnXvw8896VvK/f7/5VPeUzz86D87GKVX6W8ycs8DMXeP29P65ffuOkWfU6MnoNWCH2Zff9U8D0aVnf3G2L4f8UatqfVNC2pSADRLIWaAswmUhOAs7R76vMGXqbLBZ+u8/uO+E8CUPpP9rF06Z5Z/Yv6OnonO3fqYt+vX773/ArDmLI88D79s74L199uw5VClfAbVrvTidS07R7GvAOfmKVoP/ixfI+V02eAmcOXMBvHe4tInT2OInNkbPnt+YOf0Z058xc7U4bX7uXv7Rz0Bf+uEUnX/+D9fD+6fX6X0mE0aXnttP54tG/yW5U5V+9BlySjX667l344RzD+9NToM+S/onvV+uO06hT98fwOn+UfL0X73mff6uI6cZk/+5D89f6vYpPTr4X/px9n5U6vP3H7V///xH7T8q6X90PvXfuY6cAn+0fC59U0/6fP/+R/n0Wf3HkPrX9YfXHPf39XPyPvN3mXf432/A/V7vL++lntTf3v1/GeC9U6Z0ZfzyS198U6YGvvkmHylSZUP6zHmQ87scCHX3g1v/hKzK8C2Ofb+iBHzkBEKe+iT3l2Z5oWPH8iB7HjGf9NfOn6eRPT9/uIffvX8U9768X3+YfV3u/U9578vj8v79ZfI66KPrp6+vI3fXl87fdfSuf9fXuXv9S7lX6kfXz7m/vPflcXl86tSpgD8S8NivL0F6v6L852j7O6e8d13Hz3l86fxd59z7iS6/9P5477qO6p7y3pfrXdfR9fWl96++T+re7e+V98q98l65V977Y959ueZ7X94r75X39Z7XU9rRvf9vW967XudvXf9V90v1rfv+7etf3v8ueX68p+t9+Zye7re6H6V+T33q+S7f6PvX55+Pru9fXvO+XPdPvb7W9Tr3zD1Lp7YvjYv3L7Xv/er9T/7/v7X/+Prf78P9t89nL799Of+P2/mrz+u/7v0f/v/2+V7ePvUerXOf7/L1zD3X9bp8/vX3S399v/S/+fOnmPvvP37S9eY0fL6f93z6OevD17NP+Xz+L/e7fP7/+v/U189v5S///P9u9y9dXyr3yHvlXp/7N7RPhfDHzXp0fX94vefD++j/6fUer/f8P/Xv9H86v8/6v7RP968//P/6+L/0veK662O/vKcf6+X/6fVfPtOTr2f3P/756Lr7y3eeb98f8PzZ/fLe8V/p8+U9/ezvef7+3r+v137L/eC857N7Pv08+zTPZ5/K/eT8Z8f8Z8f8Z8f8Zsf8ZsfmZsfmZsfmZsfmZse8ZsfmZsfmZse8ZsfmZsfmZufZfX7S9Yfy6PrfPqevT/pGf36jTzGf9Ond+0f4v6Gnzp9n7lM+f7959vH5S9eHrn18vteX9r0vp/j/fL5X6pP66evD9fKex/P0f8vn9HOePyeP5XNfzh/999fPt1S76f/S/9T+pX2pL+7r6+vQPd7T/VLvp/9L/5f+T9/H6X76Gv30+u7Lpzzv78/5q/t/eizX9S/3/YdfXv//9ZqveZ+vP6f+R58f/m/7Pvp/em/6e3oP/HjP03vT3997Pt7TvB8/9mve16v+yP9Tn3reX/P/W7/Xf8+96+vce5beM64rvm68p+k1Yv3P8fPZ98f09XTfX9rn9X70Z9I+nX76ev+6vvv+6/fUv899+Zye9Pf7eE9S/9J+099I53P99/Oer/dfX07vj65P94evS/36fOpbeiz1e+6D+v1Ovpfe63Pvc+9vXs/S59Lncv9ff0b9nf9O/9/0mfS59L/65+S9S+f1v997X+X/P/086fOlPn1+un/956P16f86u9/vvd/7/0/Xe06f/qfX9X7S33Vun36un3v9X/85u788Lvev9DrdO305tU/vOfp73if+W9p/Tsd7XurR0/75qZ8p/b30On3Pp9eXPlNffT66rvXp9X/vX79Z+hz++eO0vH+9Z+hzpY96S/+3Ppf+v9/v6XP0f9L/S5/pX07D5/9P6zNf7z++T5069X++Dukz9ZulL/Unfdb67D59D3rvpe9+X/3/X9pXr5/+T/7/pPef+vS5Sv3onD6f7r68B6XP0PeK90m/1/vH9773Pf2f69D3vtd9UvdI59H/8/V1H/h3vL7uNf1/ut99vdSnP4v76/3F/VfX85rPfZ26X6pPbjMv6fN/vT9K/8N97v5/8v8P8j89/9/y/0Y/H6/3+Xm9P9X/Z99/9m+5Z3/WPeG6X++v/zrv/7P709fnf9HnyXvpz+q66X6pdWofX0/KefS965709W/6zPU7/9uX+qRzq9SvdP+f6pPe/z6l6vW13jP1/p3/X95f3nPX+af743vX759reerUpLzH8p6m56Nrzuv9pP1T90/1T/fOOfUf2l+fU+vjZ/u018eeL66LPp88T32P9H9Pnnv62Xp9yHOf8p6n7i/pOnvO+71LntfX+R7pc/Z/qX3T/1P/fMv7vO+df6XPe46ueY/le9P3SPvRfb0v1fep/748v7yX+vS+lP75Uv96v9E6tL/vF+n66XvU94uup+fE5865Lp7X67/78rn+t6e6R0p9T9e5T+0/TtepzvPeZ9/v3Vfezz7vS+W6er4nrvuon9O9/N8fBwB+e8H1vL97z+Xz6evr6f3pe9M9/X++9/n3B/eX59L/6f/37xfK/S31pft7vXfd5z6v576vf/f+kXf0/Otz0Pek/pUun/rUet67z97f9V5PH0vv77u57u/p+Z/rfmOfD/P99f3l9Xp7rvuNfm5fWreut/uP65v1/uN7y8f8p+9Zff91ve/3/p/vN6f777nPve/0ffp97N9T/0rdV/fXPd86vO/q/5U+T5/T967P0f+m533OfT/M/1P/n653fe/Pff6f/fPn3ZfvdZ+pX+v7pf9R6pP79Hm9X6f7v8rv8X5lXfL3l7XJ55zX83Xunve857N7zvO7vH/X/5fO/6X61POnz58/yfvR/VP/XPffPr++Vfep9H/qup2P906/Xqeu69nntK/eM3XuUvumf7n3vO+97vf7/7fPvV/06P9bn+7Nfb0vPfYfP6fHk+f19X/9p76m9X3p66efrfcnff/0Pekz9R99vv6v/6ev69lXr5/uNfq9POf70+tHffn88nFfznU7P+v6Ovc5H/en/+s5X+unrtM+X3rO+P719TnrU7+XuvX+33v++j/6f/oernvufXpPfO7H63Odp9Xv6f++R6nX73m9r3W9uM/Yp+/6+v8fXf9Xv0/vV9+zPke/vvZ1vP6fXqdr5Z76Zup7p887r9/Xej593PrP+vx0/9Xn9D7u89Xrr6+/p9e/X/vX+6Xer9RndX/5HnRdX0+/Pqf79D0p9bWu6/6YfVz6PvVcX1Pvr8+R67WfP7teGtfT89mX89Xnq+v50zXnvF7P6/X99f6v77H+/59+/S7d96nfuB85eT79N66Le819Xud+mP/N57NruR45X9ezX89O/8d77r6cc+c6dfz05dbT53Su02fUu+b5un+69u+X97z0uM+6x/Wv56Dve6nHPqfX9X7S33Vun36un3v9X/85u788Lvev9DrdO305tU/vOfp73if+W9p/Tsd7XurR0/75qZ8p/b30On3Pp9eXPlNffT66rvXp9X/vX79Z+hz++eO0vH+9Z+hzpY96S/+3Ppf+v9/v6XP0f9L/S5/pX07D5/9P6zNf7z++T5069X++Dukz9ZulL/Unfdb67D59D3rvpe9+X/3/X9pXr5/+T/7/pPef+vS5Sv3onD6f7r68B6XP0PeK90m/1/vH9773Pf2f69D3vtd9UvdI59H/8/V1H/h3vL7uNf1/ut99vdSnP4v76/3F/VfX85rPfZ26X6pPbjMv6fN/vT9K/8N97v5/8v8P8j89/9/y/0Y/H6/3+Xm9P9X/Z99/9m+5Z3/WPeG6X++v/zrv/7P709fnf9HnyXvpz+q66X6pdWofX0/KefS965709W/6zPU7/9uX+qRzq9SvdP+f6pPe/z6l6vW13jP1/p3/X95f3nPX+af743vX759reerUpLzH8p6m56Nrzuv9pP1T90/1T/fOOfUf2l+fU+vjZ/u018eeL66LPp88T32P9H9Pnnv62Xp9yHOf8p6n7i/pOnvO+71LntfX+R7pc/Z/qX3T/1P/fMv7vO+df6XPe46ueY/le9P3SPvRfb0v1fep/748v7yX+vS+lP75Uv96v9E6tL/vF+n66XvU94uup+fE5865Lp7X67/78rn+t6e6R0p9T9e5T+0/TtepzvPeZ9/v3Vfezz7vS+W6er4nrvuon9O9/N8fBwB+e8H1vL97z+Xz6evr6f3pe9M9/X++9/n3B/eX59L/6f/37xfK/S31pft7vXfd5z6v576vf/f+kXf0/Otz0Pek/pUun/rUet67z97f9V5PH0vv77u57u/p+Z/rfmOfD/P99f3l9Xp7rvuNfm5fWreut/uP65v1/uN7y8f8p+9Zff91ve/3/p/vN6f777nPve/0ffp97N9T/0rdV/fXPd86vO/q/5U+T5/T967P0f+m533OfT/M/1P/n653fe/Pff6f/fPn3ZfvdZ+pX+v7pf9R6pP79Hm9X6f7v8rv8X5lXfL3l7XJ55zX83Xunve857N7zvO7vH/X/5fO/6X61POnz58/yfvR/VP/XPffPr++Vfep9H/qup2P906/Xqeu69nntK/eM3XuUvumf7n3vO+97vf7/7fPvV/06P9bn+7Nfb0vPfYfP6fHk+f19X/9p76m9X3p66efrfcnff/0Pekz9R99vv6v/6ev69lXr5/uNfq9POf70+tHffn88nFfznU7P+v6Ovc5H/en/+s5X+unrtM+X3rO+P719TnrU7+XuvX+33v++j/6f/oernvufXp9eXPlNffT66rvXp9X/vX79Z+hz++eO0vH+9Z+hzpY96S/+3Ppf+v9/v6XP0f9L/S5/pX07D5/9P6zNf7z++T5069X++Dukz9ZulL/Unfdb67D59D3rvpe9+X/3/X9pXr5/+T/7/pPef+vS5Sv3onD6f7r68B6XP0PeK90m/1/vH9773Pf2f69D3vtd9UvdI59H/8/V1H/h3vL7uNf1/ut99vdSnP4v76/3F/VfX85rPfZ26X6pPbjMv6fN/vT9K/8N97v5/8v8P8j89/9/y/0Y/H6/3+Xm9P9X/Z99/9m+5Z3/WPeG6X++v/zrv/7P709fnf9HnyXvpz+q66X6pdWofX0/KefS965709W/6zPU7/9uX+qRzq9SvdP+f6pPe/z6l6vW13jP1/p3/X95f3nPX+af743vX759reerUpLzH8p6m56Nrzuv9pP1T90/1T/fOOfUf2l+fU+vjZ/u018eeL66LPp88T32P9H9Pnnv62Xp9yHOf8p6n7i/pOnvO+71LntfX+R7pc/Z/qX3T/1P/fMv7vO+df6XPe46ueY/le9P3SPvRfb0v1fep/748v7yX+vS+lP75Uv96v9E6tL/vF+n66XvU94uup+fE5865Lp7X67/78rn+t6e6R0p9T9e5T+0/TtepzvPeZ9/v3Vfezz7vS+W6er4nrvuon9O9/N8fBwB+e8H1vL97z+Xz6evr6f3pe9M9/X++9/n3B/eX59L/6f/37xfK/S31pft7vXfd5z6v576vf/f+kXf0/Otz0Pek/pUun/rUet67z97f9V5PH0vv77u57u/p+Z/rfmOfD/P99f3l9Xp7rvuNfm5fWreut/uP65v1/uN7y8f8p+9Zff91ve/3/p/vN6f777nPve/0ffp97N9T/0rdV/fXPd86vO/q/5U+T5/T967P0f+m533OfT/M/1P/n653fe/Pff6f/fPn3ZfvdZ+pX+v7pf9R6pP79Hm9X6f7v8rv8X5lXfL3l7XJ55zX83Xunve857N7zvO7vH/X/5fO/6X61POnz58/yfvR/VP/XPffPr++Vfep9H/qup2P906/Xqeu69nntK/eM3XuUvumf7n3vO+97vf7/7fPvV/06P9bn+7Nfb0vPfYfP6fHk+f19X/9p76m9X3p66efrfcnff/0Pekz9R99vv6v/6ev69lXr5/uNfq9POf70+tHffn88nFfznU7P+v6Ovc5H/en/+s5X+unrtM+X3rO+P719TnrU7+XuvX+33v++j/6f/oernvufXp9eXPlNffT66rvXp9X/vX79Z+hz++eO0vH+9Z+hzpY96S/+3Ppf+v9/v6XP0f9L/S5/pX07D5/9P6zNf7z++T5069X++Dukz9ZulL/Unfdb67D59D3rvpe9+X/3/X9pXr5/+T/7/pPef+vS5Sv3onD6f7r68B6XP0PeK90m/1/vH9773Pf2f69D3vtd9UvdI59H/8/V1H/h3vL7uNf1/ut99vdSnP4v76/3F/VfX85rPfZ26X6pPbjMv6fN/vT9K/8N97v5/8v8P8j89/9/y/0Y/H6/3+Xm9P9X/Z99/9m+5Z3/WPeG6X++v/rv/S+f+o7vV5969vXv5V7pOfpfePf8X8f9S+9f9efdfuU+pT69vXh++Vdef/0uU6fU25uS6+ve/4Oly8f+7/89/mOn0+fP3/S58f3v/T++N6f9/Wvz+7rfS7fP9fmN+/rPZ/+fP07/T19ztTPrOed9/XvX95f3vNS967X+7u/P/l5/hNdp9fn/3K/O6er77mev3V9ue75f7rfff9Vfup69vlcOufP/f96v66ve/853U9fT/eD/fV/f/3nf6n/v8/+P++5637t63Xul+77t8+99y+v6fXv632v9//p6+uf/+eP0//07+n/3/r/vOfTz5M+X+rT56f7138+Wp/+r7P7/d77vf//dL3n9Ol/el3vJ/1d5/bp5/q51//1n7P7y+Ny/0qv073Tl1P79J6jv+d94r+l/ed0vOelHj3tn5/6mdLfS6/T93x6fekz9dXno+tanzvnuvhv6fPue+fvlveP83yP9Dnzdf9Un7vOf9Un6X/0H/mfr9XPaR8+7un7vP8779Xvve87Pe/v3nN97XOn7znn6edPz6fPPz3/fO9/ev/53P96X+rxeb8p/Y90X8r///Kefh7rM9fPfTp9fPrv6f9O90G9PtflpI89X8rn9PNTX+uX7l/PqX/X87nO/XPP0vXmNP9z/vXP6fX+7t8v9Xvuv39O+/7mPn6pPum++9L6df2u7z+n+/8v97tzuvqe6/lb15frnv+n+933X+Wnrmefz6Vz/tz/r/fr+rr3n9P99PV0P9hf//fXf/6X+v/77P/znvun+q/O7z/fU++v/zvX69wv3fdvn3vvX17T69/X+17v/9PX1z//zx+n/+nf0/+/9f95z6efJ32+1KfPT/ev//wX";
-
-function tskSummaryChip(recordId){const r=records.find(x=>String(x.id)===String(recordId));if(r&&r.tskSummary)return`<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`;if(r&&r.leadId){const match=Object.values(tskSummaries).find(s=>s.leadId&&s.leadId===r.leadId.replace(/\D/g,''));if(match){r.tskSummary=match;return`<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`;}}return`<span class="no-sum">—</span>`;}
+let ratings = {}, records = [], selectedFile = null;
 
 function initRatings() {
   ratings = {};
@@ -1579,8 +1580,24 @@ async function submitForm(){
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
   records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
-  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
-  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
+  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Syncing with server…','#1a5276');
+  
+  try {
+    // 1. Sync to centralized backend
+    await fetch(`${getApiBase()}/api/records`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record)
+    });
+
+    // 2. Sync to Google Sheets (legacy/backup)
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});
+    
+    showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');
+  }catch(err){
+    console.error('Save error:', err);
+    showToast('⚠️ Record saved locally but server sync failed.','#e05c2a');
+  }
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
@@ -2241,379 +2258,479 @@ function downloadReportCSV(){
   showToast(`✅ Agent Summary downloaded (${filtered.length} calls)`,'#27ae60');
 }
 
-async function sendReportEmail(){
-  const from=document.getElementById('rpt-from')?.value||'';
-  const to=document.getElementById('rpt-to')?.value||'';
-  const selectedAgents=getSelectedAgents('rpt-ms-wrap');
-  const evalFilt=document.getElementById('rpt-evaluator')?.value||'';
-  const rawFiltered=records.filter(r=>{
-    if(selectedAgents.length&&!selectedAgents.includes(r.agent))return false;
-    if(evalFilt&&r.evaluator!==evalFilt)return false;
-    if(from&&r.date<from)return false;
-    if(to&&r.date>to)return false;
+async function generateReportPDF(filtered) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF('l', 'mm', 'a3'); // A3 Landscape for more width
+
+  // Logo URL (Can also be Base64)
+  const logoUrl = 'https://truenorthvanlines.ca/wp-content/uploads/2023/06/TrueNorth-Van-Lines-Logo.png';
+
+  // --- Styles ---
+  const darkBg = [15, 23, 42];
+  const cardBg = [30, 41, 59];
+  const accentBlue = [37, 99, 235];
+  const textWhite = [248, 250, 252];
+  const textMuted = [148, 163, 184];
+
+  // Background
+  doc.setFillColor(...darkBg);
+  doc.rect(0, 0, 420, 297, 'F');
+
+  // Add Logo
+  try {
+    doc.addImage(logoUrl, 'PNG', 20, 15, 50, 15);
+  } catch (e) {
+    doc.setTextColor(...textWhite);
+    doc.setFontSize(22);
+    doc.text('TRUE NORTH VAN LINES', 20, 25);
+  }
+
+  doc.setTextColor(...textMuted);
+  doc.setFontSize(14);
+  doc.text(`TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`, 20, 42);
+
+  let yPos = 55;
+
+  const fmtDate = (dStr) => {
+    if (!dStr) return '';
+    const d = new Date(dStr);
+    if (isNaN(d.getTime())) return dStr;
+    return `${String(d.getDate()).padStart(2, '0')}-${d.toLocaleString('en-US', { month: 'short' })}-${String(d.getFullYear()).slice(-2)}`;
+  };
+
+  const getGrading = (pct) => {
+    if (pct >= 90) return 'Excellent';
+    if (pct >= 80) return 'Good';
+    if (pct >= 70) return 'Average';
+    return 'Poor';
+  };
+
+  // 1. Agent Summary Report (18 Columns)
+  doc.setFontSize(18);
+  doc.setTextColor(56, 189, 248);
+  doc.text('Agent Summary Report', 20, yPos);
+  yPos += 8;
+
+  const agentHeaders = [[
+    'S.No', 'Call Date', 'Audit Date', 'Agent Name', 'Lead ID', 
+    'Total Params', 'Appl. Params', 'Move Value Cat.', 'Move Value', 
+    'Lead Status', 'Cue Card', 'Conv. Prob.', 'Total Met', 'Total Not Met', 
+    'Needs Impr.', 'Defect Rate', 'Adher. %', 'Grading'
+  ]];
+
+  const agentBody = filtered.map((r, i) => {
+    const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
+    const defectRate = r.assessed > 0 ? (((r.nmCount + r.niCount) / r.assessed) * 100).toFixed(1) + '%' : '0%';
+    const grading = getGrading(r.pct);
+    
+    return [
+      i + 1,
+      fmtDate(r.datetime || r.date),
+      fmtDate(r.date),
+      r.agent,
+      r.leadId || '',
+      totalParams,
+      r.assessed,
+      r.moveValueCategory || '',
+      r.moveValueAmount || '',
+      r.leadStatus || '',
+      r.cueCardUsage || '',
+      r.conversionProbability || '',
+      r.metCount,
+      r.nmCount,
+      r.niCount,
+      defectRate,
+      r.pct + '%',
+      grading
+    ];
+  });
+
+  // Calculate Agent Summary Totals
+  const totCalls = filtered.length;
+  const totParams = filtered.reduce((acc, r) => acc + (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0), 0);
+  const totApp = filtered.reduce((acc, r) => acc + r.assessed, 0);
+  const totMet = filtered.reduce((acc, r) => acc + r.metCount, 0);
+  const totNm = filtered.reduce((acc, r) => acc + r.nmCount, 0);
+  const totNi = filtered.reduce((acc, r) => acc + r.niCount, 0);
+  const totAdh = totApp > 0 ? Math.round((totMet / totApp) * 100) : 0;
+  const totDef = totApp > 0 ? (((totNm + totNi) / totApp) * 100).toFixed(1) + '%' : '0%';
+  const totGrading = getGrading(totAdh);
+
+  agentBody.push([
+    'Total', '', '', `${totCalls} Calls`, '', 
+    totParams, totApp, '', '', '', 
+    '', '', totMet, totNm, totNi, 
+    totDef, totAdh + '%', totGrading
+  ]);
+
+  doc.autoTable({
+    startY: yPos,
+    head: agentHeaders,
+    body: agentBody,
+    theme: 'grid',
+    headStyles: { fillColor: accentBlue, textColor: 255, fontSize: 8 },
+    bodyStyles: { fillColor: cardBg, textColor: 230, fontSize: 7.5 },
+    alternateRowStyles: { fillColor: [35, 48, 68] },
+    margin: { left: 20, right: 20 },
+    didParseCell: function (data) {
+      if (data.section === 'body') {
+        const isTotalRow = data.row.index === agentBody.length - 1;
+        if (isTotalRow) {
+          data.cell.styles.fontStyle = 'bold';
+          data.cell.styles.fillColor = [45, 55, 72];
+        }
+        if (data.column.index === 15 || data.column.index === 17) { // Defect or Grading
+          const val = data.cell.raw;
+          if (val === 'Poor' || (typeof val === 'string' && parseFloat(val) > 30)) data.cell.styles.textColor = [248, 113, 113];
+          if (val === 'Excellent' || val === 'Good') data.cell.styles.textColor = [74, 222, 128];
+        }
+      }
+    }
+  });
+
+  yPos = doc.lastAutoTable.finalY + 20;
+
+  // 2. Team Summary Report (9 Columns)
+  doc.setFontSize(18);
+  doc.setTextColor(74, 222, 128);
+  doc.text('Team Summary Report', 20, yPos);
+  yPos += 8;
+
+  const agMap = {};
+  filtered.forEach(r => {
+    if (!agMap[r.agent]) agMap[r.agent] = { name: r.agent, calls: 0, met: 0, nm: 0, ni: 0, app: 0 };
+    const s = agMap[r.agent];
+    s.calls++;
+    s.met += r.metCount;
+    s.nm += r.nmCount;
+    s.ni += r.niCount;
+    s.app += r.assessed;
+  });
+
+  const teamBody = Object.values(agMap).map(s => {
+    const adherence = s.app > 0 ? Math.round((s.met / s.app) * 100) : 0;
+    const defect = s.app > 0 ? (((s.nm + s.ni) / s.app) * 100).toFixed(1) + '%' : '0%';
+    const grading = getGrading(adherence);
+    return [s.name, s.calls, s.app, s.met, s.nm, s.ni, defect, adherence + '%', grading];
+  });
+
+  // Add Grand Total row for Team Summary
+  const tCalls = Object.values(agMap).reduce((acc, s) => acc + s.calls, 0);
+  const tApp = Object.values(agMap).reduce((acc, s) => acc + s.app, 0);
+  const tMet = Object.values(agMap).reduce((acc, s) => acc + s.met, 0);
+  const tNm = Object.values(agMap).reduce((acc, s) => acc + s.nm, 0);
+  const tNi = Object.values(agMap).reduce((acc, s) => acc + s.ni, 0);
+  const tAdh = tApp > 0 ? Math.round((tMet / tApp) * 100) : 0;
+  const tDef = tApp > 0 ? (((tNm + tNi) / tApp) * 100).toFixed(1) + '%' : '0%';
+  
+  teamBody.push(['Grand Total', tCalls, tApp, tMet, tNm, tNi, tDef, tAdh + '%', getGrading(tAdh)]);
+
+  doc.autoTable({
+    startY: yPos,
+    head: [['Agent Name', 'Audited', 'App. Params', 'Met', 'Not Met', 'Needs Impr.', 'Defect Rate', 'Adherence %', 'Grading']],
+    body: teamBody,
+    theme: 'grid',
+    headStyles: { fillColor: [22, 163, 74], textColor: 255, fontSize: 9 },
+    bodyStyles: { fillColor: cardBg, textColor: 230, fontSize: 8.5 },
+    margin: { left: 20, right: 20 },
+    didParseCell: function(data) {
+      if (data.row.index === teamBody.length - 1) {
+        data.cell.styles.fontStyle = 'bold';
+        data.cell.styles.fillColor = [45, 55, 72];
+      }
+    }
+  });
+
+  yPos = doc.lastAutoTable.finalY + 20;
+
+  // 3. Areas Of Improvement
+  doc.setFontSize(18);
+  doc.setTextColor(248, 113, 113);
+  doc.text('Areas Of Improvement (Top 10)', 20, yPos);
+  yPos += 8;
+
+  const itemMap = {};
+  filtered.forEach(r => {
+    if (!r.breakdown) return;
+    r.breakdown.forEach(sec => {
+      sec.items.forEach(item => {
+        if (item.rating === 'met' || item.rating === 'skip') return;
+        if (!itemMap[item.label]) itemMap[item.label] = { label: item.label, section: sec.title, nm: 0, ni: 0, total: 0 };
+        if (item.rating === 'notmet') itemMap[item.label].nm++;
+        if (item.rating === 'ni') itemMap[item.label].ni++;
+        itemMap[item.label].total++;
+      });
+    });
+  });
+
+  const aoiBody = Object.values(itemMap)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10)
+    .map((x, i) => [i + 1, x.label, x.section, x.nm, x.ni, x.total]);
+
+  doc.autoTable({
+    startY: yPos,
+    head: [['Rank', 'Coaching Item', 'Section', 'Not Met', 'Needs Impr.', 'Count']],
+    body: aoiBody,
+    theme: 'grid',
+    headStyles: { fillColor: [185, 28, 28], textColor: 255, fontSize: 9 },
+    bodyStyles: { fillColor: cardBg, textColor: 230, fontSize: 8.5 },
+    margin: { left: 20, right: 20 }
+  });
+
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(10);
+    doc.setTextColor(...textMuted);
+    doc.text(`Page ${i} of ${pageCount} — Confidential TNVL Performance Report`, 210, 285, { align: 'center' });
+  }
+
+  return doc.output('datauristring').split(',')[1];
+}
+
+async function sendReportEmail() {
+  const from = document.getElementById('rpt-from')?.value || '';
+  const to = document.getElementById('rpt-to')?.value || '';
+  const selectedAgents = getSelectedAgents('rpt-ms-wrap');
+  const evalFilt = document.getElementById('rpt-evaluator')?.value || '';
+  const rawFiltered = records.filter(r => {
+    if (selectedAgents.length && !selectedAgents.includes(r.agent)) return false;
+    if (evalFilt && r.evaluator !== evalFilt) return false;
+    if (from && r.date < from) return false;
+    if (to && r.date > to) return false;
     return true;
   });
   const filtered = deduplicateReportRecords(rawFiltered);
-  
-  if(!filtered.length){showToast('⚠️ No records match the selected filters','#e05c2a');return;}
+
+  if (!filtered.length) { showToast('⚠️ No records match the selected filters', '#e05c2a'); return; }
 
   const btn = document.getElementById('btn-email-report');
   const originalText = btn.innerHTML;
-  btn.innerHTML = '⌛ Sending...';
+  btn.innerHTML = '<span class="spinner"></span> Generating & Sending...';
   btn.disabled = true;
 
   try {
-    const fmtDate=(dStr)=>{
-      if(!dStr) return '';
-      const d=new Date(dStr);
-      if(isNaN(d.getTime())) return dStr;
-      const day=String(d.getDate()).padStart(2,'0');
-      const month=d.toLocaleString('en-US',{month:'short'});
-      const year=String(d.getFullYear()).slice(-2);
-      return `${day}-${month}-${year}`;
+    const pdfBase64 = await generateReportPDF(filtered);
+    
+    // --- Helper for professional styling ---
+    const fmtDate = (dStr) => {
+      if (!dStr) return '';
+      const d = new Date(dStr);
+      if (isNaN(d.getTime())) return dStr;
+      return `${String(d.getDate()).padStart(2, '0')}-${d.toLocaleString('en-US', { month: 'short' })}-${String(d.getFullYear()).slice(-2)}`;
+    };
+    const getGradingStyle = (pct, grade) => {
+      if (grade === 'Excellent' || pct >= 90) return 'background-color: #dcfce7; color: #166534; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
+      if (grade === 'Good' || pct >= 80) return 'background-color: #f0fdf4; color: #166534; padding: 4px 8px; border-radius: 4px;';
+      if (grade === 'Average' || pct >= 70) return 'background-color: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px;';
+      return 'background-color: #fee2e2; color: #991b1b; font-weight: bold; padding: 4px 8px; border-radius: 4px;';
     };
 
-    const getGrading=(pct)=>{
-      if(pct>90) return 'Excellent';
-      if(pct>=80) return 'Good';
-      if(pct>=70) return 'Average';
-      return 'Poor';
-    };
-
-    const headers=[
-      'S. No','Call Date','Audit Date','Agent Name','Lead ID',
-      'Total Params',
-      'Total Appl.',
-      'Move Val Cat.','Move Value ($)','Lead Status','Cue Card',
-      'Conv. Prob.','Total Met','Total NM',
-      'Needs Impr.','Defect Rate',
-      'Adherence %','Grading','Rec. Link',
-      'Call Summ.','Feedback (+ve)'
-    ];
-
-    const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
-
-    const rows=filtered.map((r,i)=>{
-      const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((s,sec)=>s+sec.items.length,0);
-      const defectRate=r.assessed>0?(((r.nmCount+r.niCount)/r.assessed)*100).toFixed(1)+'%':'0%';
-      const grading=getGrading(r.pct);
-      const reportFeedback = r.reportFeedback || { summary: '—', positive: '—', ni: '—' };
-
-      return [
-        esc(i+1),
-        esc(fmtDate(r.datetime||r.date)),
-        esc(fmtDate(r.date)),
-        esc(r.agent),
-        esc(r.leadId||''),
-        esc(totalParams),
-        esc(r.assessed),
-        esc(r.moveValueCategory||''),
-        esc(r.moveValueAmount||''),
-        esc(r.leadStatus||''),
-        esc(r.cueCardUsage||''),
-        esc(r.conversionProbability||''),
-        esc(r.metCount),
-        esc(r.nmCount),
-        esc(r.niCount),
-        esc(defectRate),
-        esc(r.pct+'%'),
-        esc(grading),
-        esc(r.recordingLink||''),
-        esc(reportFeedback.summary?.substring(0, 50) + '...'),
-        esc(reportFeedback.positive?.substring(0, 50) + '...')
-      ].join(',');
-    });
-
-    const totParams=filtered.reduce((s,r)=>(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,s),0);
-    const totAssessed=filtered.reduce((s,r)=>s+r.assessed,0);
-    const totMoveVal=filtered.reduce((s,r)=>s+(parseFloat(r.moveValueAmount)||0),0);
-    const totMet=filtered.reduce((s,r)=>s+r.metCount,0);
-    const totNm=filtered.reduce((s,r)=>s+r.nmCount,0);
-    const totNi=filtered.reduce((s,r)=>s+r.niCount,0);
-    const totalAdherence=totAssessed>0?Math.round((totMet/totAssessed)*100):0;
-    const totDefectRate=totAssessed>0?(((totNm+totNi)/totAssessed)*100).toFixed(1)+'%':'0%';
-    const totGrading=getGrading(totalAdherence);
-
-    const totalRow=[
-      esc('Total'),esc(''),esc(''),esc(filtered.length+' calls'),esc(''),
-      esc(totParams),
-      esc(totAssessed),
-      esc(''),
-      esc(totMoveVal),
-      esc(''),esc(''),esc(''),
-      esc(totMet),esc(totNm),esc(totNi),
-      esc(totDefectRate),
-      esc(totalAdherence+'%'),
-      esc(totGrading),
-      esc(''),
-      esc(''),esc('')
-    ].join(',');
-
-    // ── Generate HTML Table for Email Body ──
-    const getStyles = (val, type) => {
-      if (type === 'adherence' || type === 'grading') {
-        const p = parseFloat(val);
-        if (p >= 90 || val === 'Excellent') return 'color: #27ae60; font-weight: bold;';
-        if (p >= 80 || val === 'Good') return 'color: #27ae60;';
-        if (p >= 70 || val === 'Average') return 'color: #f39c12;';
-        return 'color: #e74c3c;';
-      }
-      if (type === 'defect') {
-        const p = parseFloat(val);
-        if (p > 30) return 'color: #e74c3c;';
-        if (p > 15) return 'color: #f39c12;';
-        return 'color: #27ae60;';
-      }
-      return '';
-    };
-
-    let htmlTable = `
-      <h2 style="font-family: Arial, sans-serif; color: #1a5276;">Agent Summary Report</h2>
-      <table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 11px;">
-        <thead>
-          <tr style="background-color: #f2f2f2; text-align: left;">
-            ${headers.map(h => `<th style="border: 1px solid #ddd; padding: 8px;">${h}</th>`).join('')}
-          </tr>
-        </thead>
-        <tbody>
-    `;
+    // ─── Logo & Header ───
+    let html = `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; color: #1e293b; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+        <div style="background-color: #0f172a; padding: 30px; border-radius: 12px 12px 0 0; text-align: left;">
+          <img src="https://truenorthvanlines.ca/wp-content/uploads/2023/06/TrueNorth-Van-Lines-Logo.png" alt="True North Logo" style="height: 50px; margin-bottom: 10px;">
+          <h1 style="color: #f8fafc; margin: 0; font-size: 24px;">Performance Reports Bundle</h1>
+          <p style="color: #94a3b8; margin: 5px 0 0 0;">Generated on ${new Date().toLocaleDateString('en-CA')}</p>
+        </div>
+        
+        <div style="padding: 25px; background: #ffffff; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
+          
+          <!-- 1. Agent Summary Report (18 Columns) -->
+          <h2 style="color: #0284c7; border-bottom: 2px solid #e0f2fe; padding-bottom: 8px; margin-top: 0;">Agent Summary Report</h2>
+          <div style="overflow-x: auto;">
+            <table border="0" cellpadding="10" style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; min-width: 1000px;">
+              <thead>
+                <tr style="background-color: #2563eb; color: #ffffff;">
+                  <th style="border: 1px solid #1d4ed8;">S.No</th>
+                  <th style="border: 1px solid #1d4ed8;">Call Date</th>
+                  <th style="border: 1px solid #1d4ed8;">Audit Date</th>
+                  <th style="border: 1px solid #1d4ed8;">Agent</th>
+                  <th style="border: 1px solid #1d4ed8;">Lead ID</th>
+                  <th style="border: 1px solid #1d4ed8;">Total Params</th>
+                  <th style="border: 1px solid #1d4ed8;">Appl. Params</th>
+                  <th style="border: 1px solid #1d4ed8;">Move Cat.</th>
+                  <th style="border: 1px solid #1d4ed8;">Move Value</th>
+                  <th style="border: 1px solid #1d4ed8;">Lead Status</th>
+                  <th style="border: 1px solid #1d4ed8;">Cue Card</th>
+                  <th style="border: 1px solid #1d4ed8;">Conv. Prob.</th>
+                  <th style="border: 1px solid #1d4ed8;">Met</th>
+                  <th style="border: 1px solid #1d4ed8;">NM</th>
+                  <th style="border: 1px solid #1d4ed8;">NI</th>
+                  <th style="border: 1px solid #1d4ed8;">Defect %</th>
+                  <th style="border: 1px solid #1d4ed8;">Adher. %</th>
+                  <th style="border: 1px solid #1d4ed8;">Grading</th>
+                </tr>
+              </thead>
+              <tbody>`;
 
     filtered.forEach((r, i) => {
+      const g = r.pct >= 90 ? 'Excellent' : r.pct >= 80 ? 'Good' : r.pct >= 70 ? 'Average' : 'Poor';
       const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
-      const defectRateRaw = r.assessed > 0 ? ((r.nmCount + r.niCount) / r.assessed) * 100 : 0;
-      const defectRate = defectRateRaw.toFixed(1) + '%';
-      const grading = getGrading(r.pct);
-      const reportFeedback = r.reportFeedback || { summary: '—', positive: '—', ni: '—' };
-
-      htmlTable += `
-        <tr>
-          <td style="border: 1px solid #ddd; padding: 8px;">${i + 1}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${fmtDate(r.datetime || r.date)}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${fmtDate(r.date)}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.agent}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.leadId || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${totalParams}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.assessed}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.moveValueCategory || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.moveValueAmount || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.leadStatus || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.cueCardUsage || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.conversionProbability || ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.metCount}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.nmCount}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.niCount}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(defectRate, 'defect')}">${defectRate}</td>
-          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(r.pct + '%', 'adherence')}">${r.pct}%</td>
-          <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(grading, 'grading')}">${grading}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${r.recordingLink ? `<a href="${r.recordingLink}">Link</a>` : ''}</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${reportFeedback.summary?.substring(0, 30) || ''}...</td>
-          <td style="border: 1px solid #ddd; padding: 8px;">${reportFeedback.positive?.substring(0, 30) || ''}...</td>
-        </tr>
-      `;
+      const defectRate = r.assessed > 0 ? (((r.nmCount + r.niCount) / r.assessed) * 100).toFixed(1) + '%' : '0%';
+      const rowBg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+      
+      html += `
+        <tr style="background-color: ${rowBg}; color: #334155;">
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${i + 1}</td>
+          <td style="border: 1px solid #e2e8f0;">${fmtDate(r.datetime || r.date)}</td>
+          <td style="border: 1px solid #e2e8f0;">${fmtDate(r.date)}</td>
+          <td style="border: 1px solid #e2e8f0; font-weight: bold;">${r.agent}</td>
+          <td style="border: 1px solid #e2e8f0;">${r.leadId || ''}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${totalParams}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.assessed}</td>
+          <td style="border: 1px solid #e2e8f0;">${r.moveValueCategory || ''}</td>
+          <td style="border: 1px solid #e2e8f0;">${r.moveValueAmount || ''}</td>
+          <td style="border: 1px solid #e2e8f0;">${r.leadStatus || ''}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.cueCardUsage || ''}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.conversionProbability || ''}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center; color: #16a34a; font-weight: bold;">${r.metCount}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center; color: #dc2626; font-weight: bold;">${r.nmCount}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center; color: #ca8a04; font-weight: bold;">${r.niCount}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${defectRate}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 800; color: #1e3a8a;">${r.pct}%</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;"><span style="${getGradingStyle(r.pct, g)}">${g}</span></td>
+        </tr>`;
     });
 
-    // Add Total Row to HTML
-    htmlTable += `
-      <tr style="background-color: #f9f9f9; font-weight: bold;">
-        <td style="border: 1px solid #ddd; padding: 8px;">Total</td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${filtered.length} calls</td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totParams}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totAssessed}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totMoveVal}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;"></td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totMet}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totNm}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${totNi}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totDefectRate, 'defect')}">${totDefectRate}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totalAdherence + '%', 'adherence')}">${totalAdherence}%</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(totGrading, 'grading')}">${totGrading}</td>
-        <td colspan="3" style="border: 1px solid #ddd; padding: 8px;"></td>
-      </tr>
-      </tbody></table><br><br>
-    `;
-    
-    // ── Generate Team Summary HTML Table ──
-    const agMap={};
-    filtered.forEach(r=>{
-      if(!agMap[r.agent]) agMap[r.agent]={name:r.agent,calls:0,totalParams:0,appParams:0,met:0,nm:0,ni:0};
-      const s=agMap[r.agent];
-      s.calls++;
-      const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,0);
-      s.totalParams+=totalParams;
-      s.appParams+=r.assessed;
-      s.met+=r.metCount;
-      s.nm+=r.nmCount;
-      s.ni+=r.niCount;
-    });
+    // ─── Agent Summary Total Row ───
+    const totCalls = filtered.length;
+    const totParams = filtered.reduce((acc, r) => acc + (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0), 0);
+    const totApp = filtered.reduce((acc, r) => acc + r.assessed, 0);
+    const totMet = filtered.reduce((acc, r) => acc + r.metCount, 0);
+    const totNm = filtered.reduce((acc, r) => acc + r.nmCount, 0);
+    const totNi = filtered.reduce((acc, r) => acc + r.niCount, 0);
+    const totAdh = totApp > 0 ? Math.round((totMet / totApp) * 100) : 0;
+    const totDef = totApp > 0 ? (((totNm + totNi) / totApp) * 100).toFixed(1) + '%' : '0%';
+    const totGrading = totAdh >= 90 ? 'Excellent' : totAdh >= 80 ? 'Good' : totAdh >= 70 ? 'Average' : 'Poor';
 
-    htmlTable += `<h2 style="font-family: Arial, sans-serif; color: #1a5276;">Team Summary Report</h2>`;
-    htmlTable += `<table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 11px; margin-bottom: 30px;">
-      <thead>
-        <tr style="background-color: #f2f2f2; text-align: left;">
-          <th style="border: 1px solid #ddd; padding: 8px;">Agent Name</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Audited</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">App. Params</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Met</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Not Met</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Needs Impr.</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Defect Rate</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Adherence %</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Grading</th>
-        </tr>
-      </thead>
-      <tbody>`;
-
-    Object.values(agMap).sort((a,b)=>a.name.localeCompare(b.name)).forEach(s=>{
-      const defectRate=s.appParams>0?(((s.nm+s.ni)/s.appParams)*100).toFixed(1)+'%':'0%';
-      const adherence=s.appParams>0?Math.round((s.met/s.appParams)*100):0;
-      const grading=getGrading(adherence);
-      htmlTable += `<tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.name}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.calls}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.appParams}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.met}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.nm}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${s.ni}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(defectRate, 'defect')}">${defectRate}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(adherence + '%', 'adherence')}">${adherence}%</td>
-        <td style="border: 1px solid #ddd; padding: 8px; ${getStyles(grading, 'grading')}">${grading}</td>
+    html += `
+      <tr style="background-color: #cbd5e1; color: #0f172a; font-weight: bold;">
+        <td colspan="5" style="border: 1px solid #94a3b8; text-align: center;">GRAND TOTAL (${totCalls} Calls)</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totParams}</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totApp}</td>
+        <td colspan="5" style="border: 1px solid #94a3b8;"></td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totMet}</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totNm}</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totNi}</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;">${totDef}</td>
+        <td style="border: 1px solid #94a3b8; text-align: center; color: #1e3a8a;">${totAdh}%</td>
+        <td style="border: 1px solid #94a3b8; text-align: center;"><span style="${getGradingStyle(totAdh, totGrading)}">${totGrading}</span></td>
       </tr>`;
-    });
-    htmlTable += `</tbody></table><br><br>`;
 
-    // ── Generate Areas Of Improvement HTML Table ──
-    const itemMap={};
-    filtered.forEach(r=>{
-      if(!r.breakdown)return;
-      r.breakdown.forEach(sec=>{
-        sec.items.forEach(item=>{
-          if(item.rating==='met')return;
-          const k=item.label;
-          if(!itemMap[k])itemMap[k]={label:k,section:sec.title,notmet:0,ni:0,total:0};
-          if(item.rating==='notmet')itemMap[k].notmet++;
-          if(item.rating==='ni')itemMap[k].ni++;
-          itemMap[k].total++;
+    html += `</tbody></table></div><br><br>`;
+
+    // ─── 2. Team Summary Report ───
+    html += `
+      <h2 style="color: #16a34a; border-bottom: 2px solid #dcfce7; padding-bottom: 8px;">Team Summary Report</h2>
+      <table border="0" cellpadding="10" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+        <thead>
+          <tr style="background-color: #16a34a; color: #ffffff;">
+            <th style="border: 1px solid #15803d;">Agent Name</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Audited</th>
+            <th style="border: 1px solid #15803d; text-align: center;">App. Params</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Met</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Not Met</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Needs Impr.</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Defect %</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Adherence %</th>
+            <th style="border: 1px solid #15803d; text-align: center;">Grading</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    const agMap = {};
+    filtered.forEach(r => {
+      if (!agMap[r.agent]) agMap[r.agent] = { name: r.agent, calls: 0, met: 0, nm: 0, ni: 0, app: 0 };
+      const s = agMap[r.agent]; s.calls++; s.met += r.metCount; s.nm += r.nmCount; s.ni += r.niCount; s.app += r.assessed;
+    });
+
+    Object.values(agMap).forEach((s, i) => {
+      const adh = s.app > 0 ? Math.round((s.met / s.app) * 100) : 0;
+      const def = s.app > 0 ? (((s.nm + s.ni) / s.app) * 100).toFixed(1) + '%' : '0%';
+      const grade = adh >= 90 ? 'Excellent' : adh >= 80 ? 'Good' : adh >= 70 ? 'Average' : 'Poor';
+      const gS = getGradingStyle(adh, grade);
+      const rowBg = i % 2 === 0 ? '#ffffff' : '#f0fdf4';
+      html += `
+        <tr style="background-color: ${rowBg};">
+          <td style="border: 1px solid #dcfce7; font-weight: bold;">${s.name}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center;">${s.calls}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center;">${s.app}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center; color: #16a34a;">${s.met}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center; color: #dc2626;">${s.nm}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center; color: #ca8a04;">${s.ni}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center;">${def}</td>
+          <td style="border: 1px solid #dcfce7; text-align: center; font-weight: bold;">${adh}%</td>
+          <td style="border: 1px solid #dcfce7; text-align: center;"><span style="${gS}">${grade}</span></td>
+        </tr>`;
+    });
+
+    const tmCalls = Object.values(agMap).reduce((acc, s) => acc + s.calls, 0);
+    const tmApp = Object.values(agMap).reduce((acc, s) => acc + s.app, 0);
+    const tmMet = Object.values(agMap).reduce((acc, s) => acc + s.met, 0);
+    const tmNm = Object.values(agMap).reduce((acc, s) => acc + s.nm, 0);
+    const tmNi = Object.values(agMap).reduce((acc, s) => acc + s.ni, 0);
+    const tmAdh = tmApp > 0 ? Math.round((tmMet / tmApp) * 100) : 0;
+    const tmDef = tmApp > 0 ? (((tmNm + tmNi) / tmApp) * 100).toFixed(1) + '%' : '0%';
+    const tmGrade = tmAdh >= 90 ? 'Excellent' : tmAdh >= 80 ? 'Good' : tmAdh >= 70 ? 'Average' : 'Poor';
+
+    html += `
+      <tr style="background-color: #bbf7d0; color: #14532d; font-weight: bold;">
+        <td style="border: 1px solid #86efac;">GRAND TOTAL</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmCalls}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmApp}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmMet}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmNm}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmNi}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmDef}</td>
+        <td style="border: 1px solid #86efac; text-align: center;">${tmAdh}%</td>
+        <td style="border: 1px solid #86efac; text-align: center;"><span style="${getGradingStyle(tmAdh, tmGrade)}">${tmGrade}</span></td>
+      </tr>`;
+
+    html += `</tbody></table><br><br>`;
+
+    // ─── 3. Areas Of Improvement (Top 10) ───
+    html += `<h2 style="color: #dc2626; border-bottom: 2px solid #fee2e2; padding-bottom: 8px;">Top 10 Coaching Needs</h2><table border="0" cellpadding="10" style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;"><thead><tr style="background-color: #dc2626; color: #ffffff;"><th>Rank</th><th>Coaching Item</th><th>Section</th><th style="text-align:center;">Not Met</th><th style="text-align:center;">Needs Impr.</th><th style="text-align:center;">Total</th></tr></thead><tbody>`;
+    
+    const itemMap = {};
+    filtered.forEach(r => {
+      if (!r.breakdown) return;
+      r.breakdown.forEach(sec => {
+        sec.items.forEach(item => {
+          if (item.rating === 'met' || item.rating === 'skip') return;
+          if (!itemMap[item.label]) itemMap[item.label] = { label: item.label, section: sec.title, nm: 0, ni: 0, total: 0 };
+          if (item.rating === 'notmet') itemMap[item.label].nm++;
+          if (item.rating === 'ni') itemMap[item.label].ni++;
+          itemMap[item.label].total++;
         });
       });
     });
-    const sortedAOI=Object.values(itemMap).filter(x=>x.total>0).sort((a,b)=>b.total-a.total).slice(0,10);
 
-    htmlTable += `<h2 style="font-family: Arial, sans-serif; color: #ed8936;">Areas Of Improvement (Top 10 Coaching Needs)</h2>`;
-    htmlTable += `<table border="1" cellpadding="8" cellspacing="0" style="font-family: Arial, sans-serif; border-collapse: collapse; width: 100%; font-size: 11px;">
-      <thead>
-        <tr style="background-color: #f2f2f2; text-align: left;">
-          <th style="border: 1px solid #ddd; padding: 8px;">Rank</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Coaching Item</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Section</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Not Met</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Needs Impr.</th>
-          <th style="border: 1px solid #ddd; padding: 8px;">Count</th>
-        </tr>
-      </thead>
-      <tbody>`;
-    
-    sortedAOI.forEach((item,idx)=>{
-      htmlTable += `<tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${idx+1}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${item.label}</td>
-        <td style="border: 1px solid #ddd; padding: 8px;">${item.section}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; color: #e74c3c; font-weight: bold;">${item.notmet}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; color: #f39c12;">${item.ni}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${item.total}</td>
-      </tr>`;
+    Object.values(itemMap).sort((a,b) => b.total - a.total).slice(0, 10).forEach((x, i) => {
+      const rowBg = i % 2 === 0 ? '#ffffff' : '#fef2f2';
+      html += `<tr style="background-color: ${rowBg};"><td style="border: 1px solid #fee2e2; text-align: center; width: 40px;">${i + 1}</td><td style="border: 1px solid #fee2e2; font-weight: 500;">${x.label}</td><td style="border: 1px solid #fee2e2; color: #64748b;">${x.section}</td><td style="border: 1px solid #fee2e2; text-align: center; color: #dc2626;">${x.nm}</td><td style="border: 1px solid #fee2e2; text-align: center; color: #ca8a04;">${x.ni}</td><td style="border: 1px solid #fee2e2; text-align: center; font-weight: bold;">${x.total}</td></tr>`;
     });
-    htmlTable += `</tbody></table>`;
+    html += `</tbody></table><br><p style="color: #64748b; font-size: 12px; font-style: italic;">This is a confidential automated report from True North Van Lines Call Monitoring System.</p></div></div>`;
 
     const apiBase = getApiBase();
-    
-    // ── Generate Report PDF ──
-    btn.innerHTML = '⌛ Generating PDF...';
-    const { jsPDF } = window.jspdf;
-    
-    // Create hidden report container for PDF capture
-    const pdfRoot = document.createElement('div');
-    pdfRoot.style.position = 'fixed';
-    pdfRoot.style.left = '-10000px';
-    pdfRoot.style.width = '1100px'; // Wider for 21 columns
-    pdfRoot.style.background = '#1a1d21'; 
-    pdfRoot.style.color = '#ffffff';
-    pdfRoot.style.padding = '40px';
-    pdfRoot.style.fontFamily = 'Arial, sans-serif';
-    
-    const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' });
-    pdfRoot.innerHTML = `
-      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:30px; border-bottom: 2px solid #2d3748; padding-bottom: 20px;">
-        <img src="${TNVL_LOGO}" style="height: 60px;">
-        <div style="text-align: right;">
-          <h1 style="margin:0; font-size:22px; color:#4a90e2;">TNVL Performance Reports Bundle</h1>
-          <p style="margin:5px 0; font-size:14px; color:#a0aec0;">Generated on: ${dateStr}</p>
-        </div>
-      </div>
-      
-      <div style="background: rgba(74, 144, 226, 0.1); border-left: 4px solid #4a90e2; padding: 15px; margin-bottom: 30px;">
-        <h2 style="margin:0; font-size:18px; color:#4a90e2;">Agent Performance Summary</h2>
-        <p style="margin:5px 0 0; font-size:12px; color:#a0aec0;">Detailed call-by-call analysis of filtered performance data.</p>
-      </div>
-      ${htmlTable.split('<br><br>')[0].replace(/background-color:\s*#f2f2f2/g, 'background-color:#1a5276;color:white').replace(/border:\s*1px\s*solid\s*#ddd/g, 'border:1px solid #2d3748').replace(/color:\s*black/g, 'color:white')}
-      
-      <div style="background: rgba(74, 144, 226, 0.1); border-left: 4px solid #4a90e2; padding: 15px; margin: 30px 0 15px;">
-        <h2 style="margin:0; font-size:18px; color:#4a90e2;">Team Summary Report</h2>
-      </div>
-      ${htmlTable.split('<br><br>')[1].replace(/background-color:\s*#f2f2f2/g, 'background-color:#1a5276;color:white').replace(/border:\s*1px\s*solid\s*#ddd/g, 'border:1px solid #2d3748').replace(/color:\s*black/g, 'color:white')}
-
-      <div style="background: rgba(243, 156, 18, 0.1); border-left: 4px solid #ed8936; padding: 15px; margin: 30px 0 15px;">
-        <h2 style="margin:0; font-size:18px; color:#ed8936;">Areas Of Improvement</h2>
-        <p style="margin:5px 0 0; font-size:12px; color:#a0aec0;">Top 10 Coaching Needs ranking based on frequency of "Not Met" ratings.</p>
-      </div>
-      ${htmlTable.split('Top 10 Coaching Needs)</h2>')[1].replace(/background-color:\s*#f2f2f2/g, 'background-color:rgba(237, 137, 54, 0.2);color:white').replace(/border:\s*1px\s*solid\s*#ddd/g, 'border:1px solid #2d3748')}
-      
-      <div style="margin-top: 50px; text-align: center; color: #4a5568; font-size: 11px; border-top: 1px solid #2d3748; padding-top: 20px;">
-        © ${new Date().getFullYear()} True North Van Lines • Performance Monitoring System • Confidential Report
-      </div>
-    `;
-    
-    document.body.appendChild(pdfRoot);
-    
-    const canvas = await html2canvas(pdfRoot, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#1a1d21'
-    });
-    
-    document.body.removeChild(pdfRoot);
-    
-    const imgData = canvas.toDataURL('image/png');
-    const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgProps = pdf.getImageProperties(imgData);
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-    
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    const pdfBase64 = pdf.output('datauristring').split(',')[1];
-
-    btn.innerHTML = '📧 Sending PDF...';
     const response = await fetch(`${apiBase}/api/send-report-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pdfBase64: pdfBase64,
-        fileName: `Performance_Report_${dateStr}.pdf`,
-        htmlContent: htmlTable // Keep HTML for the email body
+        fileName: `TNVL_Performance_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+        htmlContent: html
       })
     });
 
     if (!response.ok) {
       const err = await response.json();
-      throw new Error(err.details || err.error || 'Failed to send email');
+      throw new Error(err.details || err.error || 'Failed to send report');
     }
 
-    showToast(`✅ PDF Report emailed successfully!`,'#27ae60');
+    showToast('✅ PDF Report emailed successfully!', '#27ae60');
   } catch (error) {
     showToast(`❌ ${error.message}`, '#e74c3c');
   } finally {
@@ -2884,12 +3001,59 @@ function saveTskSummaries(){try{const ids=Object.keys(tskSummaries);localStorage
 function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_tsum_ids')||'[]');ids.forEach(id=>{if(tskSummaries[id])return;try{const raw=localStorage.getItem('tnvl_tsum_'+id);if(raw){tskSummaries[id]=JSON.parse(raw);}}catch(e){}});}catch(e){}try{const legacy=localStorage.getItem('tnvl_tsummaries');if(legacy){const parsed=JSON.parse(legacy);Object.entries(parsed).forEach(([id,s])=>{if(!tskSummaries[id])tskSummaries[id]=s;});}}catch(e){}}
 window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
 
+// ── Data Sync Logic ──
+async function syncRecordsWithServer(showToastOnSuccess = true) {
+  const btn = document.getElementById('btn-sync-data');
+  const icon = document.getElementById('sync-icon');
+  if (btn) btn.disabled = true;
+  if (icon) icon.style.animation = 'spin 1s linear infinite';
+
+  try {
+    const response = await fetch(`${getApiBase()}/api/records`);
+    if (!response.ok) throw new Error('Failed to fetch from server');
+    
+    const serverRecords = await response.json();
+    
+    // Merge logic: combine local and server, prioritize server, avoid duplicates by ID
+    const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+    const recordMap = new Map();
+    
+    // Process local first
+    localRecords.forEach(r => recordMap.set(String(r.id), r));
+    // Process server second (overwrites duplicates with server version, adds new ones)
+    serverRecords.forEach(r => recordMap.set(String(r.id), r));
+    
+    records = Array.from(recordMap.values()).sort((a, b) => b.id - a.id);
+    localStorage.setItem('tnvl_calls', JSON.stringify(records));
+    
+    // If there were local records not on server, upload them
+    for (const r of localRecords) {
+      if (!serverRecords.some(sr => String(sr.id) === String(r.id))) {
+        await fetch(`${getApiBase()}/api/records`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(r)
+        });
+      }
+    }
+    
+    if (showToastOnSuccess) showToast(`✅ Synced! Found ${records.length} total records.`, '#3498db');
+    renderDashboard();
+  } catch (err) {
+    console.error('Sync error:', err);
+    if (showToastOnSuccess) showToast('⚠️ Sync failed, using local data.', '#e67e22');
+  } finally {
+    if (btn) btn.disabled = false;
+    if (icon) icon.style.animation = 'none';
+  }
+}
+
 // ═══ INIT ═══
 (function init(){
   try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
   
-  // Data is loaded from localStorage. 
-  // No fake data generated here.
+  // Fetch latest shared records from server
+  syncRecordsWithServer(false);
   
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
