@@ -1603,14 +1603,10 @@ async function submitForm(){
 
 // ═══ DEDUPLICATION FOR REPORTS ═══
 function deduplicateReportRecords(recs) {
+  // The user wants ALL analyzed calls to be displayed (e.g. Total 45).
+  // Deduplication by Lead ID or Evaluator is removed to show every individual record.
   if (!recs || !recs.length) return [];
-  const seen = new Set();
-  return recs.filter(r => {
-    const key = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  return recs; 
 }
 
 // ═══ DASHBOARD ═══
