@@ -14,7 +14,20 @@ if (!fs.existsSync(DATA_FILE)) {
   fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
 }
 
-// ── Persistence Endpoints ──
+// ── Middleware ──
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.static(__dirname));
+
+// Request Logger
+app.use((req, res, next) => {
+  if (req.url !== '/api/health') {
+    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url} - IP: ${req.ip}`);
+  }
+  next();
+});
+
+// ── Persistence Endpoints (Moved after middleware) ──
 app.get('/api/records', (req, res) => {
   try {
     const data = fs.readFileSync(DATA_FILE, 'utf8');
@@ -53,18 +66,6 @@ process.on('uncaughtException', (err) => {
 });
 process.on('unhandledRejection', (reason) => {
   console.error('⚠️  Unhandled Rejection (server kept alive):', reason?.message || reason);
-});
-
-app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-
-// Serve static files
-app.use(express.static(__dirname));
-
-// Request Logger
-app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url} - IP: ${req.ip}`);
-  next();
 });
 
 app.get('/', (req, res) => {
