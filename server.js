@@ -851,17 +851,17 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 
 // ── Email Route (Zoho SMTP) ──────────────────────────────────────────────────
 app.post('/api/send-report-email', async (req, res) => {
-  const { csvContent, fileName, htmlContent } = req.body;
-  
+  const { pdfBase64, csvContent, fileName, htmlContent } = req.body;
+
   console.log('📧 Email request received:', {
+    hasPdf: !!pdfBase64,
     hasCsv: !!csvContent,
-    csvLength: csvContent ? csvContent.length : 0,
     hasHtml: !!htmlContent,
-    fileName: fileName || 'AgentSummary.csv'
+    fileName: fileName
   });
 
-  if (!csvContent) {
-    return res.status(400).json({ error: 'CSV content is required' });
+  if (!pdfBase64 && !csvContent) {
+    return res.status(400).json({ error: 'PDF or CSV content is required' });
   }
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
@@ -873,16 +873,27 @@ app.post('/api/send-report-email', async (req, res) => {
 
   try {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
+      from: process.env.EMAIL_USER,
       to: recipients,
       subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
-      html: htmlContent || `<p>Please find the attached report.</p>`,
-      attachments: [{
-        filename: fileName || 'AgentSummary.csv',
-        content: csvContent || '',
-        contentType: 'text/csv'
-      }]
+      html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
+      attachments: []
     };
+
+    if (pdfBase64) {
+      mailOptions.attachments.push({
+        filename: fileName || 'PerformanceReport.pdf',
+        content: pdfBase64,
+        encoding: 'base64',
+        contentType: 'application/pdf'
+      });
+    } else if (csvContent) {
+      mailOptions.attachments.push({
+        filename: fileName || 'AgentSummary.csv',
+        content: csvContent,
+        contentType: 'text/csv'
+      });
+    }
 
     console.log(`📧 Sending email via SMTP to: ${recipients}...`);
     const info = await transporter.sendMail(mailOptions);
@@ -914,7 +925,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
-  console.log(`\n   Accuracy v7 — what changed:`);
+  console.log(`\n   Accuracy v8 — what changed:`);
   console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
   console.log(`   • DISPUTE MODE: when true, soft skills rated with strict NI criteria (target 1-3 met, 6-9 ni)`);
   console.log(`   • Fixes Lead 2123/2321 Cheryl call: AI was 87%, manual was 44%`);
