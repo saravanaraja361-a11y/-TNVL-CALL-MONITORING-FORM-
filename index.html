@@ -756,7 +756,10 @@
 <div id="panel-dashboard" class="panel">
   <div class="dash-wrap">
     <div class="dash-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <span>📊 Agent Scoreboard</span>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span>📊 Agent Scoreboard</span>
+        <span id="sync-status-msg" style="font-size:11px; background:rgba(255,b255,255,0.1); padding:4px 10px; border-radius:12px; color:#fff; font-weight:400; border:1px solid rgba(255,255,255,0.15); display:none;">Initializing...</span>
+      </div>
       <button class="btn-filter" id="btn-sync-data" onclick="syncRecordsWithServer()" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
         <span id="sync-icon">🔄</span> Sync Data
       </button>
@@ -2710,25 +2713,25 @@ async function sendReportEmail() {
     });
     html += `</tbody></table><br><p style="color: #64748b; font-size: 12px; font-style: italic;">This is a confidential automated report from True North Van Lines Call Monitoring System.</p></div></div>`;
 
-    const apiBase = getApiBase();
-    const response = await fetch(`${apiBase}/api/send-report-email`, {
+    showToast('📧 Sending PDF report to server...', '#3498db');
+    const response = await fetch(`${getApiBase()}/api/send-report-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pdfBase64: pdfBase64,
-        fileName: `TNVL_Performance_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
+        fileName: `Performance_Report_${new Date().toLocaleDateString('en-CA')}.pdf`,
         htmlContent: html
       })
     });
 
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.details || err.error || 'Failed to send report');
-    }
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Server failed to send email');
 
-    showToast('✅ PDF Report emailed successfully!', '#27ae60');
+    showToast('✅ Email sent successfully!', '#27ae60');
   } catch (error) {
-    showToast(`❌ ${error.message}`, '#e74c3c');
+    console.error('Email error:', error);
+    showToast(`❌ Email Failed: ${error.message}`, '#e74c3c');
+    alert(`Email Error: ${error.message}\n\nPlease check the server console for details.`);
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -3001,28 +3004,37 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
 async function syncRecordsWithServer(showToastOnSuccess = true) {
   const btn = document.getElementById('btn-sync-data');
   const icon = document.getElementById('sync-icon');
+  const statusEl = document.getElementById('sync-status-msg');
+  
   if (btn) btn.disabled = true;
-  if (icon) icon.style.animation = 'spin 1s linear infinite';
+  if (icon) icon.style.animation = 'spin 1.5s linear infinite';
+  if (statusEl) {
+    statusEl.style.display = 'inline-block';
+    statusEl.innerHTML = '● Syncing...';
+    statusEl.style.borderColor = 'rgba(255,255,255,0.3)';
+  }
 
   try {
+    // 1. Connectivity Check
+    const health = await fetch(`${getApiBase()}/api/health`).then(r => r.json()).catch(() => null);
+    if (!health) throw new Error('Server unreachable');
+
+    // 2. Download from Server
     const response = await fetch(`${getApiBase()}/api/records`);
     if (!response.ok) throw new Error('Failed to fetch from server');
     
     const serverRecords = await response.json();
-    
-    // Merge logic: combine local and server, prioritize server, avoid duplicates by ID
     const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
     const recordMap = new Map();
     
-    // Process local first
-    localRecords.forEach(r => recordMap.set(String(r.id), r));
-    // Process server second (overwrites duplicates with server version, adds new ones)
-    serverRecords.forEach(r => recordMap.set(String(r.id), r));
+    // Merge: Local then Server (Source of Truth)
+    localRecords.forEach(r => { if(r.id) recordMap.set(String(r.id), r); });
+    serverRecords.forEach(r => { if(r.id) recordMap.set(String(r.id), r); });
     
     records = Array.from(recordMap.values()).sort((a, b) => b.id - a.id);
     localStorage.setItem('tnvl_calls', JSON.stringify(records));
     
-    // If there were local records not on server, upload them in bulk
+    // 3. Upload new local records in bulk
     const unsynced = localRecords.filter(r => !serverRecords.some(sr => String(sr.id) === String(r.id)));
     if (unsynced.length > 0) {
       await fetch(`${getApiBase()}/api/records/bulk`, {
@@ -3030,12 +3042,23 @@ async function syncRecordsWithServer(showToastOnSuccess = true) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(unsynced)
       });
+      console.log(`Uploaded ${unsynced.length} records to server.`);
     }
     
-    if (showToastOnSuccess) showToast(`✅ Synced! Found ${records.length} total records.`, '#3498db');
+    const count = records.length;
+    if (statusEl) {
+      statusEl.innerHTML = `✅ Synced (Total: ${count})`;
+      statusEl.style.borderColor = 'rgba(46,204,113,0.5)';
+      statusEl.style.color = '#fff';
+    }
+    if (showToastOnSuccess) showToast(`✅ Synced! Found ${count} total records.`, '#3498db');
     renderDashboard();
   } catch (err) {
     console.error('Sync error:', err);
+    if (statusEl) {
+      statusEl.innerHTML = '⚠️ Offline / Sync Error';
+      statusEl.style.borderColor = 'rgba(231,76,60,0.5)';
+    }
     if (showToastOnSuccess) showToast('⚠️ Sync failed, using local data.', '#e67e22');
   } finally {
     if (btn) btn.disabled = false;
@@ -3047,8 +3070,14 @@ async function syncRecordsWithServer(showToastOnSuccess = true) {
 (function init(){
   try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
   
-  // Fetch latest shared records from server
+  // Initial sync on load
   syncRecordsWithServer(false);
+
+  // Auto-sync every 2 minutes
+  setInterval(() => {
+    console.log('--- Background Auto-Sync ---');
+    syncRecordsWithServer(false);
+  }, 120000);
   
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
