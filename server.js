@@ -60,6 +60,36 @@ app.post('/api/records', (req, res) => {
   }
 });
 
+app.post('/api/records/bulk', (req, res) => {
+  const newRecords = req.body;
+  if (!Array.isArray(newRecords)) {
+    return res.status(400).json({ error: 'Invalid data format: expected array' });
+  }
+
+  try {
+    const data = fs.readFileSync(DATA_FILE, 'utf8');
+    let records = JSON.parse(data);
+    
+    let addedCount = 0;
+    newRecords.forEach(nr => {
+      if (!records.some(r => String(r.id) === String(nr.id))) {
+        records.push(nr);
+        addedCount++;
+      }
+    });
+
+    if (addedCount > 0) {
+      fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2));
+      console.log(`[${new Date().toLocaleTimeString()}] ✅ Bulk Sync: Added ${addedCount} new records.`);
+    }
+    
+    res.json({ success: true, added: addedCount });
+  } catch (err) {
+    console.error('Bulk save error:', err);
+    res.status(500).json({ error: 'Failed to save bulk records' });
+  }
+});
+
 // ── Restore global error handlers ─────
 process.on('uncaughtException', (err) => {
   console.error('⚠️  Uncaught Exception (server kept alive):', err.message);
