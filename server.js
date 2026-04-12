@@ -4,153 +4,32 @@ const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 
 const app = express();
-const DATA_FILE = path.join(__dirname, 'records.json');
 
-// Initialize records file if missing
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify([], null, 2));
-}
+// ── Restore global error handlers ─────
+process.on('uncaughtException', (err) => {
+  console.error('⚠️  Uncaught Exception (server kept alive):', err.message);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('⚠️  Unhandled Rejection (server kept alive):', reason?.message || reason);
+});
 
-// ── Middleware ──
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+
+// Serve static files
 app.use(express.static(__dirname));
 
 // Request Logger
 app.use((req, res, next) => {
-  if (req.url !== '/api/health') {
-    console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url} - IP: ${req.ip}`);
-  }
+  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url} - IP: ${req.ip}`);
   next();
 });
 
-// ── Health Check ──
-app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
-
-// ── Persistence Endpoints (Moved after middleware) ──
-app.get('/api/records', (req, res) => {
-  try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    res.json(JSON.parse(data));
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to read records' });
-  }
-});
-
-app.post('/api/records', (req, res) => {
-  const newRecord = req.body;
-  if (!newRecord || !newRecord.id) {
-    return res.status(400).json({ error: 'Invalid record data' });
-  }
-
-  try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    const records = JSON.parse(data);
-    
-    // Check if record already exists (to prevent duplicates)
-    if (records.some(r => String(r.id) === String(newRecord.id))) {
-      return res.json({ success: true, message: 'Record already synced' });
-    }
-
-    records.push(newRecord);
-    fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2));
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to save record' });
-  }
-});
-
-app.post('/api/records/bulk', (req, res) => {
-  const newRecords = req.body;
-  const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
-  if (!Array.isArray(newRecords)) {
-    return res.status(400).json({ error: 'Invalid data format: expected array' });
-  }
-
-  try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    let records = JSON.parse(data);
-    
-    let addedCount = 0;
-    newRecords.forEach(nr => {
-      if (!records.some(r => String(r.id) === String(nr.id))) {
-        records.push(nr);
-        addedCount++;
-      }
-    });
-
-    if (addedCount > 0) {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2));
-      console.log(`[${new Date().toLocaleTimeString()}] ✅ Bulk Sync from ${clientIp}: Added ${addedCount} new records.`);
-    }
-    
-    res.json({ success: true, added: addedCount });
-  } catch (err) {
-    console.error('Bulk save error:', err);
-    res.status(500).json({ error: 'Failed to save bulk records' });
-  }
-});
-
-// ── Reuse SMTP Transporter ─────
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false, 
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false 
-  }
-});
-
-// ── Email Route (Zoho SMTP - PDF Support) ───────────────────────────────────
-app.post('/api/send-report-email', async (req, res) => {
-  const { pdfBase64, fileName, htmlContent } = req.body;
-  const clientIp = req.ip || 'unknown';
-
-  console.log(`[${new Date().toLocaleTimeString()}] 📧 Email request from ${clientIp}:`, {
-    pdfSize: (pdfBase64?.length || 0) / 1024 / 1024 + ' MB',
-    fileName: fileName || 'no-filename'
-  });
-
-  if (!pdfBase64) return res.status(400).json({ error: 'PDF content is required' });
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('❌ Email failed: Missing credentials in .env');
-    return res.status(500).json({ error: 'Server email configuration missing' });
-  }
-
-  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
-
-  try {
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
-      to: recipients,
-      subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
-      html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
-      attachments: [
-        {
-          filename: fileName || 'Performance_Report.pdf',
-          content: Buffer.from(pdfBase64, 'base64'),
-          contentType: 'application/pdf'
-        }
-      ]
-    };
-
-    console.log(`📧 Sending PDF to ${recipients}...`);
-    // Set a 30s timeout for the SMTP send operation
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', info.messageId);
-    res.json({ success: true, messageId: info.messageId });
-
-  } catch (error) {
-    console.error('❌ SMTP Error:', error);
-    res.status(500).json({ error: error.message || 'Failed to send email' });
-  }
+app.get('/', (req, res) => {
+  console.log('--- DASHBOARD SERVED ---');
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 const GROQ_KEYS = [
