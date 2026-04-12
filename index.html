@@ -755,15 +755,7 @@
 <!-- ═══════════ DASHBOARD TAB ═══════════ -->
 <div id="panel-dashboard" class="panel">
   <div class="dash-wrap">
-    <div class="dash-title" style="display:flex; justify-content:space-between; align-items:center;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span>📊 Agent Scoreboard</span>
-        <span id="sync-status-msg" style="font-size:11px; background:rgba(255,b255,255,0.1); padding:4px 10px; border-radius:12px; color:#fff; font-weight:400; border:1px solid rgba(255,255,255,0.15); display:none;">Initializing...</span>
-      </div>
-      <button class="btn-filter" id="btn-sync-data" onclick="syncRecordsWithServer()" style="background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:6px; transition:all 0.2s;">
-        <span id="sync-icon">🔄</span> Sync Data
-      </button>
-    </div>
+    <div class="dash-title">📊 Agent Scoreboard</div>
     <input type="hidden" id="tsk-apikey">
     <div style="display:none" id="tsk-files"><div id="tsk-file-grid"></div></div>
 
@@ -1583,33 +1575,21 @@ async function submitForm(){
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
   records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
-  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Syncing with server…','#1a5276');
-  
-  try {
-    // 1. Sync to centralized backend
-    await fetch(`${getApiBase()}/api/records`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(record)
-    });
-
-    // 2. Sync to Google Sheets (legacy/backup)
-    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});
-    
-    showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');
-  }catch(err){
-    console.error('Save error:', err);
-    showToast('⚠️ Record saved locally but server sync failed.','#e05c2a');
-  }
+  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
+  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
 // ═══ DEDUPLICATION FOR REPORTS ═══
 function deduplicateReportRecords(recs) {
-  // The user wants ALL analyzed calls to be displayed (e.g. Total 45).
-  // Deduplication by Lead ID or Evaluator is removed to show every individual record.
   if (!recs || !recs.length) return [];
-  return recs; 
+  const seen = new Set();
+  return recs.filter(r => {
+    const key = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // ═══ DASHBOARD ═══
@@ -2713,25 +2693,25 @@ async function sendReportEmail() {
     });
     html += `</tbody></table><br><p style="color: #64748b; font-size: 12px; font-style: italic;">This is a confidential automated report from True North Van Lines Call Monitoring System.</p></div></div>`;
 
-    showToast('📧 Sending PDF report to server...', '#3498db');
-    const response = await fetch(`${getApiBase()}/api/send-report-email`, {
+    const apiBase = getApiBase();
+    const response = await fetch(`${apiBase}/api/send-report-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         pdfBase64: pdfBase64,
-        fileName: `Performance_Report_${new Date().toLocaleDateString('en-CA')}.pdf`,
+        fileName: `TNVL_Performance_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
         htmlContent: html
       })
     });
 
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Server failed to send email');
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.details || err.error || 'Failed to send report');
+    }
 
-    showToast('✅ Email sent successfully!', '#27ae60');
+    showToast('✅ PDF Report emailed successfully!', '#27ae60');
   } catch (error) {
-    console.error('Email error:', error);
-    showToast(`❌ Email Failed: ${error.message}`, '#e74c3c');
-    alert(`Email Error: ${error.message}\n\nPlease check the server console for details.`);
+    showToast(`❌ ${error.message}`, '#e74c3c');
   } finally {
     btn.innerHTML = originalText;
     btn.disabled = false;
@@ -3000,84 +2980,12 @@ function saveTskSummaries(){try{const ids=Object.keys(tskSummaries);localStorage
 function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_tsum_ids')||'[]');ids.forEach(id=>{if(tskSummaries[id])return;try{const raw=localStorage.getItem('tnvl_tsum_'+id);if(raw){tskSummaries[id]=JSON.parse(raw);}}catch(e){}});}catch(e){}try{const legacy=localStorage.getItem('tnvl_tsummaries');if(legacy){const parsed=JSON.parse(legacy);Object.entries(parsed).forEach(([id,s])=>{if(!tskSummaries[id])tskSummaries[id]=s;});}}catch(e){}}
 window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
 
-// ── Data Sync Logic ──
-async function syncRecordsWithServer(showToastOnSuccess = true) {
-  const btn = document.getElementById('btn-sync-data');
-  const icon = document.getElementById('sync-icon');
-  const statusEl = document.getElementById('sync-status-msg');
-  
-  if (btn) btn.disabled = true;
-  if (icon) icon.style.animation = 'spin 1.5s linear infinite';
-  if (statusEl) {
-    statusEl.style.display = 'inline-block';
-    statusEl.innerHTML = '● Syncing...';
-    statusEl.style.borderColor = 'rgba(255,255,255,0.3)';
-  }
-
-  try {
-    // 1. Connectivity Check
-    const health = await fetch(`${getApiBase()}/api/health`).then(r => r.json()).catch(() => null);
-    if (!health) throw new Error('Server unreachable');
-
-    // 2. Download from Server
-    const response = await fetch(`${getApiBase()}/api/records`);
-    if (!response.ok) throw new Error('Failed to fetch from server');
-    
-    const serverRecords = await response.json();
-    const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
-    const recordMap = new Map();
-    
-    // Merge: Local then Server (Source of Truth)
-    localRecords.forEach(r => { if(r.id) recordMap.set(String(r.id), r); });
-    serverRecords.forEach(r => { if(r.id) recordMap.set(String(r.id), r); });
-    
-    records = Array.from(recordMap.values()).sort((a, b) => b.id - a.id);
-    localStorage.setItem('tnvl_calls', JSON.stringify(records));
-    
-    // 3. Upload new local records in bulk
-    const unsynced = localRecords.filter(r => !serverRecords.some(sr => String(sr.id) === String(r.id)));
-    if (unsynced.length > 0) {
-      await fetch(`${getApiBase()}/api/records/bulk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unsynced)
-      });
-      console.log(`Uploaded ${unsynced.length} records to server.`);
-    }
-    
-    const count = records.length;
-    if (statusEl) {
-      statusEl.innerHTML = `✅ Synced (Total: ${count})`;
-      statusEl.style.borderColor = 'rgba(46,204,113,0.5)';
-      statusEl.style.color = '#fff';
-    }
-    if (showToastOnSuccess) showToast(`✅ Synced! Found ${count} total records.`, '#3498db');
-    renderDashboard();
-  } catch (err) {
-    console.error('Sync error:', err);
-    if (statusEl) {
-      statusEl.innerHTML = '⚠️ Offline / Sync Error';
-      statusEl.style.borderColor = 'rgba(231,76,60,0.5)';
-    }
-    if (showToastOnSuccess) showToast('⚠️ Sync failed, using local data.', '#e67e22');
-  } finally {
-    if (btn) btn.disabled = false;
-    if (icon) icon.style.animation = 'none';
-  }
-}
-
 // ═══ INIT ═══
 (function init(){
   try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
   
-  // Initial sync on load
-  syncRecordsWithServer(false);
-
-  // Auto-sync every 2 minutes
-  setInterval(() => {
-    console.log('--- Background Auto-Sync ---');
-    syncRecordsWithServer(false);
-  }, 120000);
+  // Data is loaded from localStorage. 
+  // No fake data generated here.
   
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
