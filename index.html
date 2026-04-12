@@ -1574,9 +1574,16 @@ async function submitForm(){
   if(!agent){showToast('⚠️ Please select an agent!','#e05c2a');return;}if(!date){showToast('⚠️ Please enter a date!','#e05c2a');return;}
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
-  records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
-  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
-  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
+  records.push(record);
+  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Saving to server…','#1a5276');
+  try{
+    // Save to server (shared storage)
+    const apiBase = getApiBase();
+    await fetch(`${apiBase}/api/records`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
+    // Also sync to Google Sheets
+    try { await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)}); } catch(sheetErr) {}
+    showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');
+  }catch(err){showToast('⚠️ Save failed: ' + err.message,'#e05c2a');}
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
@@ -1829,7 +1836,7 @@ function editCall(id) {
   document.getElementById('modal').classList.add('open');
 }
 
-function saveCallEdits(id) {
+async function saveCallEdits(id) {
   const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   r.leadId = document.getElementById('e-lead').value;
@@ -1838,7 +1845,11 @@ function saveCallEdits(id) {
   r.leadStatus = document.getElementById('e-status').value;
   r.moveValueCategory = document.getElementById('e-salevalue').value;
   r.evaluator = document.getElementById('e-evaluator').value;
-  localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  // Save updates to server
+  try {
+    const apiBase = getApiBase();
+    await fetch(`${apiBase}/api/records/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) });
+  } catch(e) { console.warn('Server update failed:', e.message); }
   closeModal();
   showToast('✅ Call record updated successfully!', '#27ae60');
   renderDashboard();
@@ -2981,12 +2992,50 @@ function loadTskSummaries(){try{const ids=JSON.parse(localStorage.getItem('tnvl_
 window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}});
 
 // ═══ INIT ═══
-(function init(){
-  try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
-  
-  // Data is loaded from localStorage. 
-  // No fake data generated here.
-  
+(async function init(){
+  // 1. Load records from SERVER (shared across all users)
+  try {
+    const apiBase = getApiBase();
+    const resp = await fetch(`${apiBase}/api/records`);
+    if (resp.ok) {
+      records = await resp.json();
+      console.log(`📋 Loaded ${records.length} shared records from server`);
+    } else {
+      throw new Error('Server fetch failed');
+    }
+  } catch (e) {
+    // Fallback to localStorage if server is unreachable
+    console.warn('⚠️ Server unreachable, falling back to localStorage:', e.message);
+    try { records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]'); } catch(ex) { records = []; }
+  }
+
+  // 2. One-time migration: sync any localStorage records to the server
+  try {
+    const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+    if (localRecords.length > 0) {
+      const apiBase = getApiBase();
+      const syncResp = await fetch(`${apiBase}/api/records/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(localRecords)
+      });
+      if (syncResp.ok) {
+        const result = await syncResp.json();
+        if (result.added > 0) {
+          console.log(`🔄 Synced ${result.added} local records to server (total: ${result.total})`);
+          // Reload the merged data from server
+          const refreshResp = await fetch(`${apiBase}/api/records`);
+          if (refreshResp.ok) records = await refreshResp.json();
+        }
+        // Clear localStorage after successful sync
+        localStorage.removeItem('tnvl_calls');
+        console.log('✅ localStorage records migrated to server — cleared local copy');
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ Migration sync skipped:', e.message);
+  }
+
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
