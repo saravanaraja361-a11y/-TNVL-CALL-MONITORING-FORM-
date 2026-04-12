@@ -3,7 +3,6 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');
 const nodemailer = require('nodemailer');
 
 const app = express();
@@ -31,108 +30,6 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   console.log('--- DASHBOARD SERVED ---');
   res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-// ═══════════════════════════════════════════════════════
-//  SHARED RECORDS API — Server-side storage (records.json)
-//  All users share the same records across browsers/devices
-// ═══════════════════════════════════════════════════════
-const RECORDS_FILE = path.join(__dirname, 'records.json');
-
-function loadRecords() {
-  try {
-    if (fs.existsSync(RECORDS_FILE)) {
-      const data = fs.readFileSync(RECORDS_FILE, 'utf8');
-      return JSON.parse(data);
-    }
-  } catch (e) {
-    console.error('⚠️ Error loading records.json:', e.message);
-  }
-  return [];
-}
-
-function saveRecords(records) {
-  try {
-    fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2), 'utf8');
-  } catch (e) {
-    console.error('⚠️ Error saving records.json:', e.message);
-  }
-}
-
-// GET all records
-app.get('/api/records', (req, res) => {
-  const records = loadRecords();
-  console.log(`📋 Serving ${records.length} shared records`);
-  res.json(records);
-});
-
-// POST — add a new record
-app.post('/api/records', (req, res) => {
-  const record = req.body;
-  if (!record || !record.id) {
-    return res.status(400).json({ error: 'Invalid record — missing id' });
-  }
-  const records = loadRecords();
-  // Prevent duplicate IDs
-  const existingIdx = records.findIndex(r => String(r.id) === String(record.id));
-  if (existingIdx >= 0) {
-    records[existingIdx] = record;
-  } else {
-    records.push(record);
-  }
-  saveRecords(records);
-  console.log(`✅ Record saved: ${record.agent} — Lead ${record.leadId || 'N/A'} (${record.pct}%)`);
-  res.json({ success: true, total: records.length });
-});
-
-// PUT — update an existing record
-app.put('/api/records/:id', (req, res) => {
-  const id = req.params.id;
-  const updates = req.body;
-  const records = loadRecords();
-  const idx = records.findIndex(r => String(r.id) === String(id));
-  if (idx < 0) {
-    return res.status(404).json({ error: 'Record not found' });
-  }
-  Object.assign(records[idx], updates);
-  saveRecords(records);
-  console.log(`✏️ Record updated: ID ${id}`);
-  res.json({ success: true, record: records[idx] });
-});
-
-// DELETE — remove a record
-app.delete('/api/records/:id', (req, res) => {
-  const id = req.params.id;
-  let records = loadRecords();
-  const before = records.length;
-  records = records.filter(r => String(r.id) !== String(id));
-  if (records.length === before) {
-    return res.status(404).json({ error: 'Record not found' });
-  }
-  saveRecords(records);
-  console.log(`🗑 Record deleted: ID ${id}`);
-  res.json({ success: true, remaining: records.length });
-});
-
-// POST — bulk sync (merge localStorage records into server)
-app.post('/api/records/sync', (req, res) => {
-  const incoming = req.body;
-  if (!Array.isArray(incoming)) {
-    return res.status(400).json({ error: 'Expected array of records' });
-  }
-  const existing = loadRecords();
-  const existingIds = new Set(existing.map(r => String(r.id)));
-  let added = 0;
-  incoming.forEach(rec => {
-    if (!existingIds.has(String(rec.id))) {
-      existing.push(rec);
-      existingIds.add(String(rec.id));
-      added++;
-    }
-  });
-  if (added > 0) saveRecords(existing);
-  console.log(`🔄 Sync: ${added} new records merged (total: ${existing.length})`);
-  res.json({ success: true, added, total: existing.length });
 });
 
 const GROQ_KEYS = [
