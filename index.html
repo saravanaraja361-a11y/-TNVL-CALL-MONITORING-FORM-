@@ -3022,15 +3022,14 @@ async function syncRecordsWithServer(showToastOnSuccess = true) {
     records = Array.from(recordMap.values()).sort((a, b) => b.id - a.id);
     localStorage.setItem('tnvl_calls', JSON.stringify(records));
     
-    // If there were local records not on server, upload them
-    for (const r of localRecords) {
-      if (!serverRecords.some(sr => String(sr.id) === String(r.id))) {
-        await fetch(`${getApiBase()}/api/records`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(r)
-        });
-      }
+    // If there were local records not on server, upload them in bulk
+    const unsynced = localRecords.filter(r => !serverRecords.some(sr => String(sr.id) === String(r.id)));
+    if (unsynced.length > 0) {
+      await fetch(`${getApiBase()}/api/records/bulk`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(unsynced)
+      });
     }
     
     if (showToastOnSuccess) showToast(`✅ Synced! Found ${records.length} total records.`, '#3498db');
