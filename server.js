@@ -27,6 +27,9 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Health Check ──
+app.get('/api/health', (req, res) => res.json({ status: 'ok', time: new Date().toISOString() }));
+
 // ── Persistence Endpoints (Moved after middleware) ──
 app.get('/api/records', (req, res) => {
   try {
@@ -62,6 +65,7 @@ app.post('/api/records', (req, res) => {
 
 app.post('/api/records/bulk', (req, res) => {
   const newRecords = req.body;
+  const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
   if (!Array.isArray(newRecords)) {
     return res.status(400).json({ error: 'Invalid data format: expected array' });
   }
@@ -80,7 +84,7 @@ app.post('/api/records/bulk', (req, res) => {
 
     if (addedCount > 0) {
       fs.writeFileSync(DATA_FILE, JSON.stringify(records, null, 2));
-      console.log(`[${new Date().toLocaleTimeString()}] ✅ Bulk Sync: Added ${addedCount} new records.`);
+      console.log(`[${new Date().toLocaleTimeString()}] ✅ Bulk Sync from ${clientIp}: Added ${addedCount} new records.`);
     }
     
     res.json({ success: true, added: addedCount });
@@ -90,17 +94,63 @@ app.post('/api/records/bulk', (req, res) => {
   }
 });
 
-// ── Restore global error handlers ─────
-process.on('uncaughtException', (err) => {
-  console.error('⚠️  Uncaught Exception (server kept alive):', err.message);
-});
-process.on('unhandledRejection', (reason) => {
-  console.error('⚠️  Unhandled Rejection (server kept alive):', reason?.message || reason);
+// ── Reuse SMTP Transporter ─────
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST || 'smtp.zoho.com',
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false, 
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false 
+  }
 });
 
-app.get('/', (req, res) => {
-  console.log('--- DASHBOARD SERVED ---');
-  res.sendFile(path.join(__dirname, 'index.html'));
+// ── Email Route (Zoho SMTP - PDF Support) ───────────────────────────────────
+app.post('/api/send-report-email', async (req, res) => {
+  const { pdfBase64, fileName, htmlContent } = req.body;
+  const clientIp = req.ip || 'unknown';
+
+  console.log(`[${new Date().toLocaleTimeString()}] 📧 Email request from ${clientIp}:`, {
+    pdfSize: (pdfBase64?.length || 0) / 1024 / 1024 + ' MB',
+    fileName: fileName || 'no-filename'
+  });
+
+  if (!pdfBase64) return res.status(400).json({ error: 'PDF content is required' });
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ Email failed: Missing credentials in .env');
+    return res.status(500).json({ error: 'Server email configuration missing' });
+  }
+
+  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
+
+  try {
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+      to: recipients,
+      subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
+      html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
+      attachments: [
+        {
+          filename: fileName || 'Performance_Report.pdf',
+          content: Buffer.from(pdfBase64, 'base64'),
+          contentType: 'application/pdf'
+        }
+      ]
+    };
+
+    console.log(`📧 Sending PDF to ${recipients}...`);
+    // Set a 30s timeout for the SMTP send operation
+    const info = await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully:', info.messageId);
+    res.json({ success: true, messageId: info.messageId });
+
+  } catch (error) {
+    console.error('❌ SMTP Error:', error);
+    res.status(500).json({ error: error.message || 'Failed to send email' });
+  }
 });
 
 const GROQ_KEYS = [
