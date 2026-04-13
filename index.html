@@ -1839,9 +1839,27 @@ function saveCallEdits(id) {
   r.moveValueCategory = document.getElementById('e-salevalue').value;
   r.evaluator = document.getElementById('e-evaluator').value;
   localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  fetch(`${getApiBase()}/api/records/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(r)
+  }).catch(err => console.warn('Edit sync failed:', err));
   closeModal();
   showToast('✅ Call record updated successfully!', '#27ae60');
-  renderDashboard();
+  // Refresh data from server without page reload
+  setTimeout(async () => {
+    try {
+      const res = await fetch(`${getApiBase()}/api/records`);
+      if (res.ok) {
+        records = await res.json();
+        localStorage.setItem('tnvl_calls', JSON.stringify(records));
+        renderDashboard();
+        renderSummaries();
+      }
+    } catch (e) {
+      console.warn('Failed to refresh data:', e);
+    }
+  }, 500);
 }
 
 function getMetricsForRecords(recs) {
