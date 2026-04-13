@@ -2982,11 +2982,47 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
 
 // ═══ INIT ═══
 (function init(){
+  // Load from server (shared across all users), fall back to localStorage
+  async function loadFromServer() {
+    try {
+      const res = await fetch(`${getApiBase()}/api/records`);
+      if (res.ok) {
+        const serverRecords = await res.json();
+        if (serverRecords.length > 0) {
+          records = serverRecords;
+          // Migrate any localStorage-only records to server
+          const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+          const serverKeys = new Set(serverRecords.map(r => `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`));
+          for (const r of localRecords) {
+            const k = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
+            if (!serverKeys.has(k)) {
+              await fetch(`${getApiBase()}/api/records`, {
+                method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(r)
+              }).catch(()=>{});
+            }
+          }
+        } else {
+          // Server empty — seed from localStorage if any
+          records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+          for (const r of records) {
+            await fetch(`${getApiBase()}/api/records`, {
+              method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(r)
+            }).catch(()=>{});
+          }
+        }
+      } else {
+        records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+      }
+    } catch(e) {
+      records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
+    }
+    renderDashboard();
+    renderSummaries();
+  }
+
   try{records=JSON.parse(localStorage.getItem('tnvl_calls')||'[]');}catch(e){records=[];}
-  
-  // Data is loaded from localStorage. 
-  // No fake data generated here.
-  
+  loadFromServer(); // async — loads shared data in background
+
   loadTskSummaries();
   records.forEach(r=>{if(r.tskSummary&&r.tskSummary.fileName){const key='rec_'+(r.tskSummary.leadId||r.leadId||r.id||Math.random().toString(36).slice(2));if(!tskSummaries[key])tskSummaries[key]={fileName:r.tskSummary.fileName,fileDate:r.tskSummary.fileDate||r.date||'',leadId:r.tskSummary.leadId||r.leadId||'',text:r.tskSummary.text||''};}});
   try{const tk=localStorage.getItem('tnvl_tkey');if(tk){document.getElementById('tsk-apikey').value=tk;const s=document.getElementById('tsk-apikey-sum');if(s)s.value=tk;}}catch(e){}
