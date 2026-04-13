@@ -86,9 +86,9 @@ app.post('/api/records', (req, res) => {                            // ← ADDED
   }
   try {
     const records = loadSharedRecords();
-    const key = `${record.leadId||''}|${record.date||''}|${record.evaluator||''}|${record.pct||''}`;
+    const key = `${record.leadId||''}|${record.date||''}`;
     const exists = records.some(r =>
-      `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}` === key
+      `${r.leadId||''}|${r.date||''}` === key
     );
     if (!exists) {
       records.push(record);
