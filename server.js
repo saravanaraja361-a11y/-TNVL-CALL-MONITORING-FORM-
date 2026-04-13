@@ -3,9 +3,38 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');                          // ← ADDED
 const nodemailer = require('nodemailer');
 
 const app = express();
+
+// ═══════════════════════════════════════════════════════════════
+//  SHARED RECORDS — stored in shared_records.json on the server
+//  All users on the same link read/write from this one file.
+//  Your manager in Chennai, your sister, everyone — same data.
+// ═══════════════════════════════════════════════════════════════
+
+const RECORDS_FILE = path.join(__dirname, 'shared_records.json');  // ← ADDED
+
+function loadSharedRecords() {                                       // ← ADDED
+  try {
+    if (fs.existsSync(RECORDS_FILE)) {
+      const raw = fs.readFileSync(RECORDS_FILE, 'utf8');
+      return JSON.parse(raw);
+    }
+  } catch (e) {
+    console.error('⚠️  Could not read shared_records.json:', e.message);
+  }
+  return [];
+}
+
+function saveSharedRecords(records) {                                // ← ADDED
+  try {
+    fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
+  } catch (e) {
+    console.error('⚠️  Could not save shared_records.json:', e.message);
+  }
+}
 
 // ── Restore global error handlers ─────
 process.on('uncaughtException', (err) => {
@@ -32,6 +61,79 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// ═══════════════════════════════════════════════════════════════
+//  SHARED RECORDS API — 4 endpoints                            ← ADDED
+//  GET    /api/records        → load all records (page load)
+//  POST   /api/records        → save new call (on submit)
+//  PUT    /api/records/:id    → update a call (on edit save)
+//  DELETE /api/records/:id    → delete a call (future use)
+// ═══════════════════════════════════════════════════════════════
+
+app.get('/api/records', (req, res) => {                             // ← ADDED
+  try {
+    const records = loadSharedRecords();
+    console.log(`📋 GET /api/records → ${records.length} records returned`);
+    res.json(records);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load records', details: e.message });
+  }
+});
+
+app.post('/api/records', (req, res) => {                            // ← ADDED
+  const record = req.body;
+  if (!record || !record.agent) {
+    return res.status(400).json({ error: 'Invalid record — agent is required' });
+  }
+  try {
+    const records = loadSharedRecords();
+    const key = `${record.leadId||''}|${record.date||''}|${record.evaluator||''}|${record.pct||''}`;
+    const exists = records.some(r =>
+      `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}` === key
+    );
+    if (!exists) {
+      records.push(record);
+      saveSharedRecords(records);
+      console.log(`✅ New record saved: agent=${record.agent} lead=${record.leadId} score=${record.pct}% → total=${records.length}`);
+    } else {
+      console.log(`ℹ️  Duplicate skipped: ${key}`);
+    }
+    res.json({ success: true, total: records.length, duplicate: exists });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save record', details: e.message });
+  }
+});
+
+app.put('/api/records/:id', (req, res) => {                         // ← ADDED
+  try {
+    const records = loadSharedRecords();
+    const idx = records.findIndex(r => String(r.id) === String(req.params.id));
+    if (idx === -1) return res.status(404).json({ error: 'Record not found' });
+    records[idx] = { ...records[idx], ...req.body };
+    saveSharedRecords(records);
+    console.log(`✏️  Record updated: id=${req.params.id}`);
+    res.json({ success: true, record: records[idx] });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to update record', details: e.message });
+  }
+});
+
+app.delete('/api/records/:id', (req, res) => {                      // ← ADDED
+  try {
+    const records = loadSharedRecords();
+    const filtered = records.filter(r => String(r.id) !== String(req.params.id));
+    if (filtered.length === records.length) return res.status(404).json({ error: 'Record not found' });
+    saveSharedRecords(filtered);
+    console.log(`🗑  Record deleted: id=${req.params.id}`);
+    res.json({ success: true, total: filtered.length });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to delete record', details: e.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  EVERYTHING BELOW THIS LINE IS 100% UNCHANGED FROM ORIGINAL
+// ═══════════════════════════════════════════════════════════════
+
 const GROQ_KEYS = [
   process.env.GROQ_API_KEY_1,
   process.env.GROQ_API_KEY_2,
@@ -44,9 +146,9 @@ const GROQ_KEYS = [
 
 let currentKeyIndex = 0;
 
-const GROQ_MODEL = 'llama-3.3-70b-versatile';
+const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
-const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -198,7 +300,7 @@ const SECTIONS = [
     ]
   },
   {
-    title: "Pricing & Estimate – Local Moves", items: [
+    title: "Pricing & Estimate \u2013 Local Moves", items: [
       "Explained pricing is based on hourly rate and crew size",
       "Explained billing start and end points clearly",
       "Linked estimate to inventory and access factors",
@@ -206,7 +308,7 @@ const SECTIONS = [
     ]
   },
   {
-    title: "Pricing & Estimate – Long Distance", items: [
+    title: "Pricing & Estimate \u2013 Long Distance", items: [
       "Explained pricing is based on shipment weight and distance",
       "Explained certified weigh station process",
       "Clarified labor vs transportation charges",
@@ -332,7 +434,7 @@ const SECTIONS = [
       "Showed empathy and reassurance during customer concerns",
       "Maintained a calm, respectful, and positive tone throughout the call",
       "Guided the conversation and kept it focused on next steps.",
-      "Built rapport and trust using the customer's name and natural conversation",
+      "Built rapport and trust using the customer\u2019s name and natural conversation",
       "Summarized key details and encouraged commitment or next steps",
       "Confidently responded to customer questions without deflection",
       "Did not sound dismissive, rushed, or irritated"
@@ -830,17 +932,16 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
-  // Use Zoho SMTP Transporter
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.zoho.com',
     port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false, 
+    secure: false,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
     tls: {
-      rejectUnauthorized: false 
+      rejectUnauthorized: false
     }
   });
 
@@ -869,12 +970,12 @@ app.post('/api/send-report-email', async (req, res) => {
     console.log(`📧 Sending PDF report to: ${recipients}...`);
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Email sent successfully:', info.messageId);
-    
+
     res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId });
 
   } catch (error) {
     console.error('❌ SMTP Error:', error);
-    
+
     let userMessage = 'Failed to send report';
     if (error.code === 'EAUTH') {
       userMessage = 'Authentication failed. Check Zoho credentials.';
@@ -882,22 +983,25 @@ app.post('/api/send-report-email', async (req, res) => {
       userMessage = 'Connection timed out. Check SMTP settings.';
     }
 
-    res.status(500).json({ 
-      error: userMessage, 
-      details: error.message 
+    res.status(500).json({
+      error: userMessage,
+      details: error.message
     });
   }
 });
 
+// ── Health Check ──────────────────────────────────────────────────────────────
 app.get('/api/health', (_req, res) => res.json({
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
   groqKeys: `${GROQ_KEYS.length} keys loaded`,
+  sharedRecords: loadSharedRecords().length,              // ← ADDED
   port: process.env.PORT || 3000
 }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {
+  const existing = loadSharedRecords();                   // ← ADDED
   console.log(`\n✅ TNVL Server → http://0.0.0.0:${PORT}`);
   console.log(`   Engine : Groq FREE ✅`);
   console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
@@ -905,6 +1009,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
+  console.log(`\n   📦 Shared Records: ${existing.length} records in shared_records.json`);  // ← ADDED
+  console.log(`   👥 Everyone on this link sees the same data now!\n`);                      // ← ADDED
   console.log(`\n   Accuracy v6 — what changed:`);
   console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
   console.log(`   • DISPUTE MODE: when true, soft skills rated with strict NI criteria (target 1-3 met, 6-9 ni)`);
