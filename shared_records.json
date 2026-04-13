@@ -24535,22 +24535,6 @@
     "duration": "00:23:00"
   },
   {
-    "id": "f264775685c85500b628e2d5ca87df8572f74fb8ee6b3bcb459bc4e49edb68f5d7f507c3fbba9ebd9fc1c2a811caaedfe2682739a25de58264a4db85aa83ed93",
-    "agent": "2809",
-    "leadId": "Myles",
-    "customer": "",
-    "date": "1775043635120",
-    "evaluator": "Aarti - AI",
-    "metCount": 10,
-    "nmCount": 1,
-    "niCount": 3,
-    "assessed": 14,
-    "pct": 71,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:14:00"
-  },
-  {
     "id": "989bf37c1a746c2acdde2944356c3d5290292df3c28185d7e60f0116d48ab036cbfae836caed8575fd5331e20d7989a1c3417634bae5f7483922c1ae8f69c16f",
     "agent": "Noah",
     "leadId": "887",
@@ -24631,38 +24615,6 @@
     "duration": "00:20:00"
   },
   {
-    "id": "1e676442949109b1367770ee31d612968c1a89696f20b9af1437f2281513c233093cffceb3512b00daf3407f27c80f261a1399432656ab41741eb9aafb90ae3a",
-    "agent": "2802",
-    "leadId": "Thomas",
-    "customer": "",
-    "date": "1775043018558",
-    "evaluator": "Aarti - AI",
-    "metCount": 18,
-    "nmCount": 1,
-    "niCount": 2,
-    "assessed": 21,
-    "pct": 86,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:19:00"
-  },
-  {
-    "id": "cf470e91e4497443388ece1b042f8cf6fbf20a4fca49e77bfe3c342f20aa4fdc53ce758362ac0122663f6997607faedab5394a8171a0ca2faff5805bcf00729d",
-    "agent": "2441",
-    "leadId": "Daniel",
-    "customer": "",
-    "date": "1775043313478",
-    "evaluator": "Aarti - AI",
-    "metCount": 11,
-    "nmCount": 3,
-    "niCount": 3,
-    "assessed": 17,
-    "pct": 65,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:23:00"
-  },
-  {
     "id": "cae819c0779d0ee2b7961a4652c69e0bca14109993e069cadb1a5be9ad04d2eb8ea800a44f65a10579d0cc12009992183e8f26351d5ad7fe58e0b51b981e754f",
     "agent": "Anthony",
     "leadId": "1088",
@@ -24693,22 +24645,6 @@
     "callType": "Summary",
     "leadStatus": "Completed",
     "duration": "00:20:00"
-  },
-  {
-    "id": "ea693dfe92fc253eaad710e57fd2360c0169ea455ac9637bc53e8369f25e085ea1e19015a7f41423a249697595b0cc1ea54699993f8e32597685f37b54199960",
-    "agent": "2793",
-    "leadId": "Anthony",
-    "customer": "",
-    "date": "1775043913466",
-    "evaluator": "Aarti - AI",
-    "metCount": 18,
-    "nmCount": 1,
-    "niCount": 1,
-    "assessed": 20,
-    "pct": 90,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:12:00"
   },
   {
     "id": "f2e6c8a43408021e4e99d566c78abae4025cde2e7852f70d4104f40c74be21b1ccf373e463e122c607359f79f09bf8a4557e07a1b260cc2f967951e0ff47a9fd",
