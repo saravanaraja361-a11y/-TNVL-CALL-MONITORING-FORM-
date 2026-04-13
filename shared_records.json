@@ -24503,22 +24503,6 @@
     "duration": "00:24:00"
   },
   {
-    "id": 2109,
-    "agent": "Jessica",
-    "leadId": "2109",
-    "customer": "ID",
-    "date": "1773824637096",
-    "evaluator": "Aarti - AI",
-    "metCount": 13,
-    "nmCount": 2,
-    "niCount": 1,
-    "assessed": 16,
-    "pct": 81,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:29:00"
-  },
-  {
     "id": "62b06f28966c586bc28f63f5063f0389b2685f1439a0e3348104c697134989dba9d5978d5601ebfa91edc7491d5c12ea8457d5a931e8fc8995f76b3500a0bb2c",
     "agent": "Thomas",
     "leadId": "1773425494",
@@ -24583,22 +24567,6 @@
     "duration": "00:28:00"
   },
   {
-    "id": 1810,
-    "agent": "Noah",
-    "leadId": "1810",
-    "customer": "ID",
-    "date": "1773825521703",
-    "evaluator": "Aarti - AI",
-    "metCount": 10,
-    "nmCount": 2,
-    "niCount": 3,
-    "assessed": 15,
-    "pct": 67,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:25:00"
-  },
-  {
     "id": "9cdd14f07fd52724fdc007760a9acae7593eb5c629f287b8b62bac703a31cc974230030329fc8b49590c23296d409e98833ced76777b480bdb34789c788ebcf1",
     "agent": "Anthony",
     "leadId": "1773410312",
@@ -24661,22 +24629,6 @@
     "callType": "Summary",
     "leadStatus": "Completed",
     "duration": "00:20:00"
-  },
-  {
-    "id": "9d597d36d93e03f2b052dec6b12e94845a83df9be8962f8c25349417ab7ab0cea5ee32208d7311b3b3ce458cb7f76b6b0b7ad0e1b7e0fe25252af818251f6583",
-    "agent": "Daniel",
-    "leadId": "1999",
-    "customer": "ID",
-    "date": "1773412349299",
-    "evaluator": "Aarti - AI",
-    "metCount": 10,
-    "nmCount": 4,
-    "niCount": 1,
-    "assessed": 15,
-    "pct": 67,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:12:00"
   },
   {
     "id": "1e676442949109b1367770ee31d612968c1a89696f20b9af1437f2281513c233093cffceb3512b00daf3407f27c80f261a1399432656ab41741eb9aafb90ae3a",
@@ -24757,22 +24709,6 @@
     "callType": "Summary",
     "leadStatus": "Completed",
     "duration": "00:12:00"
-  },
-  {
-    "id": 1774285393,
-    "agent": "Daniel- 2321",
-    "leadId": "1774285393",
-    "customer": "",
-    "date": "1774424541794",
-    "evaluator": "Aarti - AI",
-    "metCount": 17,
-    "nmCount": 3,
-    "niCount": 1,
-    "assessed": 21,
-    "pct": 81,
-    "callType": "Summary",
-    "leadStatus": "Completed",
-    "duration": "00:11:00"
   },
   {
     "id": "f2e6c8a43408021e4e99d566c78abae4025cde2e7852f70d4104f40c74be21b1ccf373e463e122c607359f79f09bf8a4557e07a1b260cc2f967951e0ff47a9fd",
