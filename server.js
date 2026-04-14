@@ -130,9 +130,32 @@ app.delete('/api/records/:id', (req, res) => {                      // ← ADDED
   }
 });
 
-// ═══════════════════════════════════════════════════════════════
+// // // // // // // // // // // // // // // // // // // // // // // // //
+//  ONE-TIME DEDUP ENDPOINT
+// // // // // // // // // // // // // // // // // // // // // // // // //
+app.post('/api/records/dedup', (req, res) => {
+  try {
+    const records = loadSharedRecords();
+    const seen = new Set();
+    const deduped = records.filter(r => {
+      // Better key: includes agent so two agents on same lead aren't collapsed
+      const key = `${r.agent||''}|${r.leadId||''}|${r.date||''}|${r.pct||''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const removed = records.length - deduped.length;
+    saveSharedRecords(deduped);
+    console.log(`\ud83e\uddf9 Dedup: removed ${removed} duplicates (${deduped.length} remain)`);
+    res.json({ success: true, before: records.length, after: deduped.length, removed });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// // // // // // // // // // // // // // // // // // // // // // // // //
 //  EVERYTHING BELOW THIS LINE IS 100% UNCHANGED FROM ORIGINAL
-// ═══════════════════════════════════════════════════════════════
+// // // // // // // // // // // // // // // // // // // // // // // // //
 
 const GROQ_KEYS = [
   process.env.GROQ_API_KEY_1,
