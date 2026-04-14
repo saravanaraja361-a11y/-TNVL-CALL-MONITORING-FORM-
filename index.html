@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
 <title>TNVL Call Monitoring Form</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
@@ -927,8 +924,14 @@
         </div>
       </div>
 
+      <!-- Analysis Date Range -->
+      <div style="text-align:center;padding:15px;background:#f8f9ff;border-radius:8px;margin:15px 0;border:1px solid #e8f0fd;">
+        <div style="font-size:13px;color:#666;font-weight:600;margin-bottom:5px;">ANALYSIS PERIOD</div>
+        <div id="analysis-date-range" style="font-size:16px;color:#1a5276;font-weight:700;">Loading...</div>
+      </div>
+
       <div class="table-card">
-        <div class="table-card-title">📋 Agent Performance Summary</div>
+        <div class="table-card-title"> Agent Performance Summary</div>
         <div style="overflow-x:auto;">
           <table><thead><tr>
             <th>Rank</th><th>Agent</th><th>Calls</th><th>Avg Met</th><th>Avg Not Met</th>
@@ -1578,8 +1581,14 @@ async function submitForm(){
   const{assessed,metCount,nmCount,niCount,pct,breakdown}=calcScore();if(assessed===0){showToast('⚠️ Please rate at least one item!','#e05c2a');return;}
   const record={id:Date.now(),date,agent,leadId:document.getElementById('f-lead').value,customer:document.getElementById('f-customer').value,callType:document.getElementById('f-calltype').value,duration:document.getElementById('f-duration').value,datetime:document.getElementById('f-datetime').value,evaluator:document.getElementById('f-evaluator').value,moveType:document.getElementById('f-movetype').value,moveValueAmount:document.getElementById('f-movevalue-amount').value,moveValueCategory:document.getElementById('f-movevalue').value,conversionProbability:document.getElementById('f-conversion').value,leadStatus:document.getElementById('f-leadstatus').value,cueCardUsage:document.getElementById('f-cuecard').value,recordingLink:document.getElementById('f-recording').value,metCount,nmCount,niCount,assessed,pct,breakdown,aiAnalyzed:true};
   records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
-  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='⏳ Saving…';showToast('⏳ Sending to Google Sheets…','#1a5276');
-  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(`✅ Saved! ✅${metCount} ❌${nmCount} 🔶${niCount} → ${pct}%`,'#27ae60');}catch(err){showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');}
+  const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='Saving';showToast(' Saving to server','#1a5276');
+  try {
+    //  Save to shared server first (fixes duplicates)
+    await fetch(`${getApiBase()}/api/records`, {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(record)
+    });
+  } catch(e) { console.warn('Server save failed:', e.message); }
+  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(` Saved! ${metCount} ${nmCount} ${niCount} ${pct}%`,'#27ae60');}catch(err){showToast(' Local save OK but Sheets sync failed.','#e05c2a');}
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
@@ -1832,7 +1841,7 @@ function editCall(id) {
   document.getElementById('modal').classList.add('open');
 }
 
-function saveCallEdits(id) {
+async function saveCallEdits(id) {
   const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   r.leadId = document.getElementById('e-lead').value;
@@ -1841,9 +1850,24 @@ function saveCallEdits(id) {
   r.leadStatus = document.getElementById('e-status').value;
   r.moveValueCategory = document.getElementById('e-salevalue').value;
   r.evaluator = document.getElementById('e-evaluator').value;
+  
+  // Save to localStorage
   localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  
+  //  Also save to server (fixes "reverts after refresh")
+  try {
+    const res = await fetch(`${getApiBase()}/api/records/${r.id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(r)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast(' Call record updated successfully!', '#27ae60');
+  } catch(e) {
+    showToast(' Saved locally but server sync failed: ' + e.message, '#e05c2a');
+  }
+  
   closeModal();
-  showToast('✅ Call record updated successfully!', '#27ae60');
   renderDashboard();
 }
 
@@ -1887,6 +1911,32 @@ function renderDashboard(){
   document.getElementById('kpi-ai-avg').textContent = aiM.avg;
   document.getElementById('kpi-ai-top').textContent = aiM.top;
   document.getElementById('kpi-ai-low').textContent = aiM.low;
+  
+  // Update analysis date range
+  if(rawFiltered.length > 0) {
+    const dates = rawFiltered.map(r => r.date).filter(d => d && d !== '');
+    if(dates.length > 0) {
+      const sortedDates = dates.sort();
+      const minDate = sortedDates[0];
+      const maxDate = sortedDates[sortedDates.length - 1];
+      
+      // Format dates for display
+      const formatDate = (dateStr) => {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      };
+      
+      const dateRangeText = minDate === maxDate 
+        ? formatDate(minDate) 
+        : `${formatDate(minDate)} - ${formatDate(maxDate)}`;
+      
+      document.getElementById('analysis-date-range').textContent = dateRangeText;
+    } else {
+      document.getElementById('analysis-date-range').textContent = 'No dates available';
+    }
+  } else {
+    document.getElementById('analysis-date-range').textContent = 'No assessments yet';
+  }
   
   if(!rawFiltered.length){
     // ... existing no-record logic ...
@@ -2991,32 +3041,14 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
       const res = await fetch(`${getApiBase()}/api/records`);
       if (res.ok) {
         const serverRecords = await res.json();
-        if (serverRecords.length > 0) {
-          records = serverRecords;
-          // Migrate any localStorage-only records to server
-          const localRecords = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
-          const serverKeys = new Set(serverRecords.map(r => `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`));
-          for (const r of localRecords) {
-            const k = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
-            if (!serverKeys.has(k)) {
-              await fetch(`${getApiBase()}/api/records`, {
-                method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(r)
-              }).catch(()=>{});
-            }
-          }
-        } else {
-          // Server empty — seed from localStorage if any
-          records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
-          for (const r of records) {
-            await fetch(`${getApiBase()}/api/records`, {
-              method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(r)
-            }).catch(()=>{});
-          }
-        }
+        records = serverRecords;
+        // Sync localStorage to match server (single source of truth)
+        try { localStorage.setItem('tnvl_calls', JSON.stringify(records)); } catch(e) {}
       } else {
         records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
       }
     } catch(e) {
+      // Server unreachable  fall back to localStorage
       records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
     }
     renderDashboard();
