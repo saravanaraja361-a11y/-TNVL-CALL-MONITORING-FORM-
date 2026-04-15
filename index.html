@@ -521,7 +521,7 @@
           <select id="f-agent">
             <option value="">— Select Agent —</option>
             <option>Myles</option><option>Dustin</option><option>Thomas</option>
-            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option><option>Alex</option><option>Arthur</option><option>William</option>
           </select></div>
         <div><label>Customer Name / Number</label>
           <input type="text" id="f-customer" placeholder="Customer name or number"></div>
@@ -852,7 +852,7 @@
           <select id="d-agent">
             <option value="">All Agents</option>
             <option>Myles</option><option>Dustin</option><option>Thomas</option>
-            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option><option>Alex</option><option>Arthur</option><option>William</option>
           </select></div>
         <div><label>Call Type</label>
           <select id="d-calltype">
@@ -1075,7 +1075,7 @@
           <select id="aoi-agent">
             <option value="">All Agents</option>
             <option>Myles</option><option>Dustin</option><option>Thomas</option>
-            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+            <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option><option>Alex</option><option>Arthur</option><option>William</option>
           </select>
         </div>
         <div><label>From Date</label><input type="date" id="aoi-from" style="padding:8px 12px;border:1.5px solid #d0dae5;border-radius:6px;font-size:13px;"></div>
@@ -1135,7 +1135,7 @@
         <select id="sum3-agent" onchange="renderSummaries()">
           <option value="">All Agents</option>
           <option>Myles</option><option>Dustin</option><option>Thomas</option>
-          <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option>
+          <option>Anthony</option><option>Daniel</option><option>Noah</option><option>Jessica</option><option>Alex</option><option>Arthur</option><option>William</option>
         </select>
       </div>
       <div><label>📅 From Date</label><input type="date" id="sum3-from" onchange="renderSummaries()"></div>
@@ -1623,7 +1623,7 @@ function getFiltered(isRaw=false){const from=document.getElementById('d-from').v
     }
     return true;
   }).sort((a,b)=>b.date.localeCompare(a.date));return isRaw?res:deduplicateReportRecords(res);}
-const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica'];
+const DEFAULT_AGENTS=['Myles','Dustin','Thomas','Anthony','Daniel','Noah','Jessica','Alex','Arthur','William'];
 const DEFAULT_EVALUATORS=['Aarti - AI','Aarti - Verified','Sachin','Solomon','Daniel','Saravana J'];
 function getAllAgents(){const s=new Set();DEFAULT_AGENTS.forEach(a=>s.add(a));records.filter(r=>DEFAULT_AGENTS.includes(r.agent)).forEach(r=>s.add(r.agent));return[...s].sort();}
 function getSelectedAgents(wrapId){const wrap=document.getElementById(wrapId);if(!wrap)return[];const checks=wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked');return[...checks].map(c=>c.value);}
