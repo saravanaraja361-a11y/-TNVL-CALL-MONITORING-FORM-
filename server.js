@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');                          // ← ADDED
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const app = express();
 
@@ -936,6 +937,7 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
     if (ai) combined += `📝 AI SUMMARY\n${'─'.repeat(40)}\n${ai}\n\n`;
     if (tx) combined += `🎙️ FULL TRANSCRIPT\n${'─'.repeat(40)}\n${tx}`;
     if (!combined) combined = '⚠️ No content found.';
+
     return res.json({ summary: combined });
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
@@ -944,72 +946,46 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 app.post('/api/send-report-email', async (req, res) => {
   const { pdfBase64, fileName, htmlContent } = req.body;
 
-  console.log('📧 Email request received:', {
-    hasPdf: !!pdfBase64,
-    pdfLength: pdfBase64?.length || 0,
-    hasHtml: !!htmlContent,
-    fileName: fileName || 'no-filename'
-  });
-
   if (!pdfBase64) {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-    port: parseInt(process.env.EMAIL_PORT) || 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  });
-
-  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
-
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
-    return res.status(500).json({ error: 'Email credentials missing in server .env' });
+  if (!process.env.RESEND_API_KEY) {
+    return res.status(500).json({ error: 'RESEND_API_KEY missing in .env' });
   }
 
   try {
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const recipients = (process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER || '')
+      .split(',')
+      .map(e => e.trim())
+      .filter(Boolean);
+
+    const { data, error } = await resend.emails.send({
+      from: 'TNVL Reports <onboarding@resend.dev>',
       to: recipients,
       subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
-      html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
+      html: htmlContent || '<p>Please find the attached performance report PDF.</p>',
       attachments: [
         {
           filename: fileName || 'Performance_Report.pdf',
-          content: Buffer.from(pdfBase64, 'base64'),
-          contentType: 'application/pdf'
+          content: pdfBase64,
         }
       ]
-    };
+    });
 
-    console.log(`📧 Sending PDF report to: ${recipients}...`);
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully:', info.messageId);
-
-    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId });
-
-  } catch (error) {
-    console.error('❌ SMTP Error:', error);
-
-    let userMessage = 'Failed to send report';
-    if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check Zoho credentials.';
-    } else if (error.code === 'ECONNREFUSED' || error.message.includes('ETIMEDOUT')) {
-      userMessage = 'Connection timed out. Check SMTP settings.';
+    if (error) {
+      console.error('❌ Resend error:', error);
+      return res.status(500).json({ error: error.message });
     }
 
-    res.status(500).json({
-      error: userMessage,
-      details: error.message
-    });
+    console.log('✅ Email sent via Resend:', data?.id);
+    res.json({ success: true, message: 'PDF Report sent successfully!', id: data?.id });
+
+  } catch (err) {
+    console.error('❌ Resend exception:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
