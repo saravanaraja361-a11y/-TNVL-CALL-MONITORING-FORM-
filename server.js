@@ -963,7 +963,7 @@ app.post('/api/send-report-email', async (req, res) => {
       .filter(Boolean);
 
     const { data, error } = await resend.emails.send({
-      from: 'TNVL Reports <saravanaraja@tnvl.ca>',
+      from: 'TNVL Reports <onboarding@resend.dev>',
       to: recipients,
       subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
       html: htmlContent || '<p>Please find the attached performance report PDF.</p>',
