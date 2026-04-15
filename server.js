@@ -957,44 +957,29 @@ app.post('/api/send-report-email', async (req, res) => {
 
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
+    port: parseInt(process.env.EMAIL_PORT) || 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
     tls: {
       rejectUnauthorized: false
-    },
-    connectionTimeout: 30000,        // 30 seconds connection timeout
-    greetingTimeout: 15000,          // 15 seconds greeting timeout
-    socketTimeout: 45000,            // 45 seconds socket timeout
-    pool: true,                      // Enable connection pooling
-    maxConnections: 5,               // Max connections in pool
-    maxMessages: 100                 // Max messages per connection
+    }
   });
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
 
   if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error(' Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
+    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
     return res.status(500).json({ error: 'Email credentials missing in server .env' });
   }
 
   try {
-    // Log connection details for debugging
-    console.log(' Email configuration:', {
-      host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
-      user: process.env.EMAIL_USER,
-      hasPass: !!process.env.EMAIL_PASS,
-      recipients: recipients
-    });
-
     const mailOptions = {
       from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to: recipients,
-      subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
+      subject: `TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`,
       html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
       attachments: [
         {
@@ -1005,48 +990,25 @@ app.post('/api/send-report-email', async (req, res) => {
       ]
     };
 
-    console.log(` Sending PDF report to: ${recipients}...`);
-    const startTime = Date.now();
+    console.log(`📧 Sending PDF report to: ${recipients}...`);
     const info = await transporter.sendMail(mailOptions);
-    const duration = Date.now() - startTime;
-    console.log(` Email sent successfully in ${duration}ms:`, info.messageId);
+    console.log('✅ Email sent successfully:', info.messageId);
 
-    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
+    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId });
 
   } catch (error) {
-    console.error(' SMTP Error Details:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack,
-      errno: error.errno,
-      syscall: error.syscall,
-      address: error.address,
-      port: error.port
-    });
+    console.error('❌ SMTP Error:', error);
 
     let userMessage = 'Failed to send report';
     if (error.code === 'EAUTH') {
       userMessage = 'Authentication failed. Check Zoho credentials.';
-    } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. SMTP server may be blocking your IP or port 587 is closed.';
-    } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Network/firewall issue or Zoho blocking your server IP.';
-    } else if (error.code === 'ENOTFOUND') {
-      userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com.';
-    } else if (error.code === 'EHOSTUNREACH') {
-      userMessage = 'Host unreachable. Network connectivity issue.';
+    } else if (error.code === 'ECONNREFUSED' || error.message.includes('ETIMEDOUT')) {
+      userMessage = 'Connection timed out. Check SMTP settings.';
     }
 
     res.status(500).json({
       error: userMessage,
-      details: error.message,
-      code: error.code,
-      troubleshooting: {
-        checkFirewall: "Ensure outbound port 587 is open on your live server",
-        checkDNS: "Verify DNS resolution for smtp.zoho.com",
-        checkZohoIP: "Contact Zoho to whitelist your server IP",
-        checkCredentials: "Verify EMAIL_USER and EMAIL_PASS are correct"
-      }
+      details: error.message
     });
   }
 });
