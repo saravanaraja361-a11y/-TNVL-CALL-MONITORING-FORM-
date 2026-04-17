@@ -248,6 +248,14 @@
     display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; }
   .filter-bar label { font-size:14px; font-weight:600; color:#555; display:block; margin-bottom:5px; }
   .filter-bar input, .filter-bar select { padding:9px 13px; border:1.5px solid #d0dae5; border-radius:6px; font-size:15px; }
+
+  .sync-status { display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700; background:rgba(0,0,0,.1); padding:4px 10px; border-radius:20px; color:#555; vertical-align:middle; margin-left:10px; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:#aaa; transition: all 0.3s; }
+  .sync-status.ok { background:rgba(39,174,96,.1); color:#27ae60; border:1px solid rgba(39,174,96,.2); }
+  .sync-status.ok .sync-dot { background:#27ae60; box-shadow:0 0 6px #27ae60; }
+  .sync-status.err { background:rgba(192,57,43,.1); color:#e74c3c; border:1px solid rgba(192,57,43,.2); }
+  .sync-status.err .sync-dot { background:#e74c3c; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   .btn-filter  { background:#1a5276; color:#fff; border:none; padding:10px 22px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
   .btn-clear-f { background:#888; color:#fff; border:none; padding:10px 18px; border-radius:6px; font-weight:700; font-size:14px; cursor:pointer; }
 
@@ -755,7 +763,13 @@
 <!-- ═══════════ DASHBOARD TAB ═══════════ -->
 <div id="panel-dashboard" class="panel">
   <div class="dash-wrap">
-    <div class="dash-title">📊 Agent Scoreboard</div>
+      <div class="dash-title" style="display:flex;align-items:center;gap:12px;">
+        📊 Team Performance Dashboard
+        <div id="sync-status" class="sync-status" title="Checking server connection...">
+          <span class="sync-dot"></span>
+          <span id="sync-text">Connecting...</span>
+        </div>
+      </div>
     <input type="hidden" id="tsk-apikey">
     <div style="display:none" id="tsk-files"><div id="tsk-file-grid"></div></div>
 
@@ -1585,12 +1599,32 @@ async function submitForm(){
   records.push(record);try{localStorage.setItem('tnvl_calls',JSON.stringify(records));}catch(e){}
   const btn=document.getElementById('btn-submit');btn.disabled=true;btn.textContent='Saving';showToast(' Saving to server','#1a5276');
   try {
-    //  Save to shared server first (fixes duplicates)
-    await fetch(`${getApiBase()}/api/records`, {
+    //  Save to shared server first (CRITICAL)
+    const serverResp = await fetch(`${getApiBase()}/api/records`, {
       method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(record)
     });
-  } catch(e) { console.warn('Server save failed:', e.message); }
-  try{await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});showToast(` Saved! ${metCount} ${nmCount} ${niCount} ${pct}%`,'#27ae60');}catch(err){showToast(' Local save OK but Sheets sync failed.','#e05c2a');}
+    
+    if (!serverResp.ok) {
+      const errData = await serverResp.json().catch(() => ({}));
+      throw new Error(errData.error || `Server returned ${serverResp.status}`);
+    }
+    const serverResult = await serverResp.json();
+    console.log('✅ Server save success:', serverResult);
+
+  } catch(e) { 
+    console.error('❌ Server save failed:', e.message);
+    showToast(`❌ ERROR: Failed to save to shareable records! (${e.message})`, '#c0392b');
+    btn.disabled = false;
+    btn.textContent = '❌ Retry Submit';
+    return; // STOP HERE - don't save to sheets if server failed
+  }
+
+  try {
+    await fetch(SHEETS_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'application/json'}, body: JSON.stringify(record) });
+    showToast(`✅ Saved! ${metCount}/${assessed} | ${pct}%`,'#27ae60');
+  } catch(err) {
+    showToast('⚠️ Local save OK but Sheets sync failed.','#e05c2a');
+  }
   btn.disabled=false;btn.textContent='✅ Submit & Save';setTimeout(()=>{resetForm();switchTab('dashboard');},2200);
 }
 
@@ -1607,7 +1641,7 @@ function deduplicateReportRecords(recs) {
 }
 
 // ═══ DASHBOARD ═══
-function filterByEvaluator(recs) {
+function applyEvaluatorFilter(recs) {
   if (evaluatorFilter === 'all') return recs;
   if (evaluatorFilter === 'ai') return recs.filter(r => r.evaluator === 'Aarti - AI');
   if (evaluatorFilter === 'manual') return recs.filter(r => r.evaluator !== 'Aarti - AI');
@@ -2137,7 +2171,7 @@ function renderAOI(){
   const rankClass=i=>i===0?'rank-1':i===1?'rank-2':i===2?'rank-3':'rank-other',rankLabel=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}`;
   document.getElementById('aoi-list-body').innerHTML=!sorted.length?`<div class="no-data-aoi" style="padding:40px"><div class="icon">🎉</div><h3>No "Not Met" items!</h3></div>`:sorted.map((item,i)=>{const combined=item.notmet+item.ni;const p=Math.round(combined/maxCombined*100);return `<div class="aoi-item"><div class="aoi-rank ${rankClass(i)}">${rankLabel(i)}</div><div class="aoi-item-info"><div class="aoi-item-label">${escHtml(item.label)}</div><div class="aoi-item-section">📂 ${escHtml(item.section)}</div></div><div class="aoi-count-badge" style="background:rgba(192,57,43,0.1);color:#c0392b">❌ ${combined}×</div><div class="aoi-bar-wrap"><div class="aoi-bar-bg"><div class="aoi-bar-fill" style="width:${p}%"></div></div><div class="aoi-bar-pct">${p}%</div></div></div>`}).join('');
   const secSorted=Object.values(sectionCounts).filter(s=>s.assessed>0).sort((a,b)=>(b.notmet+b.ni)-(a.notmet+a.ni));
-  document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No data</h3></div>`:secSorted.map(s=>{const combined=s.notmet+s.ni,failRate=s.assessed>0?Math.round((combined/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
+  document.getElementById('aoi-section-body').innerHTML=!secSorted.length?`<div class="no-data-aoi"><div class="icon">📊</div><h3>No section data yet</h3></div>`:secSorted.map(s=>{const combined=s.notmet+s.ni,failRate=s.assessed>0?Math.round((combined/s.assessed)*100):0,failColor=failRate>=50?'#c0392b':failRate>=25?'#d35400':'#27ae60';return`<div class="aoi-sec-row"><span class="aoi-sec-name">${escHtml(s.title)}</span><span style="text-align:center;color:#c0392b;font-weight:800">${s.notmet}</span><span style="text-align:center;color:#d35400;font-weight:700">${s.ni}</span><span style="text-align:center;color:#27ae60;font-weight:700">${s.met}</span><span style="text-align:center"><span style="background:${failColor}20;color:${failColor};font-weight:800;padding:3px 10px;border-radius:20px;font-size:12px;">${failRate}% fail</span></span></div>`;}).join('');
 }
 
 function updateEvaluatorList() {
@@ -2161,18 +2195,6 @@ function switchSubTab(tab){
   const rptPanel=document.getElementById('subpanel-reports');
   if(rptPanel)rptPanel.classList.toggle('active',tab==='reports');
   if(tab==='aoi')renderAOI();
-// ── Browser side health check helper ────────
-async function checkServerStatus() {
-  const apiBase = getApiBase();
-  try {
-    const res = await fetch(`${apiBase}/api/health`);
-    if(res.ok) {
-       console.log('✅ Server is reachable at ' + apiBase);
-       return true;
-    }
-  } catch(e) {}
-  return false;
-}
   if(tab==='reports'){initMultiSelect('rpt-ms-wrap','rpt-agents-trigger','rpt-agents-dropdown'); initMultiSelect('tsm-ms-wrap','tsm-agents-trigger','tsm-agents-dropdown'); updateEvaluatorList();}
 }
 
@@ -3039,18 +3061,28 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
 (function init(){
   // Load from server (shared across all users), fall back to localStorage
   async function loadFromServer() {
+    const dot = document.getElementById('sync-status');
+    const text = document.getElementById('sync-text');
     try {
+      const apiStatus = await fetch(`${getApiBase()}/api/health`).then(r => r.json());
+      if (dot && text) {
+        dot.className = 'sync-status ok';
+        text.textContent = `SYNCED: ${apiStatus.sharedRecords} Records`;
+      }
+      
       const res = await fetch(`${getApiBase()}/api/records`);
       if (res.ok) {
         const serverRecords = await res.json();
         records = serverRecords;
-        // Sync localStorage to match server (single source of truth)
         try { localStorage.setItem('tnvl_calls', JSON.stringify(records)); } catch(e) {}
       } else {
         records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
       }
     } catch(e) {
-      // Server unreachable  fall back to localStorage
+      if (dot && text) {
+        dot.className = 'sync-status err';
+        text.textContent = 'OFFLINE: Server Unreachable';
+      }
       records = JSON.parse(localStorage.getItem('tnvl_calls') || '[]');
     }
     renderDashboard();
