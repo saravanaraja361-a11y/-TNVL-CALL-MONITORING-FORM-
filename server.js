@@ -35,22 +35,22 @@ function loadSharedRecords() {
 }
 
 async function safeSaveRecords(record, isNew = true, updateId = null) {
-  return (saveQueue = saveQueue.then(async () => {
+  // Use .catch(() => {}) to ensure the queue never stays 'Rejected' and blocks future saves.
+  return (saveQueue = saveQueue.catch(() => {}).then(async () => {
     try {
       const records = loadSharedRecords();
       
       if (isNew) {
-        // Use the record ID (timestamp) as the ultimate unique identifier.
-        // This prevents overwrites while allowing separate calls for the same lead.
+        // Dedup check
         const exists = records.some(r => String(r.id) === String(record.id));
         
         if (!exists) {
           records.push(record);
           fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-          console.log(`[DISK SYNC] New record written: ${record.agent} (Lead: ${record.leadId})`);
+          console.log(`[DISK SYNC] ✅ Record SAVED! | Agent: ${record.agent} | Lead: ${record.leadId} | Total: ${records.length}`);
           return { success: true, total: records.length, duplicate: false };
         } else {
-          console.log(`[DISK SYNC] Duplicate skipped: ID ${record.id}`);
+          console.log(`[DISK SYNC] ℹ️ Duplicate skipped: ID ${record.id}`);
           return { success: true, total: records.length, duplicate: true };
         }
       } else {
@@ -59,12 +59,13 @@ async function safeSaveRecords(record, isNew = true, updateId = null) {
         if (idx !== -1) {
           records[idx] = { ...records[idx], ...record };
           fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
+          console.log(`[DISK SYNC] ✅ Record UPDATED! | Lead: ${record.leadId} | Total: ${records.length}`);
           return { success: true, record: records[idx] };
         }
         return { success: false, error: 'Record not found' };
       }
     } catch (e) {
-      console.error('⚠️ Save failed:', e.message);
+      console.error('⚠️ [DISK SYNC] CRITICAL ERROR:', e.message);
       throw e;
     }
   }));
