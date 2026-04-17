@@ -106,6 +106,7 @@ app.get('/', (req, res) => {
 
 app.get('/api/records', (req, res) => {                             // ← ADDED
   try {
+    console.log(`[NETWORK] 📋 Someone opened/refreshed the dashboard (IP: ${req.ip})`);
     const records = loadSharedRecords();
     console.log(`📋 GET /api/records → ${records.length} records returned`);
     res.json(records);
@@ -116,6 +117,7 @@ app.get('/api/records', (req, res) => {                             // ← ADDED
 
 app.post('/api/records', async (req, res) => {
   const record = req.body;
+  console.log(`[NETWORK] ?? Receiving a SUBMIT request for Lead: ${record?.leadId} (Agent: ${record?.agent})`);
   if (!record || !record.agent) {
     return res.status(400).json({ error: 'Invalid record — agent is required' });
   }
