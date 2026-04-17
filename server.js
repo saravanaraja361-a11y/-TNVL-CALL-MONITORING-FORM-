@@ -71,13 +71,7 @@ async function safeSaveRecords(record, isNew = true, updateId = null) {
   }));
 }
 
-// ── Restore global error handlers ─────
-process.on('uncaughtException', (err) => {
-  console.error('⚠️  Uncaught Exception (server kept alive):', err.message);
-});
-process.on('unhandledRejection', (reason) => {
-  console.error('⚠️  Unhandled Rejection (server kept alive):', reason?.message || reason);
-});
+
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
