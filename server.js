@@ -47,10 +47,10 @@ async function safeSaveRecords(record, isNew = true, updateId = null) {
         if (!exists) {
           records.push(record);
           fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-          console.log(`✅ [SYNC] Saved: ${record.agent} (ID: ${record.id})`);
+          console.log(`[DISK SYNC] New record written: ${record.agent} (Lead: ${record.leadId})`);
           return { success: true, total: records.length, duplicate: false };
         } else {
-          console.log(`ℹ️ [SYNC] Duplicate ignored: ${key}`);
+          console.log(`[DISK SYNC] Duplicate skipped: ID ${record.id}`);
           return { success: true, total: records.length, duplicate: true };
         }
       } else {
