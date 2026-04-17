@@ -3,73 +3,50 @@ const express = require('express');
 const fetch = require('node-fetch');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs');                          // ← ADDED
+const fs = require('fs');
 const nodemailer = require('nodemailer');
+const mongoose = require('mongoose');
+
+// ═══════════════════════════════════════════════════════════════
+//  CLOUD STORAGE (MongoDB)
+// ═══════════════════════════════════════════════════════════════
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB Cloud'))
+  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+
+const recordSchema = new mongoose.Schema({
+  id: { type: String, unique: true },
+  date: String,
+  agent: String,
+  leadId: String,
+  customer: String,
+  callType: String,
+  duration: String,
+  datetime: String,
+  evaluator: String,
+  moveType: String,
+  moveValueAmount: String,
+  moveValueCategory: String,
+  conversionProbability: String,
+  leadStatus: String,
+  cueCardUsage: String,
+  recordingLink: String,
+  metCount: Number,
+  nmCount: Number,
+  niCount: Number,
+  assessed: Number,
+  pct: Number,
+  breakdown: Array,
+  aiAnalyzed: Boolean,
+  tskSummary: Object,
+  createdAt: { type: Date, default: Date.now }
+});
+
+const CallRecord = mongoose.model('CallRecord', recordSchema);
 
 const app = express();
 
-// ═══════════════════════════════════════════════════════════════
-//  SHARED RECORDS — stored in shared_records.json on the server
-//  All users on the same link read/write from this one file.
-//  Your manager in Chennai, your sister, everyone — same data.
-// ═══════════════════════════════════════════════════════════════
-
-const RECORDS_FILE = path.join(__dirname, 'shared_records.json');  // ← ADDED
-
-// // // // // // // // // // // // // // // // // // // // // // // // //
-//  SHARED RECORDS SYNC PROTECTION
-//  We use a queue to prevent race conditions when multiple users save at once.
-// // // // // // // // // // // // // // // // // // // // // // // // //
-let saveQueue = Promise.resolve();
-
-function loadSharedRecords() {
-  try {
-    if (fs.existsSync(RECORDS_FILE)) {
-      const raw = fs.readFileSync(RECORDS_FILE, 'utf8');
-      return JSON.parse(raw);
-    }
-  } catch (e) {
-    console.error('⚠️ Could not read shared_records.json:', e.message);
-  }
-  return [];
-}
-
-async function safeSaveRecords(record, isNew = true, updateId = null) {
-  // Use .catch(() => {}) to ensure the queue never stays 'Rejected' and blocks future saves.
-  return (saveQueue = saveQueue.catch(() => {}).then(async () => {
-    try {
-      const records = loadSharedRecords();
-      
-      if (isNew) {
-        // Dedup check
-        const exists = records.some(r => String(r.id) === String(record.id));
-        
-        if (!exists) {
-          records.push(record);
-          fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-          console.log(`[DISK SYNC] ✅ Record SAVED! | Agent: ${record.agent} | Lead: ${record.leadId} | Total: ${records.length}`);
-          return { success: true, total: records.length, duplicate: false };
-        } else {
-          console.log(`[DISK SYNC] ℹ️ Duplicate skipped: ID ${record.id}`);
-          return { success: true, total: records.length, duplicate: true };
-        }
-      } else {
-        // Update existing record
-        const idx = records.findIndex(r => String(r.id) === String(updateId));
-        if (idx !== -1) {
-          records[idx] = { ...records[idx], ...record };
-          fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-          console.log(`[DISK SYNC] ✅ Record UPDATED! | Lead: ${record.leadId} | Total: ${records.length}`);
-          return { success: true, record: records[idx] };
-        }
-        return { success: false, error: 'Record not found' };
-      }
-    } catch (e) {
-      console.error('⚠️ [DISK SYNC] CRITICAL ERROR:', e.message);
-      throw e;
-    }
-  }));
-}
+// (Removed local fs logic - replaced by Mongoose calls below)
 
 
 
@@ -98,11 +75,10 @@ app.get('/', (req, res) => {
 //  DELETE /api/records/:id    → delete a call (future use)
 // ═══════════════════════════════════════════════════════════════
 
-app.get('/api/records', (req, res) => {                             // ← ADDED
+app.get('/api/records', async (req, res) => {
   try {
-    console.log(`[NETWORK] 📋 Someone opened/refreshed the dashboard (IP: ${req.ip})`);
-    const records = loadSharedRecords();
-    console.log(`📋 GET /api/records → ${records.length} records returned`);
+    const records = await CallRecord.find({}).sort({ createdAt: -1 });
+    console.log(`[CLOUD] 📋 GET /api/records → ${records.length} records returned`);
     res.json(records);
   } catch (e) {
     res.status(500).json({ error: 'Failed to load records', details: e.message });
@@ -110,14 +86,23 @@ app.get('/api/records', (req, res) => {                             // ← ADDED
 });
 
 app.post('/api/records', async (req, res) => {
-  const record = req.body;
-  console.log(`[NETWORK] ?? Receiving a SUBMIT request for Lead: ${record?.leadId} (Agent: ${record?.agent})`);
-  if (!record || !record.agent) {
+  const recordData = req.body;
+  if (!recordData || !recordData.agent) {
     return res.status(400).json({ error: 'Invalid record — agent is required' });
   }
   try {
-    const result = await safeSaveRecords(record, true);
-    res.json(result);
+    const recordId = String(recordData.id);
+    const existing = await CallRecord.findOne({ id: recordId });
+    if (existing) {
+      console.log(`[CLOUD] ℹ️ Duplicate skipped: ID ${recordId}`);
+      const count = await CallRecord.countDocuments();
+      return res.json({ success: true, total: count, duplicate: true });
+    }
+    
+    await CallRecord.create({ ...recordData, id: recordId });
+    const total = await CallRecord.countDocuments();
+    console.log(`[CLOUD] ✅ Record SAVED! | Agent: ${recordData.agent} | Lead: ${recordData.leadId} | Total: ${total}`);
+    res.json({ success: true, total, duplicate: false });
   } catch (e) {
     res.status(500).json({ error: 'Failed to save record', details: e.message });
   }
@@ -125,22 +110,26 @@ app.post('/api/records', async (req, res) => {
 
 app.put('/api/records/:id', async (req, res) => {
   try {
-    const result = await safeSaveRecords(req.body, false, req.params.id);
-    if (!result.success) return res.status(404).json(result);
-    res.json(result);
+    const updated = await CallRecord.findOneAndUpdate(
+      { id: String(req.params.id) },
+      { $set: req.body },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, error: 'Record not found' });
+    console.log(`[CLOUD] ✅ Record UPDATED! | ID: ${req.params.id}`);
+    res.json({ success: true, record: updated });
   } catch (e) {
     res.status(500).json({ error: 'Failed to update record', details: e.message });
   }
 });
 
-app.delete('/api/records/:id', (req, res) => {                      // ← ADDED
+app.delete('/api/records/:id', async (req, res) => {
   try {
-    const records = loadSharedRecords();
-    const filtered = records.filter(r => String(r.id) !== String(req.params.id));
-    if (filtered.length === records.length) return res.status(404).json({ error: 'Record not found' });
-    saveSharedRecords(filtered);
-    console.log(`🗑  Record deleted: id=${req.params.id}`);
-    res.json({ success: true, total: filtered.length });
+    const result = await CallRecord.deleteOne({ id: String(req.params.id) });
+    if (result.deletedCount === 0) return res.status(404).json({ error: 'Record not found' });
+    const count = await CallRecord.countDocuments();
+    console.log(`[CLOUD] 🗑 Record deleted: id=${req.params.id}`);
+    res.json({ success: true, total: count });
   } catch (e) {
     res.status(500).json({ error: 'Failed to delete record', details: e.message });
   }
@@ -149,21 +138,29 @@ app.delete('/api/records/:id', (req, res) => {                      // ← ADDED
 // // // // // // // // // // // // // // // // // // // // // // // // //
 //  ONE-TIME DEDUP ENDPOINT
 // // // // // // // // // // // // // // // // // // // // // // // // //
-app.post('/api/records/dedup', (req, res) => {
+app.post('/api/records/dedup', async (req, res) => {
   try {
-    const records = loadSharedRecords();
+    const records = await CallRecord.find({});
     const seen = new Set();
-    const deduped = records.filter(r => {
-      // Better key: includes agent so two agents on same lead aren't collapsed
+    const toDelete = [];
+    const kept = [];
+    
+    records.forEach(r => {
       const key = `${r.agent||''}|${r.leadId||''}|${r.date||''}|${r.pct||''}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+      if (seen.has(key)) {
+        toDelete.push(r._id);
+      } else {
+        seen.add(key);
+        kept.push(r);
+      }
     });
-    const removed = records.length - deduped.length;
-    saveSharedRecords(deduped);
-    console.log(`\ud83e\uddf9 Dedup: removed ${removed} duplicates (${deduped.length} remain)`);
-    res.json({ success: true, before: records.length, after: deduped.length, removed });
+
+    if (toDelete.length > 0) {
+      await CallRecord.deleteMany({ _id: { $in: toDelete } });
+    }
+
+    console.log(`🧹 Dedup: removed ${toDelete.length} duplicates (${kept.length} remain)`);
+    res.json({ success: true, before: records.length, after: kept.length, removed: toDelete.length });
   } catch(e) {
     res.status(500).json({ error: e.message });
   }
@@ -1074,17 +1071,17 @@ app.post('/api/send-report-email', async (req, res) => {
 });
 
 // ── Health Check ──────────────────────────────────────────────────────────────
-app.get('/api/health', (_req, res) => res.json({
+app.get('/api/health', async (_req, res) => res.json({
   status: 'ok',
   engine: `Groq FREE (${GROQ_MODEL} + ${GROQ_MODEL_B2})`,
   groqKeys: `${GROQ_KEYS.length} keys loaded`,
-  sharedRecords: loadSharedRecords().length,              // ← ADDED
+  sharedRecords: await CallRecord.countDocuments(),
   port: process.env.PORT || 3000
 }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  const existing = loadSharedRecords();                   // ← ADDED
+app.listen(PORT, '0.0.0.0', async () => {
+  const count = await CallRecord.countDocuments();
   console.log(`\n✅ TNVL Server → http://0.0.0.0:${PORT}`);
   console.log(`   Engine : Groq FREE ✅`);
   console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
@@ -1092,7 +1089,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
-  console.log(`\n   📦 Shared Records: ${existing.length} records in shared_records.json`);  // ← ADDED
+  console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
   console.log(`   👥 Everyone on this link sees the same data now!\n`);                      // ← ADDED
   console.log(`\n   Accuracy v6 — what changed:`);
   console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
