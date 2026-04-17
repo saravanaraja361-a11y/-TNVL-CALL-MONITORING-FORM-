@@ -16,24 +16,58 @@ const app = express();
 
 const RECORDS_FILE = path.join(__dirname, 'shared_records.json');  // ← ADDED
 
-function loadSharedRecords() {                                       // ← ADDED
+// // // // // // // // // // // // // // // // // // // // // // // // //
+//  SHARED RECORDS SYNC PROTECTION
+//  We use a queue to prevent race conditions when multiple users save at once.
+// // // // // // // // // // // // // // // // // // // // // // // // //
+let saveQueue = Promise.resolve();
+
+function loadSharedRecords() {
   try {
     if (fs.existsSync(RECORDS_FILE)) {
       const raw = fs.readFileSync(RECORDS_FILE, 'utf8');
       return JSON.parse(raw);
     }
   } catch (e) {
-    console.error('⚠️  Could not read shared_records.json:', e.message);
+    console.error('⚠️ Could not read shared_records.json:', e.message);
   }
   return [];
 }
 
-function saveSharedRecords(records) {                                // ← ADDED
-  try {
-    fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-  } catch (e) {
-    console.error('⚠️  Could not save shared_records.json:', e.message);
-  }
+async function safeSaveRecords(record, isNew = true, updateId = null) {
+  return (saveQueue = saveQueue.then(async () => {
+    try {
+      const records = loadSharedRecords();
+      
+      if (isNew) {
+        // Use the record ID (timestamp) as the ultimate unique identifier.
+        // This prevents overwrites while allowing separate calls for the same lead.
+        const exists = records.some(r => String(r.id) === String(record.id));
+        
+        if (!exists) {
+          records.push(record);
+          fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
+          console.log(`✅ [SYNC] Saved: ${record.agent} (ID: ${record.id})`);
+          return { success: true, total: records.length, duplicate: false };
+        } else {
+          console.log(`ℹ️ [SYNC] Duplicate ignored: ${key}`);
+          return { success: true, total: records.length, duplicate: true };
+        }
+      } else {
+        // Update existing record
+        const idx = records.findIndex(r => String(r.id) === String(updateId));
+        if (idx !== -1) {
+          records[idx] = { ...records[idx], ...record };
+          fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
+          return { success: true, record: records[idx] };
+        }
+        return { success: false, error: 'Record not found' };
+      }
+    } catch (e) {
+      console.error('⚠️ Save failed:', e.message);
+      throw e;
+    }
+  }));
 }
 
 // ── Restore global error handlers ─────
@@ -79,39 +113,24 @@ app.get('/api/records', (req, res) => {                             // ← ADDED
   }
 });
 
-app.post('/api/records', (req, res) => {                            // ← ADDED
+app.post('/api/records', async (req, res) => {
   const record = req.body;
   if (!record || !record.agent) {
     return res.status(400).json({ error: 'Invalid record — agent is required' });
   }
   try {
-    const records = loadSharedRecords();
-    const key = `${record.leadId||''}|${record.date||''}|${record.evaluator||''}|${record.pct||''}`;
-    const exists = records.some(r =>
-      `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}` === key
-    );
-    if (!exists) {
-      records.push(record);
-      saveSharedRecords(records);
-      console.log(`✅ New record saved: agent=${record.agent} lead=${record.leadId} score=${record.pct}% → total=${records.length}`);
-    } else {
-      console.log(`ℹ️  Duplicate skipped: ${key}`);
-    }
-    res.json({ success: true, total: records.length, duplicate: exists });
+    const result = await safeSaveRecords(record, true);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to save record', details: e.message });
   }
 });
 
-app.put('/api/records/:id', (req, res) => {                         // ← ADDED
+app.put('/api/records/:id', async (req, res) => {
   try {
-    const records = loadSharedRecords();
-    const idx = records.findIndex(r => String(r.id) === String(req.params.id));
-    if (idx === -1) return res.status(404).json({ error: 'Record not found' });
-    records[idx] = { ...records[idx], ...req.body };
-    saveSharedRecords(records);
-    console.log(`✏️  Record updated: id=${req.params.id}`);
-    res.json({ success: true, record: records[idx] });
+    const result = await safeSaveRecords(req.body, false, req.params.id);
+    if (!result.success) return res.status(404).json(result);
+    res.json(result);
   } catch (e) {
     res.status(500).json({ error: 'Failed to update record', details: e.message });
   }
@@ -492,7 +511,7 @@ async function analyzeContext(transcript) {
   const usr = `Carefully read this call transcript and return a JSON context object.
 
 TRANSCRIPT:
-${transcript.substring(0, 5000)}
+${transcript.substring(0, 10000)}
 
 Return ONLY this JSON with true/false values:
 {
@@ -529,23 +548,17 @@ Return ONLY this JSON with true/false values:
 }
 
 CRITICAL INSTRUCTIONS:
-- isFollowUpCall=true ONLY when: customer has already booked AND paid a deposit AND this call is about confirming move day / dispatch / handling a pre-move issue. NOT for initial quote calls.
-- inventoryWasDiscussed=true if agent asks about furniture/items
-- packingWasDiscussed=true if agent asks about packing/boxes
-- accessWasDiscussed=true if agent asks about stairs/elevator/parking
-- trustBuildingWasDiscussed=true if agent explains billing/timing/transparency
-- agentGaveEstimate=true if agent provides any price/quote
-- agentDiscussedPayment=true if agent mentions deposit/payment
-- agentDiscussedPreMoveConf=true if agent mentions confirmation call
-- callDurationCategory: "short" = under 800 words in transcript, "medium" = 800-1800 words, "long" = over 1800 words
-- customerIsSelfPacking=true if customer explicitly says they will pack their own items themselves
-- dismantlingWasDiscussed=true if agent specifically asked about or discussed bed/furniture dismantling/assembly
-- elevatorWasMentioned=true if elevator was specifically mentioned in the call
-- stairsAtDeliveryMentioned=true if stairs at the delivery/destination address were discussed
-- addressCapturedInCall=true if agent explicitly asked for and received street-level addresses during the call (cities alone do not count)
-- moveTypeExplainedInDetail=true if agent explicitly described what basic moving includes OR what full-service moving includes
-- bothPricingTypesDiscussed=true if agent discussed BOTH hourly/local pricing AND weight-based/long-distance pricing in the same call
-- isDisputeOrComplaintCall=true if ANY of these are true: (1) customer expresses frustration, anger, or feeling misled during the call, (2) agent is delivering unexpected bad news (extra charges, delays, policy changes), (3) customer says words like "outrageous", "shaken down", "confused", "not happy", "I was told differently", (4) call involves a dispute about pricing, charges, or service promises made earlier
+- isFollowUpCall=true when: customer mentions "calling you back", "following up", or discusses a previously provided quote/estimate.
+- moveType="longdistance" if: customer mentions states (e.g., from NY to CA), "long distance", "interstate", or pricing by weight (pounds/lbs).
+- customerRaisedPriceObjection=true if: customer mentions prices being "highest", "second highest", "expensive", compares competitor prices, or asks for a discount/match.
+- bothPricingTypesDiscussed=true ONLY if agent discusses BOTH (1) hourly/crew rates AND (2) weight/distance-based pricing in the same call. If only per-pound is discussed, this is FALSE. If only hourly is discussed, this is FALSE.
+- isDisputeOrComplaintCall=true ONLY if: (1) customer expresses anger, hostility, or extreme frustration, (2) agent is delivering unexpected bad news that the customer rejects. A customer comparing prices or negotiating is NOT a dispute.
+- agentGaveEstimate=true if agent provides any price/quote OR discusses labor/hourly/per-pound rates.
+- trustBuildingWasDiscussed=true if agent explains billing/timing/transparency OR discusses how pricing works OR mentions no hidden charges.
+- agentDiscussedPayment=true if agent mentions deposit/payment OR discusses payment terms OR explains when payment is due.
+- bothPricingTypesDiscussed=true if agent discusses BOTH hourly/local pricing AND weight-based/long-distance pricing OR discusses multiple pricing options.
+- inventoryWasDiscussed=true if agent asks about furniture/items OR customer discusses their inventory/weight OR mentions specific items.
+- packingWasDiscussed=true if agent asks about packing/boxes OR customer mentions packing OR discusses packing options.
 
 IMPORTANT: Default to FALSE unless you find CLEAR EVIDENCE in transcript.`;
 
@@ -575,27 +588,28 @@ function buildSkipList(ctx) {
   const skip = new Set();
   const isLD = ctx.moveType === 'longdistance';
   const isShort = ctx.callDurationCategory === 'short';
-  const isMedium = ctx.callDurationCategory === 'medium';
-
-  if (ctx.isFollowUpCall) {
-    SECTIONS.forEach((sec, si) => {
-      if (sec.manualOnly) return;
-      sec.items.forEach((_, ii) => {
-        const key = `r_${si}_${ii}`;
-        const keepIntro = (si === 0 && ii === 0);
-        const keepGreeting = (si === 0 && ii === 1);
-        const keepPurpose = (si === 1 && ii === 0);
-        const keepSoftSkills = (si === 20);
-        if (!keepIntro && !keepGreeting && !keepPurpose && !keepSoftSkills) skip.add(key);
-      });
-    });
-    return skip;
-  }
 
   SECTIONS.forEach((sec, si) => {
     sec.items.forEach((_, ii) => {
       const key = `r_${si}_${ii}`;
 
+      // Global follow-up suppression handling
+      if (ctx.isFollowUpCall) {
+        const keepIntro = (si === 0 && ii <= 1);
+        const keepPurpose = (si === 1 && ii === 0);
+        const keepSoftSkills = (si === 20);
+        const keepPricing = (si >= 7 && si <= 9); 
+        const keepObjections = (si >= 10 && si <= 16); 
+        const keepBooking = (si === 17);
+        const keepPreMove = (si === 18);
+        
+        if (!keepIntro && !keepPurpose && !keepSoftSkills && !keepPricing && !keepObjections && !keepBooking && !keepPreMove) {
+          skip.add(key);
+          return;
+        }
+      }
+
+      // Context-aware specialized skips (apply even to follow-ups)
       if (si === 0 && [2, 3, 5, 6].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
       if (si === 0 && ii === 4 && ctx.customerAvailable) skip.add(key);
 
@@ -689,11 +703,21 @@ RATING SYSTEM — 3 POSSIBLE VALUES: met / notmet / ni
 ═══════════════════════════════════════════════════════
 
 "met"    = Agent did it. May be brief but clear. Task was accomplished.
-"notmet" = Agent did NOT do it at all. Topic absent from call.
-"ni"     = Agent did it BUT delivery was clearly poor (robotic, heavy fillers, no benefit explanation)
+"notmet" = Agent missed a required topic that should have been covered.
+"ni"     = Agent did it BUT delivery was clearly poor (robotic, heavy fillers, unsure)
+"skip"   = Use this if the item is clearly NOT applicable to this specific call context (e.g., discussing weigh stations in a follow-up purely about price matching, or local pricing details in a long-distance call).
 
 ═══════════════════════════════════════════════════════
-STAGE 1: DID AGENT DO IT? (Read AI Summary first)
+STAGE 1: IS IT APPLICABLE? (The "Smart Skip" Rule)
+═══════════════════════════════════════════════════════
+
+Use "skip" FREELY for items that are irrelevant to the specific conversation.
+- If the call is a follow-up focused on a specific issue (e.g., price matching), many sub-items in the full checklist (like "Google Maps calculation", "wrapping procedures", "stairs at delivery") may not be relevant if they were supposedly covered in the first call or aren't relevant to the current dispute. 
+- If an item is NOT applicable → "skip".
+- If an item was applicable but was missed or ignored → "notmet".
+
+═══════════════════════════════════════════════════════
+STAGE 2: DID AGENT DO IT? (Read AI Summary first)
 ═══════════════════════════════════════════════════════
 
 RULE OF SILENCE: If the topic is clearly NOT in the AI Summary → "notmet"
@@ -747,7 +771,8 @@ SPECIFIC GUIDANCE:
 - "Avoided vague/filler language" → "ni" only if fillers are PERVASIVE, not occasional
 - "Built rapport using customer name" → "met" if agent uses name at least 2 times naturally
 - "Spoke clearly and confidently" → "ni" if agent sounds notably unsure or rushed throughout
-- "Showed empathy" → "ni" if agent acknowledged concern but in a formulaic/dismissive way
+- "Showed empathy" → "ni" only if agent completely dismisses concern or shows no acknowledgment
+- "met" if agent acknowledges customer concerns reasonably (even brief "I understand" is sufficient)
 
 CALIBRATION TARGETS (manual analysis benchmarks):
 - Jessica (Lead 2109, 14 min): ~68% — good call with some packing/trust gaps
@@ -803,8 +828,8 @@ APPLY THESE STRICT RULES FOR SOFT SKILLS:
 → "ni" if agent cannot clearly explain why the charge is legitimate
 
 EXPECTED DISTRIBUTION for dispute/complaint calls:
-- Soft Skills: 1-3 "met", 6-9 "ni", 0-2 "notmet"
-- Overall call score for a 7-minute dispute call: typically 40-55%` : `No special dispute/complaint rules apply to this call.`}
+- Soft Skills: 4-6 "met", 4-6 "ni", 0-1 "notmet"
+- Goal: Reflect professional handling of a difficult situation. Only use "ni" for actual delivery failures.` : `No special dispute/complaint rules apply to this call.`}
 
 Return ONLY this JSON format:
 {"ratings": {"r_0_0": "met", "r_0_1": "notmet", "r_1_2": "ni", ...}}`;
@@ -855,7 +880,7 @@ async function analyzeCall(callText) {
       ratings[key] = 'skip';
     } else {
       const r = batchRatings[key];
-      ratings[key] = ['met', 'notmet', 'ni'].includes(r) ? r : 'skip';
+      ratings[key] = ['met', 'notmet', 'ni', 'skip'].includes(r) ? r : 'skip';
     }
   });
 
