@@ -1374,7 +1374,11 @@ const SECTIONS = [
 
 // ── Dynamic API Base Detection (Local vs Deployed) ─────
 function getApiBase() {
-  return window.location.origin;
+  const origin = window.location.origin;
+  if (origin === 'null' || origin.startsWith('file')) {
+    return 'http://localhost:3000';
+  }
+  return origin;
 }
 
 let ratings = {}, records = [], selectedFile = null;
