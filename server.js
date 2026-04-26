@@ -94,7 +94,6 @@ app.post('/api/records', async (req, res) => {
       const count = await CallRecord.countDocuments();
       return res.json({ success: true, total: count, duplicate: true });
     }
-
     await CallRecord.create({ ...recordData, id: recordId });
     const total = await CallRecord.countDocuments();
     console.log(`[CLOUD] ✅ Record SAVED! | Agent: ${recordData.agent} | Lead: ${recordData.leadId} | Total: ${total}`);
@@ -131,14 +130,13 @@ app.delete('/api/records/:id', async (req, res) => {
   }
 });
 
-// ── ONE-TIME DEDUP ENDPOINT ───────────────────────────────────────────────────
+// ── One-time dedup endpoint ───────────────────────────────────────────────────
 app.post('/api/records/dedup', async (req, res) => {
   try {
     const records = await CallRecord.find({});
     const seen = new Set();
     const toDelete = [];
     const kept = [];
-
     records.forEach(r => {
       const key = `${r.agent || ''}|${r.leadId || ''}|${r.date || ''}|${r.pct || ''}`;
       if (seen.has(key)) {
@@ -148,11 +146,9 @@ app.post('/api/records/dedup', async (req, res) => {
         kept.push(r);
       }
     });
-
     if (toDelete.length > 0) {
       await CallRecord.deleteMany({ _id: { $in: toDelete } });
     }
-
     console.log(`🧹 Dedup: removed ${toDelete.length} duplicates (${kept.length} remain)`);
     res.json({ success: true, before: records.length, after: kept.length, removed: toDelete.length });
   } catch (e) {
@@ -161,7 +157,7 @@ app.post('/api/records/dedup', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  GROQ SETUP
+//  GROQ AI ENGINE
 // ═══════════════════════════════════════════════════════════════
 
 const GROQ_KEYS = [
@@ -184,7 +180,6 @@ const delay = ms => new Promise(r => setTimeout(r, ms));
 
 async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
   if (GROQ_KEYS.length === 0) throw new Error('No GROQ_API_KEY configured');
-
   const attempts = GROQ_KEYS.length;
   for (let i = 0; i < attempts; i++) {
     const key = GROQ_KEYS[currentKeyIndex];
@@ -198,7 +193,6 @@ async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
         max_tokens: maxTokens
       })
     });
-
     if (res.status === 401 || res.status === 429) {
       console.warn(`⚠️ Groq Key ${currentKeyIndex + 1} failed (${res.status}). Switching to next key...`);
       currentKeyIndex = (currentKeyIndex + 1) % GROQ_KEYS.length;
@@ -207,12 +201,10 @@ async function callGroq(model, systemPrompt, userPrompt, maxTokens = 700) {
       }
       continue;
     }
-
     if (!res.ok) {
       const e = await res.json().catch(() => ({}));
       throw new Error(`Groq ${res.status}: ${e?.error?.message || 'unknown error'}`);
     }
-
     const data = await res.json();
     const text = data?.choices?.[0]?.message?.content || '';
     if (!text) throw new Error('Groq returned empty response. Please try again.');
@@ -228,7 +220,6 @@ function parseJSON(raw) {
   return null;
 }
 
-// Bias toward end of call (booking/payment/pre-move happen at the end)
 function sampleTranscript(text, maxChars = 8500) {
   if (text.length <= maxChars) return text;
   const s = Math.floor(maxChars * 0.38);
@@ -244,7 +235,6 @@ function sampleTranscript(text, maxChars = 8500) {
   );
 }
 
-// Estimate word count from transcript portion only
 function estimateWordCount(text) {
   const transcriptMatch = text.match(/(?:FULL TRANSCRIPT|Transcript)[\s\S]*?[\n\r]([\s\S]*)$/i);
   const transcriptText = transcriptMatch ? transcriptMatch[1] : text;
@@ -330,7 +320,7 @@ const SECTIONS = [
     ]
   },
   {
-    title: "Pricing & Estimate \u2013 Local Moves", items: [
+    title: "Pricing & Estimate – Local Moves", items: [
       "Explained pricing is based on hourly rate and crew size",
       "Explained billing start and end points clearly",
       "Linked estimate to inventory and access factors",
@@ -338,7 +328,7 @@ const SECTIONS = [
     ]
   },
   {
-    title: "Pricing & Estimate \u2013 Long Distance", items: [
+    title: "Pricing & Estimate – Long Distance", items: [
       "Explained pricing is based on shipment weight and distance",
       "Explained certified weigh station process",
       "Clarified labor vs transportation charges",
@@ -464,7 +454,7 @@ const SECTIONS = [
       "Showed empathy and reassurance during customer concerns",
       "Maintained a calm, respectful, and positive tone throughout the call",
       "Guided the conversation and kept it focused on next steps.",
-      "Built rapport and trust using the customer\u2019s name and natural conversation",
+      "Built rapport and trust using the customer's name and natural conversation",
       "Summarized key details and encouraged commitment or next steps",
       "Confidently responded to customer questions without deflection",
       "Did not sound dismissive, rushed, or irritated"
@@ -595,34 +585,25 @@ function buildSkipList(ctx) {
 
       if (si === 0 && [2, 3, 5, 6].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
       if (si === 0 && ii === 4 && ctx.customerAvailable) skip.add(key);
-
       if (si === 1 && [4, 5, 6].includes(ii) && ctx.customerAvailable) skip.add(key);
       if (si === 1 && ii === 2) skip.add(key);
-
       if (si === 2 && [1, 2].includes(ii) && !ctx.moveTypeExplainedInDetail) skip.add(key);
-
       if (si === 3 && !ctx.addressCapturedInCall) skip.add(key);
       if (si === 3 && ii === 3 && isShort) skip.add(key);
-
       if (si === 4 && !ctx.inventoryWasDiscussed) skip.add(key);
-
       if (si === 5 && !ctx.accessWasDiscussed) skip.add(key);
       if (si === 5 && [5, 6].includes(ii) && !ctx.elevatorWasMentioned) skip.add(key);
       if (si === 5 && ii === 1 && !ctx.stairsAtDeliveryMentioned) skip.add(key);
       if (si === 5 && ii === 4) skip.add(key);
       if (si === 5 && ii === 7 && isShort) skip.add(key);
-
       if (si === 6 && !ctx.packingWasDiscussed && ii >= 2) skip.add(key);
       if (si === 6 && ctx.customerIsSelfPacking) {
         if ([3, 4, 8].includes(ii)) skip.add(key);
       }
       if (si === 6 && !ctx.dismantlingWasDiscussed && [5, 6, 7].includes(ii)) skip.add(key);
-
       if (si === 7 && isLD && !ctx.bothPricingTypesDiscussed) skip.add(key);
       if (si === 8 && !isLD && !ctx.bothPricingTypesDiscussed) skip.add(key);
-
       if (si === 9 && !ctx.trustBuildingWasDiscussed) skip.add(key);
-
       if (si === 10 && !ctx.customerRaisedTrustObjection) skip.add(key);
       if (si === 11 && !ctx.customerRaisedPriceObjection) skip.add(key);
       if (si === 12 && !ctx.customerRaisedSafetyObjection) skip.add(key);
@@ -630,11 +611,8 @@ function buildSkipList(ctx) {
       if (si === 14 && !ctx.customerRaisedUrgencyObjection) skip.add(key);
       if (si === 15 && !ctx.customerAskedToDelay) skip.add(key);
       if (si === 16 && !ctx.customerRaisedChargesObjection) skip.add(key);
-
       if (si === 17 && !ctx.agentDiscussedPayment && ii >= 3) skip.add(key);
-
       if (si === 18 && !ctx.agentDiscussedPreMoveConf) skip.add(key);
-
       if (si === 19 && !ctx.cancellationRequested) skip.add(key);
     });
   });
@@ -652,10 +630,8 @@ async function rateChecklist(transcript, skipSet, allItems, ctx) {
 
   function buildBatchPrompt(batch) {
     const itemLines = batch.map(i => `${i.key}: ${i.label}`).join('\n');
-
     const summaryMatch = transcript.match(/(?:AI SUMMARY|Summary)[\s\S]*?[\n\r]([\s\S]*?)(?=(?:FULL TRANSCRIPT|Transcript)|$)/i);
     const transcriptMatch = transcript.match(/(?:FULL TRANSCRIPT|Transcript)[\s\S]*?[\n\r]([\s\S]*)$/i);
-
     const aiSummary = summaryMatch ? summaryMatch[1].trim() : transcript.substring(0, 5000);
     const fullTranscript = transcriptMatch ? transcriptMatch[1].trim().substring(0, 8000) : transcript.substring(Math.max(0, transcript.length - 8000));
 
@@ -688,7 +664,7 @@ RATING SYSTEM — 3 POSSIBLE VALUES: met / notmet / ni
 "met"    = Agent did it. May be brief but clear. Task was accomplished.
 "notmet" = Agent missed a required topic that should have been covered.
 "ni"     = Agent did it BUT delivery was clearly poor (robotic, heavy fillers, unsure)
-"skip"   = Use this if the item is clearly NOT applicable to this specific call context.
+"skip"   = Not applicable to this specific call context.
 
 Return ONLY this JSON format:
 {"ratings": {"r_0_0": "met", "r_0_1": "notmet", "r_1_2": "ni", ...}}`;
@@ -816,8 +792,10 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  EMAIL ROUTE — FIXED: port 465 SSL avoids AUTH PLAIN rejection
-//  on cloud servers that intercept STARTTLS (port 587).
+//  EMAIL ROUTE — FIXED for cloud servers (port 465 + SSL)
+//  Root cause: Zoho blocks AUTH PLAIN from unknown IPs on
+//  port 587/STARTTLS. Port 465 uses direct SSL which sends
+//  AUTH LOGIN — accepted from any IP.
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/send-report-email', async (req, res) => {
   const { pdfBase64, fileName, htmlContent } = req.body;
@@ -838,43 +816,36 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(500).json({ error: 'Email credentials missing in server .env' });
   }
 
-  // ── KEY FIX ──────────────────────────────────────────────────────────────
-  // Port 465 + secure:true uses SSL from the first byte, bypassing the
-  // STARTTLS negotiation that Zoho rejects on cloud-server IPs with
-  // "501 Could not decode user and password for AUTH PLAIN".
-  // Port 587 + secure:false (STARTTLS) works locally but fails on cloud.
-  // ─────────────────────────────────────────────────────────────────────────
-  const emailPort = parseInt(process.env.EMAIL_PORT) || 465;
-  const useSSL = emailPort === 465;
-
+  // ── FIXED: Use port 465 + secure:true (SSL) instead of 587 + STARTTLS ──
+  // Zoho rejects AUTH PLAIN from cloud IPs on port 587.
+  // Port 465 forces AUTH LOGIN which Zoho accepts from any IP.
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-    port: emailPort,
-    secure: useSSL,          // true  → SSL/TLS from start (port 465)
-    // false → STARTTLS upgrade (port 587)
+    port: 465,          // ← FIXED: was 587, now 465 (SSL)
+    secure: true,       // ← FIXED: was false, now true (direct SSL, no STARTTLS)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    tls: {
-      rejectUnauthorized: false,
-      minVersion: 'TLSv1.2'   // cloud hosts strip older ciphers
-    },
+    // No tls block needed — port 465 handles it natively
     connectionTimeout: 30000,
     greetingTimeout: 15000,
-    socketTimeout: 45000
+    socketTimeout: 45000,
+    pool: true,
+    maxConnections: 5,
+    maxMessages: 100
   });
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
 
   try {
-    console.log('📨 Email configuration:', {
-      host: process.env.EMAIL_HOST,
-      port: emailPort,
-      secure: useSSL,
+    console.log('📤 Email configuration:', {
+      host: process.env.EMAIL_HOST || 'smtp.zoho.com',
+      port: 465,
+      secure: true,
       user: process.env.EMAIL_USER,
       hasPass: !!process.env.EMAIL_PASS,
-      recipients
+      recipients: recipients
     });
 
     const mailOptions = {
@@ -891,7 +862,7 @@ app.post('/api/send-report-email', async (req, res) => {
       ]
     };
 
-    console.log(`📤 Sending PDF report to: ${recipients}...`);
+    console.log(`📨 Sending PDF report to: ${recipients}...`);
     const startTime = Date.now();
     const info = await transporter.sendMail(mailOptions);
     const duration = Date.now() - startTime;
@@ -911,15 +882,15 @@ app.post('/api/send-report-email', async (req, res) => {
 
     let userMessage = 'Failed to send report';
     if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check Zoho credentials or use an App Password.';
+      userMessage = 'Authentication failed. Check Zoho credentials or use an App Password (accounts.zoho.com → Security → App Passwords).';
     } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. Port 465 may be blocked by your host — contact support.';
+      userMessage = 'Connection refused. Port 465 may be blocked by your hosting firewall — contact your host to open outbound port 465.';
     } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Firewall may be blocking outbound SMTP.';
+      userMessage = 'Connection timed out. Firewall may be blocking port 465. Try whitelisting smtp.zoho.com:465.';
     } else if (error.code === 'ENOTFOUND') {
-      userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com.';
+      userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com — check server DNS settings.';
     } else if (error.code === 'EHOSTUNREACH') {
-      userMessage = 'Host unreachable. Network connectivity issue.';
+      userMessage = 'Host unreachable. Check network connectivity on the server.';
     }
 
     res.status(500).json({
@@ -927,10 +898,10 @@ app.post('/api/send-report-email', async (req, res) => {
       details: error.message,
       code: error.code,
       troubleshooting: {
-        primaryFix: 'Ensure EMAIL_PORT=465 in your .env file',
-        checkFirewall: 'Ensure outbound port 465 is open on your live server',
-        checkCredentials: 'Verify EMAIL_USER and EMAIL_PASS are correct',
-        zohoAppPassword: 'If 2FA is enabled on Zoho, generate an App Password at accounts.zoho.com'
+        step1: "Ensure outbound port 465 is open on your server/hosting firewall",
+        step2: "Generate a Zoho App Password at accounts.zoho.com → Security → App Passwords",
+        step3: "Use the App Password as EMAIL_PASS in your .env (not your login password)",
+        step4: "Make sure EMAIL_PORT=465 is set in your .env file"
       }
     });
   }
@@ -949,14 +920,14 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', async () => {
   const count = await CallRecord.countDocuments();
   console.log(`\n✅ TNVL Server → http://0.0.0.0:${PORT}`);
-  console.log(`   Engine : Groq FREE ✅`);
-  console.log(`   Model  : ${GROQ_MODEL} (context + batch 1)`);
-  console.log(`   Model2 : ${GROQ_MODEL_B2} (batch 2)`);
-  console.log(`   Keys   : ✅ loaded ${GROQ_KEYS.length} keys`);
-  console.log(`   Speed  : ~20-30s per analysis`);
-  console.log(`   Limits : No daily cap — FREE forever`);
+  console.log(`   Engine  : Groq FREE ✅`);
+  console.log(`   Model   : ${GROQ_MODEL} (context + batch 1)`);
+  console.log(`   Model2  : ${GROQ_MODEL_B2} (batch 2)`);
+  console.log(`   Keys    : ✅ loaded ${GROQ_KEYS.length} keys`);
+  console.log(`   Speed   : ~20-30s per analysis`);
+  console.log(`   Limits  : No daily cap — FREE forever`);
   console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
   console.log(`   👥 Everyone on this link sees the same data now!`);
-  console.log(`\n   📧 EMAIL: Port ${parseInt(process.env.EMAIL_PORT) || 465} | SSL=${parseInt(process.env.EMAIL_PORT) === 465}`);
-  console.log(`   Fix applied: port 465 SSL avoids AUTH PLAIN rejection on cloud hosts\n`);
+  console.log(`\n   📧 EMAIL: Port 465 SSL (Zoho cloud fix active)`);
+  console.log(`   📊 Records: ${count} total in database\n`);
 });
