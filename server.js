@@ -820,14 +820,15 @@ app.post('/api/send-report-email', async (req, res) => {
   // Zoho rejects AUTH PLAIN from cloud IPs on port 587.
   // Port 465 forces AUTH LOGIN which Zoho accepts from any IP.
   const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-    port: 465,          // ← FIXED: was 587, now 465 (SSL)
-    secure: true,       // ← FIXED: was false, now true (direct SSL, no STARTTLS)
+    host: 'smtppro.zoho.com',
+    port: 465,
+    secure: true,
+    authMethod: 'LOGIN',        // ← ADD THIS LINE
     auth: {
+      type: 'login',            // ← ADD THIS LINE  
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    // No tls block needed — port 465 handles it natively
     connectionTimeout: 30000,
     greetingTimeout: 15000,
     socketTimeout: 45000,
