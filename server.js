@@ -98,7 +98,7 @@ app.post('/api/records', async (req, res) => {
       const count = await CallRecord.countDocuments();
       return res.json({ success: true, total: count, duplicate: true });
     }
-    
+
     await CallRecord.create({ ...recordData, id: recordId });
     const total = await CallRecord.countDocuments();
     console.log(`[CLOUD] ✅ Record SAVED! | Agent: ${recordData.agent} | Lead: ${recordData.leadId} | Total: ${total}`);
@@ -144,9 +144,9 @@ app.post('/api/records/dedup', async (req, res) => {
     const seen = new Set();
     const toDelete = [];
     const kept = [];
-    
+
     records.forEach(r => {
-      const key = `${r.agent||''}|${r.leadId||''}|${r.date||''}|${r.pct||''}`;
+      const key = `${r.agent || ''}|${r.leadId || ''}|${r.date || ''}|${r.pct || ''}`;
       if (seen.has(key)) {
         toDelete.push(r._id);
       } else {
@@ -161,7 +161,7 @@ app.post('/api/records/dedup', async (req, res) => {
 
     console.log(`🧹 Dedup: removed ${toDelete.length} duplicates (${kept.length} remain)`);
     res.json({ success: true, before: records.length, after: kept.length, removed: toDelete.length });
-  } catch(e) {
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
@@ -182,9 +182,9 @@ const GROQ_KEYS = [
 
 let currentKeyIndex = 0;
 
-const GROQ_MODEL   = 'llama-3.3-70b-versatile';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
 const GROQ_MODEL_B2 = 'llama-3.1-8b-instant';
-const GROQ_URL      = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
@@ -592,11 +592,11 @@ function buildSkipList(ctx) {
         const keepIntro = (si === 0 && ii <= 1);
         const keepPurpose = (si === 1 && ii === 0);
         const keepSoftSkills = (si === 20);
-        const keepPricing = (si >= 7 && si <= 9); 
-        const keepObjections = (si >= 10 && si <= 16); 
+        const keepPricing = (si >= 7 && si <= 9);
+        const keepObjections = (si >= 10 && si <= 16);
         const keepBooking = (si === 17);
         const keepPreMove = (si === 18);
-        
+
         if (!keepIntro && !keepPurpose && !keepSoftSkills && !keepPricing && !keepObjections && !keepBooking && !keepPreMove) {
           skip.add(key);
           return;
@@ -974,23 +974,24 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
+  const emailPort = parseInt(process.env.EMAIL_PORT) || 465;
+  const useSSL = emailPort === 465;
+
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-    port: parseInt(process.env.EMAIL_PORT) || 587,
-    secure: false,
+    port: emailPort,
+    secure: useSSL,        // true for 465, false for 587
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
     tls: {
-      rejectUnauthorized: false
+      rejectUnauthorized: false,
+      minVersion: 'TLSv1.2'
     },
-    connectionTimeout: 30000,        // 30 seconds connection timeout
-    greetingTimeout: 15000,          // 15 seconds greeting timeout
-    socketTimeout: 45000,            // 45 seconds socket timeout
-    pool: true,                      // Enable connection pooling
-    maxConnections: 5,               // Max connections in pool
-    maxMessages: 100                 // Max messages per connection
+    connectionTimeout: 30000,
+    greetingTimeout: 15000,
+    socketTimeout: 45000
   });
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
