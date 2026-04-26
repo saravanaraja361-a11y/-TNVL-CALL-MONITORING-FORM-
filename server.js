@@ -46,10 +46,6 @@ const CallRecord = mongoose.model('CallRecord', recordSchema);
 
 const app = express();
 
-// (Removed local fs logic - replaced by Mongoose calls below)
-
-
-
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
@@ -68,11 +64,11 @@ app.get('/', (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  SHARED RECORDS API — 4 endpoints                            ← ADDED
-//  GET    /api/records        → load all records (page load)
-//  POST   /api/records        → save new call (on submit)
-//  PUT    /api/records/:id    → update a call (on edit save)
-//  DELETE /api/records/:id    → delete a call (future use)
+//  SHARED RECORDS API
+//  GET    /api/records        → load all records
+//  POST   /api/records        → save new call
+//  PUT    /api/records/:id    → update a call
+//  DELETE /api/records/:id    → delete a call
 // ═══════════════════════════════════════════════════════════════
 
 app.get('/api/records', async (req, res) => {
@@ -135,9 +131,7 @@ app.delete('/api/records/:id', async (req, res) => {
   }
 });
 
-// // // // // // // // // // // // // // // // // // // // // // // // //
-//  ONE-TIME DEDUP ENDPOINT
-// // // // // // // // // // // // // // // // // // // // // // // // //
+// ── ONE-TIME DEDUP ENDPOINT ───────────────────────────────────────────────────
 app.post('/api/records/dedup', async (req, res) => {
   try {
     const records = await CallRecord.find({});
@@ -166,9 +160,9 @@ app.post('/api/records/dedup', async (req, res) => {
   }
 });
 
-// // // // // // // // // // // // // // // // // // // // // // // // //
-//  EVERYTHING BELOW THIS LINE IS 100% UNCHANGED FROM ORIGINAL
-// // // // // // // // // // // // // // // // // // // // // // // // //
+// ═══════════════════════════════════════════════════════════════
+//  GROQ SETUP
+// ═══════════════════════════════════════════════════════════════
 
 const GROQ_KEYS = [
   process.env.GROQ_API_KEY_1,
@@ -499,7 +493,7 @@ function flattenChecklist() {
   return items;
 }
 
-// ── Pass 1: Extract call context ─────────────────────────────────────────────
+// ── Pass 1: Extract call context ──────────────────────────────────────────────
 async function analyzeContext(transcript) {
   const sys = 'You are a call quality analyst. Return ONLY valid JSON, no markdown, no explanation.';
   const usr = `Carefully read this call transcript and return a JSON context object.
@@ -545,12 +539,11 @@ CRITICAL INSTRUCTIONS:
 - isFollowUpCall=true when: customer mentions "calling you back", "following up", or discusses a previously provided quote/estimate.
 - moveType="longdistance" if: customer mentions states (e.g., from NY to CA), "long distance", "interstate", or pricing by weight (pounds/lbs).
 - customerRaisedPriceObjection=true if: customer mentions prices being "highest", "second highest", "expensive", compares competitor prices, or asks for a discount/match.
-- bothPricingTypesDiscussed=true ONLY if agent discusses BOTH (1) hourly/crew rates AND (2) weight/distance-based pricing in the same call. If only per-pound is discussed, this is FALSE. If only hourly is discussed, this is FALSE.
-- isDisputeOrComplaintCall=true ONLY if: (1) customer expresses anger, hostility, or extreme frustration, (2) agent is delivering unexpected bad news that the customer rejects. A customer comparing prices or negotiating is NOT a dispute.
+- bothPricingTypesDiscussed=true ONLY if agent discusses BOTH (1) hourly/crew rates AND (2) weight/distance-based pricing in the same call.
+- isDisputeOrComplaintCall=true ONLY if: (1) customer expresses anger, hostility, or extreme frustration, (2) agent is delivering unexpected bad news that the customer rejects.
 - agentGaveEstimate=true if agent provides any price/quote OR discusses labor/hourly/per-pound rates.
 - trustBuildingWasDiscussed=true if agent explains billing/timing/transparency OR discusses how pricing works OR mentions no hidden charges.
 - agentDiscussedPayment=true if agent mentions deposit/payment OR discusses payment terms OR explains when payment is due.
-- bothPricingTypesDiscussed=true if agent discusses BOTH hourly/local pricing AND weight-based/long-distance pricing OR discusses multiple pricing options.
 - inventoryWasDiscussed=true if agent asks about furniture/items OR customer discusses their inventory/weight OR mentions specific items.
 - packingWasDiscussed=true if agent asks about packing/boxes OR customer mentions packing OR discusses packing options.
 
@@ -577,7 +570,7 @@ IMPORTANT: Default to FALSE unless you find CLEAR EVIDENCE in transcript.`;
   };
 }
 
-// ── Build skip list from context ─────────────────────────────────────────────
+// ── Build skip list from context ──────────────────────────────────────────────
 function buildSkipList(ctx) {
   const skip = new Set();
   const isLD = ctx.moveType === 'longdistance';
@@ -587,7 +580,6 @@ function buildSkipList(ctx) {
     sec.items.forEach((_, ii) => {
       const key = `r_${si}_${ii}`;
 
-      // Global follow-up suppression handling
       if (ctx.isFollowUpCall) {
         const keepIntro = (si === 0 && ii <= 1);
         const keepPurpose = (si === 1 && ii === 0);
@@ -596,14 +588,11 @@ function buildSkipList(ctx) {
         const keepObjections = (si >= 10 && si <= 16);
         const keepBooking = (si === 17);
         const keepPreMove = (si === 18);
-
         if (!keepIntro && !keepPurpose && !keepSoftSkills && !keepPricing && !keepObjections && !keepBooking && !keepPreMove) {
-          skip.add(key);
-          return;
+          skip.add(key); return;
         }
       }
 
-      // Context-aware specialized skips (apply even to follow-ups)
       if (si === 0 && [2, 3, 5, 6].includes(ii) && !ctx.wasWrongNumber) skip.add(key);
       if (si === 0 && ii === 4 && ctx.customerAvailable) skip.add(key);
 
@@ -699,131 +688,7 @@ RATING SYSTEM — 3 POSSIBLE VALUES: met / notmet / ni
 "met"    = Agent did it. May be brief but clear. Task was accomplished.
 "notmet" = Agent missed a required topic that should have been covered.
 "ni"     = Agent did it BUT delivery was clearly poor (robotic, heavy fillers, unsure)
-"skip"   = Use this if the item is clearly NOT applicable to this specific call context (e.g., discussing weigh stations in a follow-up purely about price matching, or local pricing details in a long-distance call).
-
-═══════════════════════════════════════════════════════
-STAGE 1: IS IT APPLICABLE? (The "Smart Skip" Rule)
-═══════════════════════════════════════════════════════
-
-Use "skip" FREELY for items that are irrelevant to the specific conversation.
-- If the call is a follow-up focused on a specific issue (e.g., price matching), many sub-items in the full checklist (like "Google Maps calculation", "wrapping procedures", "stairs at delivery") may not be relevant if they were supposedly covered in the first call or aren't relevant to the current dispute. 
-- If an item is NOT applicable → "skip".
-- If an item was applicable but was missed or ignored → "notmet".
-
-═══════════════════════════════════════════════════════
-STAGE 2: DID AGENT DO IT? (Read AI Summary first)
-═══════════════════════════════════════════════════════
-
-RULE OF SILENCE: If the topic is clearly NOT in the AI Summary → "notmet"
-
-Read the AI Summary first. It is the authoritative record of what happened.
-- If a topic IS in the summary → go to Stage 2
-- If a topic is NOT in the summary → "notmet"
-- EXCEPTION: For call opening items (intro, greeting), give benefit of the doubt — transcripts
-  sometimes miss the first few seconds. If agent name appears anywhere in the call and the call
-  flow seems normal, assume introduction happened → "met" unless you see clear evidence otherwise.
-
-═══════════════════════════════════════════════════════
-STAGE 2: HOW WELL? (Read Full Transcript for quality)
-═══════════════════════════════════════════════════════
-
-RULE OF QUALITY: A topic covered clearly → "met". Only downgrade to "ni" if quality was NOTABLY poor.
-
-Mark "ni" ONLY when you see CLEAR evidence of poor delivery:
-- Agent uses heavy fillers throughout (not occasional "um" but pervasive "like", "you know", "basically")
-- Agent sounds completely robotic or scripted with no natural flow
-- Agent gave an answer that was so brief it clearly didn't serve the customer's understanding
-- Agent explicitly shows confusion or uncertainty ("I think...", "I'm not sure but...")
-- Agent missed an obvious opportunity to explain something critical
-
-DO NOT mark "ni" for:
-- Occasional filler words (every agent uses some fillers)
-- Brief but clear answers (brevity ≠ poor quality)
-- Informal but friendly language
-- Answers that accomplished the task even if not perfectly worded
-
-═══════════════════════════════════════════════════════
-NI CALIBRATION — REALISTIC TARGETS
-═══════════════════════════════════════════════════════
-
-REALISTIC NI PER CALL: 5-10 NI items for a full 15-22 minute call. Shorter calls have fewer.
-
-SOFT SKILLS — typical distribution:
-- 5-7 "met" items (most agents are reasonably professional)
-- 3-5 "ni" items (real quality issues)
-- 0-2 "notmet" items (agent was actively bad at something)
-
-TRUST BUILDERS — typical distribution:
-- 2-4 "met" items (topics they covered well)
-- 2-3 "ni" items (topics covered but not explained well)
-- 1-3 "notmet" items (topics not discussed at all)
-
-SPECIFIC GUIDANCE:
-- "Introduced self with agent name and company name" → "met" if agent said name AND company name
-  (even if transcript starts mid-call — assume intro happened if call flow is normal)
-- "Used professional greeting, confirmed identity" → "met" if agent greeted by name and confirmed
-- "Avoided vague/filler language" → "ni" only if fillers are PERVASIVE, not occasional
-- "Built rapport using customer name" → "met" if agent uses name at least 2 times naturally
-- "Spoke clearly and confidently" → "ni" if agent sounds notably unsure or rushed throughout
-- "Showed empathy" → "ni" only if agent completely dismisses concern or shows no acknowledgment
-- "met" if agent acknowledges customer concerns reasonably (even brief "I understand" is sufficient)
-
-CALIBRATION TARGETS (manual analysis benchmarks):
-- Jessica (Lead 2109, 14 min): ~68% — good call with some packing/trust gaps
-- Daniel (Lead 1999, 22 min): ~73% — thorough call, minor NI issues in soft skills
-- Noah (Lead 1810, 10 min): ~59% — short call, missed booking/inventory depth
-- Daniel (Lead 2321, 7 min): ~44% — short dispatch/issue call, soft skills need work
-
-═══════════════════════════════════════════════════════
-DISPUTE / COMPLAINT CALL — STRICT SOFT SKILLS MODE
-═══════════════════════════════════════════════════════
-
-${ctx.isDisputeOrComplaintCall ? `⚠️ THIS IS A DISPUTE OR COMPLAINT CALL.
-
-When a customer is upset, frustrated, or an agent is delivering unexpected bad news, the bar for "met" in Soft Skills is MUCH higher. Most soft skill items should be "ni" not "met" in these calls.
-
-APPLY THESE STRICT RULES FOR SOFT SKILLS:
-
-"Spoke clearly, confidently, and at an appropriate pace"
-→ "ni" if agent sounds at all defensive, hesitant, or rushes through the bad news
-→ "ni" if agent uses phrases like "you know", "I understand but", "like" frequently
-
-"Used professional and customer-friendly language"
-→ "ni" if agent uses informal phrases, sounds unprepared, or repeats themselves
-→ "ni" if agent says things like "you know what I mean", "basically", "like I said"
-
-"Avoided vague, unsure, or filler language"
-→ "notmet" if agent uses heavy fillers throughout the call
-→ "ni" if agent sounds uncertain about the reason for the charge
-
-"Did not interrupt and listened actively to the customer"
-→ "ni" if agent jumps in before customer finishes their complaint
-→ "ni" if agent does not acknowledge what the customer said before responding
-
-"Showed empathy and reassurance during customer concerns"
-→ "ni" if agent says "I understand" but immediately moves to justifying the charge
-→ "ni" if empathy feels formulaic ("I completely understand but...")
-→ "notmet" if agent shows no genuine empathy at all
-
-"Guided the conversation and kept it focused on next steps"
-→ "ni" if agent loses control of the conversation or becomes reactive
-→ "ni" if agent fails to proactively offer a clear resolution path
-
-"Built rapport and trust using the customer's name and natural conversation"
-→ "ni" if agent uses customer name fewer than 3 times OR tone feels transactional
-→ "ni" if agent does not acknowledge the customer's frustration genuinely
-
-"Summarized key details and encouraged commitment or next steps"
-→ "ni" if agent does not clearly confirm what was agreed at end of call
-→ "ni" if agent closes without ensuring customer understands what happens next
-
-"Confidently responded to customer questions without deflection"
-→ "ni" if agent deflects blame to another agent (e.g., "Noah should have told you")
-→ "ni" if agent cannot clearly explain why the charge is legitimate
-
-EXPECTED DISTRIBUTION for dispute/complaint calls:
-- Soft Skills: 4-6 "met", 4-6 "ni", 0-1 "notmet"
-- Goal: Reflect professional handling of a difficult situation. Only use "ni" for actual delivery failures.` : `No special dispute/complaint rules apply to this call.`}
+"skip"   = Use this if the item is clearly NOT applicable to this specific call context.
 
 Return ONLY this JSON format:
 {"ratings": {"r_0_0": "met", "r_0_1": "notmet", "r_1_2": "ni", ...}}`;
@@ -859,10 +724,6 @@ async function analyzeCall(callText) {
 
   const skip = buildSkipList(ctx);
   console.log(`  Context: ${ctx.moveType} | ${ctx.callDirection} | followUp=${ctx.isFollowUpCall} | dispute=${ctx.isDisputeOrComplaintCall}`);
-  console.log(`  Topics: inv=${ctx.inventoryWasDiscussed} pack=${ctx.packingWasDiscussed} access=${ctx.accessWasDiscussed} trust=${ctx.trustBuildingWasDiscussed}`);
-  console.log(`  Packing: selfPack=${ctx.customerIsSelfPacking} dismantling=${ctx.dismantlingWasDiscussed} | Address captured=${ctx.addressCapturedInCall}`);
-  console.log(`  Access: elevator=${ctx.elevatorWasMentioned} stairsDelivery=${ctx.stairsAtDeliveryMentioned} | MoveTypeDetail=${ctx.moveTypeExplainedInDetail}`);
-  console.log(`  Booking: est=${ctx.agentGaveEstimate} pay=${ctx.agentDiscussedPayment} premove=${ctx.agentDiscussedPreMoveConf} | bothPricing=${ctx.bothPricingTypesDiscussed}`);
   console.log(`  Duration: ${ctx.callDurationCategory} | Skipping ${skip.size} items → rating ${allItems.length - skip.size} items`);
 
   console.log('  Pass 2: rating checklist (2 batches)...');
@@ -908,11 +769,6 @@ app.post('/api/analyze-text', async (req, res) => {
 
 app.get('/api/transkriptor/files', async (req, res) => {
   const apiKey = req.headers['x-transkriptor-key'] || process.env.TRANSKRIPTOR_API_KEY;
-  console.log('🔑 Transkriptor API key check:', {
-    fromHeader: !!req.headers['x-transkriptor-key'],
-    fromEnv: !!process.env.TRANSKRIPTOR_API_KEY,
-    envKeyLength: process.env.TRANSKRIPTOR_API_KEY?.length || 0
-  });
   if (!apiKey) return res.status(400).json({ error: 'Missing Transkriptor API key' });
   try {
     const r = await fetch('https://api.tor.app/developer/files', {
@@ -959,7 +815,10 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
   } catch (err) { return res.status(500).json({ error: err.message }); }
 });
 
-// ── Email Route (Zoho SMTP - PDF Support) ───────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+//  EMAIL ROUTE — FIXED: port 465 SSL avoids AUTH PLAIN rejection
+//  on cloud servers that intercept STARTTLS (port 587).
+// ═══════════════════════════════════════════════════════════════
 app.post('/api/send-report-email', async (req, res) => {
   const { pdfBase64, fileName, htmlContent } = req.body;
 
@@ -974,20 +833,32 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
+    return res.status(500).json({ error: 'Email credentials missing in server .env' });
+  }
+
+  // ── KEY FIX ──────────────────────────────────────────────────────────────
+  // Port 465 + secure:true uses SSL from the first byte, bypassing the
+  // STARTTLS negotiation that Zoho rejects on cloud-server IPs with
+  // "501 Could not decode user and password for AUTH PLAIN".
+  // Port 587 + secure:false (STARTTLS) works locally but fails on cloud.
+  // ─────────────────────────────────────────────────────────────────────────
   const emailPort = parseInt(process.env.EMAIL_PORT) || 465;
   const useSSL = emailPort === 465;
 
   const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.zoho.com',
     port: emailPort,
-    secure: useSSL,        // true for 465, false for 587
+    secure: useSSL,          // true  → SSL/TLS from start (port 465)
+    // false → STARTTLS upgrade (port 587)
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
     tls: {
       rejectUnauthorized: false,
-      minVersion: 'TLSv1.2'
+      minVersion: 'TLSv1.2'   // cloud hosts strip older ciphers
     },
     connectionTimeout: 30000,
     greetingTimeout: 15000,
@@ -996,19 +867,14 @@ app.post('/api/send-report-email', async (req, res) => {
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error(' Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
-    return res.status(500).json({ error: 'Email credentials missing in server .env' });
-  }
-
   try {
-    // Log connection details for debugging
-    console.log(' Email configuration:', {
+    console.log('📨 Email configuration:', {
       host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT,
+      port: emailPort,
+      secure: useSSL,
       user: process.env.EMAIL_USER,
       hasPass: !!process.env.EMAIL_PASS,
-      recipients: recipients
+      recipients
     });
 
     const mailOptions = {
@@ -1025,19 +891,18 @@ app.post('/api/send-report-email', async (req, res) => {
       ]
     };
 
-    console.log(` Sending PDF report to: ${recipients}...`);
+    console.log(`📤 Sending PDF report to: ${recipients}...`);
     const startTime = Date.now();
     const info = await transporter.sendMail(mailOptions);
     const duration = Date.now() - startTime;
-    console.log(` Email sent successfully in ${duration}ms:`, info.messageId);
+    console.log(`✅ Email sent successfully in ${duration}ms:`, info.messageId);
 
     res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
 
   } catch (error) {
-    console.error(' SMTP Error Details:', {
+    console.error('❌ SMTP Error Details:', {
       code: error.code,
       message: error.message,
-      stack: error.stack,
       errno: error.errno,
       syscall: error.syscall,
       address: error.address,
@@ -1046,11 +911,11 @@ app.post('/api/send-report-email', async (req, res) => {
 
     let userMessage = 'Failed to send report';
     if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check Zoho credentials.';
+      userMessage = 'Authentication failed. Check Zoho credentials or use an App Password.';
     } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. SMTP server may be blocking your IP or port 587 is closed.';
+      userMessage = 'Connection refused. Port 465 may be blocked by your host — contact support.';
     } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Network/firewall issue or Zoho blocking your server IP.';
+      userMessage = 'Connection timed out. Firewall may be blocking outbound SMTP.';
     } else if (error.code === 'ENOTFOUND') {
       userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com.';
     } else if (error.code === 'EHOSTUNREACH') {
@@ -1062,10 +927,10 @@ app.post('/api/send-report-email', async (req, res) => {
       details: error.message,
       code: error.code,
       troubleshooting: {
-        checkFirewall: "Ensure outbound port 587 is open on your live server",
-        checkDNS: "Verify DNS resolution for smtp.zoho.com",
-        checkZohoIP: "Contact Zoho to whitelist your server IP",
-        checkCredentials: "Verify EMAIL_USER and EMAIL_PASS are correct"
+        primaryFix: 'Ensure EMAIL_PORT=465 in your .env file',
+        checkFirewall: 'Ensure outbound port 465 is open on your live server',
+        checkCredentials: 'Verify EMAIL_USER and EMAIL_PASS are correct',
+        zohoAppPassword: 'If 2FA is enabled on Zoho, generate an App Password at accounts.zoho.com'
       }
     });
   }
@@ -1091,10 +956,7 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Speed  : ~20-30s per analysis`);
   console.log(`   Limits : No daily cap — FREE forever`);
   console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
-  console.log(`   👥 Everyone on this link sees the same data now!\n`);                      // ← ADDED
-  console.log(`\n   Accuracy v6 — what changed:`);
-  console.log(`   • NEW FLAG: isDisputeOrComplaintCall — detects upset customer / bad news delivery calls`);
-  console.log(`   • DISPUTE MODE: when true, soft skills rated with strict NI criteria (target 1-3 met, 6-9 ni)`);
-  console.log(`   • Fixes Lead 2123/2321 Cheryl call: AI was 87%, manual was 44%`);
-  console.log(`   • All other leads unaffected — dispute mode only triggers when customer is upset\n`);
+  console.log(`   👥 Everyone on this link sees the same data now!`);
+  console.log(`\n   📧 EMAIL: Port ${parseInt(process.env.EMAIL_PORT) || 465} | SSL=${parseInt(process.env.EMAIL_PORT) === 465}`);
+  console.log(`   Fix applied: port 465 SSL avoids AUTH PLAIN rejection on cloud hosts\n`);
 });
