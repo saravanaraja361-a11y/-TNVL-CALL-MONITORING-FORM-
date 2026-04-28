@@ -39,6 +39,10 @@ const recordSchema = new mongoose.Schema({
   breakdown: Array,
   aiAnalyzed: Boolean,
   tskSummary: Object,
+  // Feedback fields
+  callSummary: String,
+  feedbackPositive: String,
+  feedbackNeedsImprovement: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -928,9 +932,59 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-//  EMAIL ROUTE — FIXED for cloud servers (port 465 + SSL)
-//  Root cause: Zoho blocks AUTH PLAIN from unknown IPs on
-//  port 587/STARTTLS. Port 465 uses direct SSL which sends
+//  FEEDBACK API
+// ═══════════════════════════════════════════════════════════════
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { agent, leadId, date, summary, positive, ni } = req.body;
+    
+    if (!agent || !leadId || !date) {
+      return res.status(400).json({ error: 'Agent, Lead ID, and Date are required' });
+    }
+
+    // Find the record by agent, leadId, and date combination
+    let record = await CallRecord.findOne({ 
+      agent, 
+      leadId: leadId || '', 
+      date 
+    });
+
+    if (!record) {
+      // Create a new record if none exists (feedback can be saved before the main form)
+      const recordId = `${agent}_${leadId}_${date}`;
+      record = new CallRecord({
+        id: recordId,
+        agent,
+        leadId: leadId || '',
+        date,
+        callSummary: summary || '',
+        feedbackPositive: positive || '',
+        feedbackNeedsImprovement: ni || '',
+        metCount: 0,
+        nmCount: 0,
+        niCount: 0,
+        assessed: 0,
+        pct: 0,
+        breakdown: []
+      });
+      console.log(`[CLOUD] 📝 Created new record for feedback | Agent: ${agent} | Lead: ${leadId} | Date: ${date}`);
+    } else {
+      // Update feedback fields on existing record
+      record.callSummary = summary || '';
+      record.feedbackPositive = positive || '';
+      record.feedbackNeedsImprovement = ni || '';
+    }
+    
+    await record.save();
+
+    console.log(`[CLOUD] ✅ Feedback saved! | Agent: ${agent} | Lead: ${leadId} | Date: ${date}`);
+    res.json({ success: true, message: 'Feedback saved successfully', recordCreated: !record._id });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save feedback', details: e.message });
+  }
+});
+
+// ... (rest of the code remains the same)
 //  AUTH LOGIN — accepted from any IP.
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/send-report-email', async (req, res) => {
