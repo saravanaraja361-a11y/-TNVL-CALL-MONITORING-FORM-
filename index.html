@@ -460,6 +460,8 @@
   .tsk-btn:hover { opacity: .88; }
   .tsk-btn:disabled { opacity: .45; cursor: not-allowed; }
   .tsk-key-input { width: 100%; padding: 9px 12px; border-radius: 7px; border: 1.5px solid #1e4060; background: rgba(255,255,255,.07); color: #fff; font-size: 13px; font-family: monospace; }
+  #tsk-search-input:focus { border-color: #4285F4; background: rgba(255,255,255,.12); }
+  #tsk-search-input::placeholder { color: #6a9abf; }
   .tsk-spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.2); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
   .sum-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid #b8d8f0; background: #e8f4fd; color: #1a5276; transition: all .15s; white-space: nowrap; }
   .sum-chip:hover { background: #1a5276; color: #fff; }
@@ -664,6 +666,11 @@
             <div style="font-size:12px;color:#4a7a9b;">Click <strong style="color:#8ab4d4">📂 Browse Files</strong> or <strong style="color:#8ab4d4">🎭 Demo Files</strong> above.</div>
           </div>
           <div id="tsk-file-count-label" style="display:none;font-size:12px;font-weight:700;color:#4a7a9b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;"></div>
+          <div id="tsk-search-container" style="display:none;margin-bottom:10px;">
+            <input type="text" id="tsk-search-input" placeholder="🔍 Search files by name or ID..." 
+              style="width:100%;padding:10px 14px;border:1.5px solid #2d5a82;border-radius:8px;background:rgba(255,255,255,.08);color:#fff;font-size:14px;outline:none;transition:border-color .2s;"
+              oninput="filterTskFiles(this.value)">
+          </div>
           <div id="tsk-form-file-list" style="display:none;"></div>
         </div>
       </div>
@@ -827,7 +834,7 @@
           <div><label>To Date</label><input type="date" id="tsm-perf-to"></div>
           <button class="btn-filter" onclick="downloadTeamPerformanceCSV()" style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥 Download Team Summary</button>
         </div>
-        <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads an aggregated report per agent: <em>Total Calls, Total Parameters, Applicable Parameters, Met, Not Met, Needs Improvement, Defect Rate, Adherence %, Grading.</em></div>
+        <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads an aggregated report per agent: <em>Total Calls, Total Parameters, Applicable Parameters, Met, Not Met, Needs Improvement, Defect Rate, Adherence %, Grading, Move Value Categories, Total Move Value.</em></div>
       </div>
 
       <!-- ── AREAS OF IMPROVEMENT ── -->
@@ -1178,22 +1185,110 @@
 <div id="toast"></div>
 
 <script>
-let reportFeedback = { summary: '', positive: '', ni: '' };
+let reportFeedbackMap = new Map(); // Store feedback per call ID
 const SHEETS_URL = "https://script.google.com/macros/s/AKfycbwAGXVRq_yL4yULbXTRmLOkPTqUVWcCa0dqYsWHtTRbYRi__B2jkUGrnuINj6wmboZR/exec";
 const R_BLANK = "", R_MET = "met", R_NM = "notmet", R_NI = "ni";
 const GROQ_MODEL   = 'llama-3.3-70b-versatile';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
-function saveReportFeedback(btn){
+async function saveReportFeedback(btn){
   const card = btn.closest('.feedback-card');
   const s = card.querySelector('.feedback-summary').value;
   const p = card.querySelector('.feedback-positive').value;
   const n = card.querySelector('.feedback-ni').value;
-  reportFeedback = { summary: s, positive: p, ni: n };
-  document.querySelectorAll('.feedback-summary').forEach(el => el.value = s);
-  document.querySelectorAll('.feedback-positive').forEach(el => el.value = p);
-  document.querySelectorAll('.feedback-ni').forEach(el => el.value = n);
-  showToast('✅ Feedback saved for the report CSV!','#27ae60');
+  
+  // Get current call details from the form
+  const agent = document.getElementById('f-agent')?.value;
+  const leadId = document.getElementById('f-lead')?.value;
+  const date = document.getElementById('f-date')?.value;
+  
+  if (!agent || !leadId || !date) {
+    showToast('⚠️ Please fill Agent, Lead ID, and Date first','#e05c2a');
+    return;
+  }
+  
+  // Disable button during save
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  
+  // Save to local map first (always works)
+  const callId = `${agent}_${leadId}_${date}`;
+  reportFeedbackMap.set(callId, { summary: s, positive: p, ni: n });
+  
+  // Also save to database
+  try {
+    const response = await fetch(`${getApiBase()}/api/feedback`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agent,
+        leadId,
+        date,
+        summary: s,
+        positive: p,
+        ni: n
+      })
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.recordCreated) {
+        showToast('✅ Feedback saved! (New record created)','#27ae60');
+      } else {
+        showToast('✅ Feedback saved! (Record updated)','#27ae60');
+      }
+    } else {
+      const error = await response.json();
+      showToast(`❌ Failed to save: ${error.error}`,'#e05c2a');
+    }
+  } catch (err) {
+    console.error('Failed to save feedback to server:', err);
+    showToast('⚠️ Saved locally only (server connection failed)','#f39c12');
+  } finally {
+    // Re-enable button
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+function getCurrentCallId() {
+  // Try to get call ID from various possible sources
+  const leadId = document.getElementById('f-lead')?.value;
+  const agent = document.getElementById('f-agent')?.value;
+  const date = document.getElementById('f-date')?.value;
+  
+  if (leadId && agent && date) {
+    return `${agent}_${leadId}_${date}`;
+  }
+  return null;
+}
+
+function loadFeedbackForCurrentCall() {
+  const callId = getCurrentCallId();
+  if (callId && reportFeedbackMap.has(callId)) {
+    const feedback = reportFeedbackMap.get(callId);
+    document.querySelector('.feedback-summary').value = feedback.summary || '';
+    document.querySelector('.feedback-positive').value = feedback.positive || '';
+    document.querySelector('.feedback-ni').value = feedback.ni || '';
+  } else {
+    // Clear feedback fields if no saved feedback exists
+    document.querySelector('.feedback-summary').value = '';
+    document.querySelector('.feedback-positive').value = '';
+    document.querySelector('.feedback-ni').value = '';
+  }
+}
+
+function addFeedbackLoadListeners() {
+  // Add listeners to form fields that identify a call
+  const fields = ['f-agent', 'f-lead', 'f-date'];
+  fields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) {
+      field.addEventListener('change', loadFeedbackForCurrentCall);
+      field.addEventListener('input', loadFeedbackForCurrentCall);
+    }
+  });
 }
 
 // ═══════════════════════════════════════════════
@@ -1503,10 +1598,26 @@ let allTskFiles = [];
 
 function renderFileListInForm(files) {
   allTskFiles = files;
-  const noFiles=document.getElementById('tsk-form-no-files'),label=document.getElementById('tsk-file-count-label'),list=document.getElementById('tsk-form-file-list');
-  if(!files.length){noFiles.style.display='';label.style.display='none';list.style.display='none';list.innerHTML='';return;}
-  noFiles.style.display='none';label.style.display='block';label.textContent=`📁 ${files.length} files — click one to select, click again to deselect`;list.style.display='grid';
-  list.innerHTML=files.map(f=>{const isSelected=selectedTskOrderId===f.order_id;const isLoaded=!!tskSummaries[f.order_id];const borderColor=isSelected?'#27ae60':isLoaded?'#1a6bb5':'#2d5a82';const bgColor=isSelected?'rgba(39,174,96,.22)':isLoaded?'rgba(26,107,181,.1)':'rgba(255,255,255,.05)';const arrow=isSelected?'✅':isLoaded?'☑':'→';const safeId=f.order_id.replace(/[^a-zA-Z0-9_-]/g,'_');const safeName=(f.name||'').replace(/\\/g,'').replace(/'/g,"'").replace(/"/g,'&quot;');const safeDate=(f.created_at||'').replace(/'/g,"'");return `<div class="tsk-form-file-card" id="tsk-form-card-${safeId}" style="border:1.5px solid ${borderColor};background:${bgColor};cursor:pointer;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;transition:all .15s;" onclick="toggleFileSelection('${f.order_id.replace(/'/g,"\\'")}','${safeName}','${safeDate}')"><div style="flex:1;min-width:0;overflow:hidden;"><div style="font-size:13px;font-weight:700;color:#d0eaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${f.name}</div>${f.created_at?`<div style="font-size:11px;color:#6a9abf;margin-top:2px;">${f.created_at}</div>`:''}</div><div style="font-size:16px;flex-shrink:0;" id="tsk-form-arrow-${safeId}">${arrow}</div></div>`;}).join('');
+  const noFiles=document.getElementById('tsk-form-no-files'),label=document.getElementById('tsk-file-count-label'),list=document.getElementById('tsk-form-file-list'),searchContainer=document.getElementById('tsk-search-container');
+  if(!files.length){noFiles.style.display='';label.style.display='none';list.style.display='none';searchContainer.style.display='none';list.innerHTML='';return;}
+  noFiles.style.display='none';label.style.display='block';searchContainer.style.display='block';label.textContent=`📁 ${files.length} files — click one to select, click again to deselect`;list.style.display='grid';
+  const searchValue=document.getElementById('tsk-search-input').value.toLowerCase();
+  const filteredFiles=filterFiles(files,searchValue);
+  list.innerHTML=filteredFiles.map(f=>{const isSelected=selectedTskOrderId===f.order_id;const isLoaded=!!tskSummaries[f.order_id];const borderColor=isSelected?'#27ae60':isLoaded?'#1a6bb5':'#2d5a82';const bgColor=isSelected?'rgba(39,174,96,.22)':isLoaded?'rgba(26,107,181,.1)':'rgba(255,255,255,.05)';const arrow=isSelected?'✅':isLoaded?'☑':'→';const safeId=f.order_id.replace(/[^a-zA-Z0-9_-]/g,'_');const safeName=(f.name||'').replace(/\\/g,'').replace(/'/g,"'").replace(/"/g,'&quot;');const safeDate=(f.created_at||'').replace(/'/g,"'");return `<div class="tsk-form-file-card" id="tsk-form-card-${safeId}" style="border:1.5px solid ${borderColor};background:${bgColor};cursor:pointer;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;transition:all .15s;" onclick="toggleFileSelection('${f.order_id.replace(/'/g,"\\'")}','${safeName}','${safeDate}')"><div style="flex:1;min-width:0;overflow:hidden;"><div style="font-size:13px;font-weight:700;color:#d0eaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${f.name}</div>${f.created_at?`<div style="font-size:11px;color:#6a9abf;margin-top:2px;">${f.created_at}</div>`:''}</div><div style="font-size:16px;flex-shrink:0;" id="tsk-form-arrow-${safeId}">${arrow}</div></div>`;}).join('');
+}
+
+function filterFiles(files,searchValue) {
+  if(!searchValue) return files;
+  return files.filter(f => {
+    const name=(f.name||'').toLowerCase();
+    const id=(f.order_id||'').toLowerCase();
+    const date=(f.created_at||'').toLowerCase();
+    return name.includes(searchValue) || id.includes(searchValue) || date.includes(searchValue);
+  });
+}
+
+function filterTskFiles(searchValue) {
+  renderFileListInForm(allTskFiles);
 }
 
 async function toggleFileSelection(orderId,name,date) {
@@ -1842,6 +1953,20 @@ function editCall(id) {
   body.innerHTML = `
     <div class="edit-form">
       <label>Lead ID</label><input type="text" id="e-lead" value="${r.leadId || ''}">
+      <label>Agent Name</label>
+      <select id="e-agent">
+        <option value="">— Select Agent —</option>
+        <option value="Myles" ${r.agent==='Myles'?'selected':''}>Myles</option>
+        <option value="Dustin" ${r.agent==='Dustin'?'selected':''}>Dustin</option>
+        <option value="Thomas" ${r.agent==='Thomas'?'selected':''}>Thomas</option>
+        <option value="Anthony" ${r.agent==='Anthony'?'selected':''}>Anthony</option>
+        <option value="Daniel" ${r.agent==='Daniel'?'selected':''}>Daniel</option>
+        <option value="Noah" ${r.agent==='Noah'?'selected':''}>Noah</option>
+        <option value="Jessica" ${r.agent==='Jessica'?'selected':''}>Jessica</option>
+        <option value="Alex" ${r.agent==='Alex'?'selected':''}>Alex</option>
+        <option value="Arthur" ${r.agent==='Arthur'?'selected':''}>Arthur</option>
+        <option value="William" ${r.agent==='William'?'selected':''}>William</option>
+      </select>
       <label>Customer Name</label><input type="text" id="e-customer" value="${r.customer || ''}">
       <label>Call Type</label>
       <select id="e-calltype">
@@ -1881,6 +2006,7 @@ async function saveCallEdits(id) {
   const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   r.leadId = document.getElementById('e-lead').value;
+  r.agent = document.getElementById('e-agent').value;
   r.customer = document.getElementById('e-customer').value;
   r.callType = document.getElementById('e-calltype').value;
   r.leadStatus = document.getElementById('e-status').value;
@@ -2248,6 +2374,20 @@ function downloadReportCSV(){
     const defectRate=r.assessed>0?(((r.nmCount+r.niCount)/r.assessed)*100).toFixed(1)+'%':'0%';
     const grading=getGrading(r.pct);
 
+    // Get feedback from database record first, then fallback to local map
+    const feedback = {
+      summary: r.callSummary || '',
+      positive: r.feedbackPositive || '',
+      ni: r.feedbackNeedsImprovement || ''
+    };
+    
+    // If no feedback in database, check local map
+    if (!feedback.summary && !feedback.positive && !feedback.ni) {
+      const callId = `${r.agent}_${r.leadId||''}_${r.date}`;
+      const localFeedback = reportFeedbackMap.get(callId) || { summary: '', positive: '', ni: '' };
+      Object.assign(feedback, localFeedback);
+    }
+
     return [
       esc(i+1),
       esc(fmtDate(r.datetime||r.date)),
@@ -2268,9 +2408,9 @@ function downloadReportCSV(){
       esc(r.pct+'%'),
       esc(grading),
       esc(r.recordingLink||''),
-      esc(reportFeedback.summary),
-      esc(reportFeedback.positive),
-      esc(reportFeedback.ni)
+      esc(feedback.summary),
+      esc(feedback.positive),
+      esc(feedback.ni)
     ].join(',');
   });
 
@@ -2815,7 +2955,7 @@ function downloadTeamPerformanceCSV(){
 
   const agMap={};
   filtered.forEach(r=>{
-    if(!agMap[r.agent]) agMap[r.agent]={name:r.agent,calls:0,totalParams:0,appParams:0,met:0,nm:0,ni:0};
+    if(!agMap[r.agent]) agMap[r.agent]={name:r.agent,calls:0,totalParams:0,appParams:0,met:0,nm:0,ni:0,moveValueCategories:{},totalMoveValue:0};
     const s=agMap[r.agent];
     s.calls++;
     const totalParams=(r.callType==='Pre Move Confirmation call'?PRE_MOVE_SECTIONS:SECTIONS).reduce((ss,sec)=>ss+sec.items.length,0);
@@ -2824,14 +2964,24 @@ function downloadTeamPerformanceCSV(){
     s.met+=r.metCount;
     s.nm+=r.nmCount;
     s.ni+=r.niCount;
+    
+    // Track move value categories and amounts
+    if(r.moveValueCategory){
+      s.moveValueCategories[r.moveValueCategory]=(s.moveValueCategories[r.moveValueCategory]||0)+1;
+    }
+    if(r.moveValueAmount){
+      const amount=parseFloat(r.moveValueAmount)||0;
+      s.totalMoveValue+=amount;
+    }
   });
 
   const esc=v=>{ const s=String(v==null?'':v); return s.includes(',')||s.includes('"')||s.includes('\n')?`"${s.replace(/"/g,'""')}"`:s; };
-  const headers=['S.No','Agent Name','Total calls Audited','Total Parameters (Met+Not Met+Needs Improvement+NA)','Total Applicable Parameters (Excludes NA)','Total - Met','Total - Not Met','Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)','Adherence %','Grading'];
+  const headers=['S.No','Agent Name','Total calls Audited','Total Parameters (Met+Not Met+Needs Improvement+NA)','Total Applicable Parameters (Excludes NA)','Total - Met','Total - Not Met','Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)','Adherence %','Grading','Move Value Categories','Total Move Value'];
 
   const rows=Object.values(agMap).sort((a,b)=>a.name.localeCompare(b.name)).map((s,i)=>{
     const defectRate=s.appParams>0?(((s.nm+s.ni)/s.appParams)*100).toFixed(1)+'%':'0%';
     const adherence=s.appParams>0?Math.round((s.met/s.appParams)*100):0;
+    const moveValueCats=Object.entries(s.moveValueCategories).map(([cat,count])=>`${cat}: ${count}`).join('; ');
     return [
       esc(i+1),
       esc(s.name),
@@ -2843,7 +2993,9 @@ function downloadTeamPerformanceCSV(){
       esc(s.ni),
       esc(defectRate),
       esc(adherence+'%'),
-      esc(getGrading(adherence))
+      esc(getGrading(adherence)),
+      esc(moveValueCats),
+      esc(s.totalMoveValue.toFixed(2))
     ].join(',');
   });
 
@@ -2855,9 +3007,19 @@ function downloadTeamPerformanceCSV(){
   const tNi=Object.values(agMap).reduce((acc,s)=>acc+s.ni,0);
   const tDefect=tApp>0?(((tNm+tNi)/tApp)*100).toFixed(1)+'%':'0%';
   const tAdh=tApp>0?Math.round((tMet/tApp)*100):0;
+  
+  // Calculate total move value
+  const tTotalMoveValue=Object.values(agMap).reduce((acc,s)=>acc+s.totalMoveValue,0);
+  const allMoveCategories={};
+  Object.values(agMap).forEach(s=>{
+    Object.entries(s.moveValueCategories).forEach(([cat,count])=>{
+      allMoveCategories[cat]=(allMoveCategories[cat]||0)+count;
+    });
+  });
+  const tMoveValueCats=Object.entries(allMoveCategories).map(([cat,count])=>`${cat}: ${count}`).join('; ');
 
   const totalRow=[
-    esc('Grand Total'),esc(''),esc(tCalls),esc(tParams),esc(tApp),esc(tMet),esc(tNm),esc(tNi),esc(tDefect),esc(tAdh+'%'),esc(getGrading(tAdh))
+    esc('Grand Total'),esc(''),esc(tCalls),esc(tParams),esc(tApp),esc(tMet),esc(tNm),esc(tNi),esc(tDefect),esc(tAdh+'%'),esc(getGrading(tAdh)),esc(tMoveValueCats),esc(tTotalMoveValue.toFixed(2))
   ].join(',');
 
   rows.push(totalRow);
@@ -3059,6 +3221,9 @@ window.addEventListener('beforeunload',()=>{try{saveTskSummaries();}catch(e){}})
 
 // ═══ INIT ═══
 (function init(){
+  // Initialize feedback loading listeners
+  addFeedbackLoadListeners();
+  
   // Load from server (shared across all users), fall back to localStorage
   async function loadFromServer() {
     const dot = document.getElementById('sync-status');
