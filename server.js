@@ -995,6 +995,7 @@ app.post('/api/send-report-email', async (req, res) => {
     port: 587,
     secure: false,
     requireTLS: true,
+    family: 4,           // ← ADD THIS — forces IPv4 instead of IPv6
     auth: {
       user: process.env.EMAIL_USER,   // saravanaraja361@gmail.com
       pass: process.env.EMAIL_PASS    // 16-char Gmail App Password
