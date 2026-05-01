@@ -1749,13 +1749,20 @@ async function submitForm(){
 // ═══ DEDUPLICATION FOR REPORTS ═══
 function deduplicateReportRecords(recs) {
   if (!recs || !recs.length) return [];
-  const seen = new Set();
-  return recs.filter(r => {
-    const key = `${r.leadId||''}|${r.date||''}|${r.evaluator||''}|${r.pct||''}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
+  const bestRecords = new Map();
+  
+  recs.forEach(r => {
+    const key = `${r.agent||''}|${r.leadId||''}|${r.date||''}`;
+    const existing = bestRecords.get(key);
+    
+    // Keep the record with higher score (pct), or if scores are equal, keep the one with more data
+    if (!existing || (r.pct || 0) > (existing.pct || 0) || 
+        ((r.pct || 0) === (existing.pct || 0) && Object.keys(r).length > Object.keys(existing).length)) {
+      bestRecords.set(key, r);
+    }
   });
+  
+  return Array.from(bestRecords.values());
 }
 
 // ═══ DASHBOARD ═══
