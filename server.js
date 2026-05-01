@@ -1016,12 +1016,12 @@ app.post('/api/send-report-email', async (req, res) => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    connectionTimeout: 30000,
-    greetingTimeout: 15000,
-    socketTimeout: 45000,
+    connectionTimeout: 60000,      // Increased from 30s to 60s
+    greetingTimeout: 30000,       // Increased from 15s to 30s
+    socketTimeout: 90000,         // Increased from 45s to 90s
     pool: true,
-    maxConnections: 5,
-    maxMessages: 100
+    maxConnections: 3,            // Reduced from 5 to 3 for cloud
+    maxMessages: 50               // Reduced from 100 to 50 for cloud
   });
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
@@ -1052,9 +1052,28 @@ app.post('/api/send-report-email', async (req, res) => {
 
     console.log(`📨 Sending PDF report to: ${recipients}...`);
     const startTime = Date.now();
-    const info = await transporter.sendMail(mailOptions);
+    let info;
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        info = await transporter.sendMail(mailOptions);
+        break; // Success, exit retry loop
+      } catch (retryError) {
+        retries++;
+        console.log(`⚠️ Email attempt ${retries} failed: ${retryError.message}`);
+        if (retries >= maxRetries) {
+          throw retryError; // All retries failed, throw the error
+        }
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
+        console.log(`🔄 Retrying email send (attempt ${retries + 1}/${maxRetries})...`);
+      }
+    }
+    
     const duration = Date.now() - startTime;
-    console.log(`✅ Email sent successfully in ${duration}ms:`, info.messageId);
+    console.log(`✅ Email sent successfully in ${duration}ms (after ${retries} retries):`, info.messageId);
 
     res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
 
