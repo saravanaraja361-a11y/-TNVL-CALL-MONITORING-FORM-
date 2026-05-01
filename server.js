@@ -1008,20 +1008,16 @@ app.post('/api/send-report-email', async (req, res) => {
 
   const transporter = nodemailer.createTransport({
     host: 'smtppro.zoho.com',
-    port: 465,
-    secure: true,
-    authMethod: 'LOGIN',
+    port: 587,
+    secure: false,
+    requireTLS: true,
     auth: {
-      type: 'login',
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS
     },
-    connectionTimeout: 60000,      // Increased from 30s to 60s
-    greetingTimeout: 30000,       // Increased from 15s to 30s
-    socketTimeout: 90000,         // Increased from 45s to 90s
-    pool: true,
-    maxConnections: 3,            // Reduced from 5 to 3 for cloud
-    maxMessages: 50               // Reduced from 100 to 50 for cloud
+    connectionTimeout: 30000,
+    greetingTimeout: 15000,
+    socketTimeout: 45000,
   });
 
   const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
@@ -1029,8 +1025,8 @@ app.post('/api/send-report-email', async (req, res) => {
   try {
     console.log('📤 Email configuration:', {
       host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       user: process.env.EMAIL_USER,
       hasPass: !!process.env.EMAIL_PASS,
       recipients: recipients
@@ -1052,28 +1048,9 @@ app.post('/api/send-report-email', async (req, res) => {
 
     console.log(`📨 Sending PDF report to: ${recipients}...`);
     const startTime = Date.now();
-    let info;
-    let retries = 0;
-    const maxRetries = 3;
-    
-    while (retries < maxRetries) {
-      try {
-        info = await transporter.sendMail(mailOptions);
-        break; // Success, exit retry loop
-      } catch (retryError) {
-        retries++;
-        console.log(`⚠️ Email attempt ${retries} failed: ${retryError.message}`);
-        if (retries >= maxRetries) {
-          throw retryError; // All retries failed, throw the error
-        }
-        // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retries) * 1000));
-        console.log(`🔄 Retrying email send (attempt ${retries + 1}/${maxRetries})...`);
-      }
-    }
-    
+    const info = await transporter.sendMail(mailOptions);
     const duration = Date.now() - startTime;
-    console.log(`✅ Email sent successfully in ${duration}ms (after ${retries} retries):`, info.messageId);
+    console.log(`✅ Email sent successfully in ${duration}ms:`, info.messageId);
 
     res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
 
@@ -1091,9 +1068,9 @@ app.post('/api/send-report-email', async (req, res) => {
     if (error.code === 'EAUTH') {
       userMessage = 'Authentication failed. Check Zoho credentials or use an App Password (accounts.zoho.com → Security → App Passwords).';
     } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. Port 465 may be blocked by your hosting firewall — contact your host to open outbound port 465.';
+      userMessage = 'Connection refused. Port 587 may be blocked by your hosting firewall — contact your host to open outbound port 587.';
     } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Firewall may be blocking port 465. Try whitelisting smtp.zoho.com:465.';
+      userMessage = 'Connection timed out. Firewall may be blocking port 587. Try whitelisting smtp.zoho.com:587.';
     } else if (error.code === 'ENOTFOUND') {
       userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com — check server DNS settings.';
     } else if (error.code === 'EHOSTUNREACH') {
@@ -1105,10 +1082,10 @@ app.post('/api/send-report-email', async (req, res) => {
       details: error.message,
       code: error.code,
       troubleshooting: {
-        step1: "Ensure outbound port 465 is open on your server/hosting firewall",
+        step1: "Ensure outbound port 587 is open on your server/hosting firewall",
         step2: "Generate a Zoho App Password at accounts.zoho.com → Security → App Passwords",
         step3: "Use the App Password as EMAIL_PASS in your .env (not your login password)",
-        step4: "Make sure EMAIL_PORT=465 is set in your .env file"
+        step4: "Make sure EMAIL_PORT=587 is set in your .env file"
       }
     });
   }
@@ -1135,6 +1112,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Limits  : No daily cap — FREE forever`);
   console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
   console.log(`   👥 Everyone on this link sees the same data now!`);
-  console.log(`\n   📧 EMAIL: Port 465 SSL (Zoho cloud fix active)`);
+  console.log(`\n   📧 EMAIL: Port 587 STARTTLS (Zoho cloud fix active)`);
   console.log(`   📊 Records: ${count} total in database\n`);
 });
