@@ -937,46 +937,29 @@ app.get('/api/transkriptor/summary/:orderId', async (req, res) => {
 app.post('/api/feedback', async (req, res) => {
   try {
     const { agent, leadId, date, summary, positive, ni } = req.body;
-    
+
     if (!agent || !leadId || !date) {
       return res.status(400).json({ error: 'Agent, Lead ID, and Date are required' });
     }
 
-    // Find the record by agent, leadId, and date combination
-    let record = await CallRecord.findOne({ 
-      agent, 
-      leadId: leadId || '', 
-      date 
-    });
+    let record = await CallRecord.findOne({ agent, leadId: leadId || '', date });
 
     if (!record) {
-      // Create a new record if none exists (feedback can be saved before the main form)
       const recordId = `${agent}_${leadId}_${date}`;
       record = new CallRecord({
-        id: recordId,
-        agent,
-        leadId: leadId || '',
-        date,
-        callSummary: summary || '',
-        feedbackPositive: positive || '',
+        id: recordId, agent, leadId: leadId || '', date,
+        callSummary: summary || '', feedbackPositive: positive || '',
         feedbackNeedsImprovement: ni || '',
-        metCount: 0,
-        nmCount: 0,
-        niCount: 0,
-        assessed: 0,
-        pct: 0,
-        breakdown: []
+        metCount: 0, nmCount: 0, niCount: 0, assessed: 0, pct: 0, breakdown: []
       });
       console.log(`[CLOUD] 📝 Created new record for feedback | Agent: ${agent} | Lead: ${leadId} | Date: ${date}`);
     } else {
-      // Update feedback fields on existing record
       record.callSummary = summary || '';
       record.feedbackPositive = positive || '';
       record.feedbackNeedsImprovement = ni || '';
     }
-    
-    await record.save();
 
+    await record.save();
     console.log(`[CLOUD] ✅ Feedback saved! | Agent: ${agent} | Lead: ${leadId} | Date: ${date}`);
     res.json({ success: true, message: 'Feedback saved successfully', recordCreated: !record._id });
   } catch (e) {
@@ -984,8 +967,8 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-// ... (rest of the code remains the same)
-//  AUTH LOGIN — accepted from any IP.
+// ═══════════════════════════════════════════════════════════════
+//  EMAIL — Gmail SMTP (works on Render free tier)
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/send-report-email', async (req, res) => {
   const { pdfBase64, fileName, htmlContent } = req.body;
@@ -1006,14 +989,15 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(500).json({ error: 'Email credentials missing in server .env' });
   }
 
+  // ── Gmail SMTP — port 587 is never blocked by Render ──────────────────────
   const transporter = nodemailer.createTransport({
-    host: 'smtppro.zoho.com',
+    host: 'smtp.gmail.com',   // ← CHANGED from smtppro.zoho.com
     port: 587,
     secure: false,
     requireTLS: true,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user: process.env.EMAIL_USER,   // saravanaraja361@gmail.com
+      pass: process.env.EMAIL_PASS    // 16-char Gmail App Password
     },
     connectionTimeout: 30000,
     greetingTimeout: 15000,
@@ -1024,7 +1008,7 @@ app.post('/api/send-report-email', async (req, res) => {
 
   try {
     console.log('📤 Email configuration:', {
-      host: process.env.EMAIL_HOST || 'smtp.zoho.com',
+      host: 'smtp.gmail.com',
       port: 587,
       secure: false,
       user: process.env.EMAIL_USER,
@@ -1055,38 +1039,24 @@ app.post('/api/send-report-email', async (req, res) => {
     res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
 
   } catch (error) {
-    console.error('❌ SMTP Error Details:', {
+    console.error('❌ Gmail SMTP Error:', {
       code: error.code,
       message: error.message,
-      errno: error.errno,
-      syscall: error.syscall,
-      address: error.address,
-      port: error.port
     });
 
     let userMessage = 'Failed to send report';
     if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check Zoho credentials or use an App Password (accounts.zoho.com → Security → App Passwords).';
+      userMessage = 'Gmail authentication failed. Make sure EMAIL_PASS is your 16-character App Password (not your Gmail login password). Generate one at myaccount.google.com/apppasswords';
     } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. Port 587 may be blocked by your hosting firewall — contact your host to open outbound port 587.';
+      userMessage = 'Connection refused to Gmail. Contact Render support to unblock port 587.';
     } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Firewall may be blocking port 587. Try whitelisting smtp.zoho.com:587.';
-    } else if (error.code === 'ENOTFOUND') {
-      userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com — check server DNS settings.';
-    } else if (error.code === 'EHOSTUNREACH') {
-      userMessage = 'Host unreachable. Check network connectivity on the server.';
+      userMessage = 'Connection timed out. Please try again.';
     }
 
     res.status(500).json({
       error: userMessage,
       details: error.message,
-      code: error.code,
-      troubleshooting: {
-        step1: "Ensure outbound port 587 is open on your server/hosting firewall",
-        step2: "Generate a Zoho App Password at accounts.zoho.com → Security → App Passwords",
-        step3: "Use the App Password as EMAIL_PASS in your .env (not your login password)",
-        step4: "Make sure EMAIL_PORT=587 is set in your .env file"
-      }
+      code: error.code
     });
   }
 });
@@ -1112,6 +1082,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Limits  : No daily cap — FREE forever`);
   console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
   console.log(`   👥 Everyone on this link sees the same data now!`);
-  console.log(`\n   📧 EMAIL: Port 587 STARTTLS (Zoho cloud fix active)`);
+  console.log(`\n   📧 EMAIL: Gmail SMTP port 587 ✅ (Render compatible)`);
   console.log(`   📊 Records: ${count} total in database\n`);
 });
