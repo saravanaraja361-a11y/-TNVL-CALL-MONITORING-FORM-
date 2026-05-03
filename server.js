@@ -984,115 +984,63 @@ app.post('/api/feedback', async (req, res) => {
   }
 });
 
-// ... (rest of the code remains the same)
-//  AUTH LOGIN — accepted from any IP.
+// ═══════════════════════════════════════════════════════════════
+//  EMAIL REPORTING API
 // ═══════════════════════════════════════════════════════════════
 app.post('/api/send-report-email', async (req, res) => {
   const { pdfBase64, fileName, htmlContent } = req.body;
-
-  console.log('📧 Email request received:', {
-    hasPdf: !!pdfBase64,
-    pdfLength: pdfBase64?.length || 0,
-    hasHtml: !!htmlContent,
-    fileName: fileName || 'no-filename'
-  });
 
   if (!pdfBase64) {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.error('❌ Email failed: Missing EMAIL_USER or EMAIL_PASS in .env');
-    return res.status(500).json({ error: 'Email credentials missing in server .env' });
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'BREVO_API_KEY missing in Render environment' });
   }
 
-  // ── Zoho SMTP — port 465 SSL for cloud compatibility ───────────────────────
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtppro.zoho.com',
-    port: process.env.EMAIL_PORT || 465,
-    secure: true,
-    authMethod: 'LOGIN',
-    auth: {
-      type: 'login',
-      user: process.env.EMAIL_USER,   // saravanaraja@tnvl.ca
-      pass: process.env.EMAIL_PASS    // Zoho password or App Password
-    },
-    connectionTimeout: 30000,
-    greetingTimeout: 15000,
-    socketTimeout: 45000,
-    pool: true,
-    maxConnections: 5,
-    maxMessages: 100
-  });
-
-  const recipients = process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER;
+  const recipientList = (process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER || '')
+    .split(',')
+    .map(e => e.trim())
+    .filter(Boolean)
+    .map(email => ({ email }));
 
   try {
-    console.log('📤 Email configuration:', {
-      host: process.env.EMAIL_HOST || 'smtp.zoho.com',
-      port: 465,
-      secure: true,
-      user: process.env.EMAIL_USER,
-      hasPass: !!process.env.EMAIL_PASS,
-      recipients: recipients
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: {
+          name: process.env.EMAIL_FROM_NAME || 'TNVL Reports',
+          email: process.env.EMAIL_FROM || process.env.EMAIL_USER
+        },
+        to: recipientList,
+        subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
+        htmlContent: htmlContent || '<p>Please find the attached performance report PDF.</p>',
+        attachment: [
+          {
+            content: pdfBase64,
+            name: fileName || 'Performance_Report.pdf'
+          }
+        ]
+      })
     });
 
-    const mailOptions = {
-      from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
-      to: recipients,
-      subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
-      html: htmlContent || `<p>Please find the attached performance report PDF.</p>`,
-      attachments: [
-        {
-          filename: fileName || 'Performance_Report.pdf',
-          content: Buffer.from(pdfBase64, 'base64'),
-          contentType: 'application/pdf'
-        }
-      ]
-    };
+    const data = await response.json().catch(() => ({}));
 
-    console.log(`📨 Sending PDF report to: ${recipients}...`);
-    const startTime = Date.now();
-    const info = await transporter.sendMail(mailOptions);
-    const duration = Date.now() - startTime;
-    console.log(`✅ Email sent successfully in ${duration}ms:`, info.messageId);
-
-    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId, duration });
-
-  } catch (error) {
-    console.error('❌ SMTP Error Details:', {
-      code: error.code,
-      message: error.message,
-      errno: error.errno,
-      syscall: error.syscall,
-      address: error.address,
-      port: error.port
-    });
-
-    let userMessage = 'Failed to send report';
-    if (error.code === 'EAUTH') {
-      userMessage = 'Authentication failed. Check Zoho credentials or use an App Password (accounts.zoho.com → Security → App Passwords).';
-    } else if (error.code === 'ECONNREFUSED') {
-      userMessage = 'Connection refused. Port 465 may be blocked by your hosting firewall — contact your host to open outbound port 465.';
-    } else if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
-      userMessage = 'Connection timed out. Firewall may be blocking port 465. Try whitelisting smtp.zoho.com:465.';
-    } else if (error.code === 'ENOTFOUND') {
-      userMessage = 'DNS resolution failed. Cannot reach smtp.zoho.com — check server DNS settings.';
-    } else if (error.code === 'EHOSTUNREACH') {
-      userMessage = 'Host unreachable. Check network connectivity on the server.';
+    if (!response.ok) {
+      throw new Error(data?.message || `Brevo error ${response.status}`);
     }
 
-    res.status(500).json({
-      error: userMessage,
-      details: error.message,
-      code: error.code,
-      troubleshooting: {
-        step1: "Ensure outbound port 465 is open on your server/hosting firewall",
-        step2: "Generate a Zoho App Password at accounts.zoho.com → Security → App Passwords",
-        step3: "Use the App Password as EMAIL_PASS in your .env (not your login password)",
-        step4: "Make sure EMAIL_PORT=465 is set in your .env file"
-      }
-    });
+    console.log('✅ Email sent via Brevo!', data.messageId);
+    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: data.messageId });
+
+  } catch (error) {
+    console.error('❌ Brevo Error:', error.message);
+    res.status(500).json({ error: 'Failed to send report', details: error.message });
   }
 });
 
@@ -1117,6 +1065,6 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   Limits  : No daily cap — FREE forever`);
   console.log(`\n   📦 DATABASE: Cloud MongoDB Connected`);
   console.log(`   👥 Everyone on this link sees the same data now!`);
-  console.log(`\n   📧 EMAIL: Port 465 SSL (Zoho cloud fix active)`);
+  console.log(`   📧 EMAIL: Brevo HTTP API ✅ (Render compatible)`);
   console.log(`   📊 Records: ${count} total in database\n`);
 });
