@@ -1015,7 +1015,7 @@ app.post('/api/send-report-email', async (req, res) => {
       body: JSON.stringify({
         sender: {
           name: process.env.EMAIL_FROM_NAME || 'TNVL Reports',
-          email: process.env.EMAIL_FROM || process.env.EMAIL_USER
+          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@brevo.com'
         },
         to: recipientList,
         subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
