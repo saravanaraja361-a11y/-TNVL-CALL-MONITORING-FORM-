@@ -92,16 +92,14 @@ app.post('/api/records', async (req, res) => {
   }
   try {
     const recordId = String(recordData.id);
-    const existing = await CallRecord.findOne({ id: recordId });
-    if (existing) {
-      console.log(`[CLOUD] ℹ️ Duplicate skipped: ID ${recordId}`);
-      const count = await CallRecord.countDocuments();
-      return res.json({ success: true, total: count, duplicate: true });
-    }
-    await CallRecord.create({ ...recordData, id: recordId });
+    const result = await CallRecord.findOneAndUpdate(
+      { id: recordId },
+      { $set: recordData },
+      { upsert: true, new: true }
+    );
     const total = await CallRecord.countDocuments();
-    console.log(`[CLOUD] ✅ Record SAVED! | Agent: ${recordData.agent} | Lead: ${recordData.leadId} | Total: ${total}`);
-    res.json({ success: true, total, duplicate: false });
+    console.log(`[CLOUD] ✅ Record SAVED/UPDATED! | Agent: ${recordData.agent} | Lead: ${recordData.leadId} | Total: ${total}`);
+    res.json({ success: true, total, id: recordId });
   } catch (e) {
     res.status(500).json({ error: 'Failed to save record', details: e.message });
   }
