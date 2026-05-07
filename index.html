@@ -603,7 +603,7 @@
             <option>No</option>
           </select>
         </div>
-        <div style="grid-column: span 2;"><label>Monitoring Category</label>
+        <div style="grid-column: span 2;"><label>Priority Based Monitoring Category</label>
           <select id="f-monitoring-category">
             <option value="">— Select —</option>
             <option value="Booked">Booked</option>
@@ -2021,7 +2021,7 @@ function editCall(id) {
   const r = records.find(rec => String(rec.id) === String(id));
   if (!r) return;
   const body = document.getElementById('modal-body');
-  document.getElementById('modal-title').textContent = `📝 Edit Call Log: ${r.leadId || 'N/A'}`;
+  document.getElementById('modal-title').textContent = `📝 Edit Call Log: ${r.leadId || 'N/A'} — ${r.agent || ''}`;
   
   body.innerHTML = `
     <div class="edit-form">
@@ -2066,8 +2066,9 @@ function editCall(id) {
       <select id="e-evaluator">
         ${DEFAULT_EVALUATORS.map(e => `<option value="${e}" ${r.evaluator===e?'selected':''}>${e}</option>`).join('')}
       </select>
-      <div class="edit-btns">
+      <div class="edit-btns" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
+        <button style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="showChecklistRatingEditor('${id}')">📋 Edit Checklist Ratings</button>
         <button class="btn btn-submit" onclick="saveCallEdits('${id}')">Save Changes</button>
       </div>
     </div>
@@ -2097,11 +2098,160 @@ async function saveCallEdits(id) {
       body: JSON.stringify(r)
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    showToast(' Call record updated successfully!', '#27ae60');
+    showToast('✅ Call record updated successfully!', '#27ae60');
   } catch(e) {
-    showToast(' Saved locally but server sync failed: ' + e.message, '#e05c2a');
+    showToast('⚠️ Saved locally but server sync failed: ' + e.message, '#e05c2a');
   }
   
+  closeModal();
+  renderDashboard();
+}
+
+// ─── Checklist Rating Editor ───────────────────────────────────────
+function showChecklistRatingEditor(id) {
+  const r = records.find(rec => String(rec.id) === String(id));
+  if (!r) return;
+
+  const body = document.getElementById('modal-body');
+  document.getElementById('modal-title').textContent = `📋 Edit Checklist Ratings: ${r.leadId || 'N/A'} — ${r.agent || ''}`;
+
+  const ratingLabel = { met: '✅ Met', notmet: '❌ Not Met', ni: '🔶 Needs Impr.', '': '⬜ Not Assessed' };
+  const ratingColor = { met: '#27ae60', notmet: '#e74c3c', ni: '#f0b429', '': '#aaa' };
+  const ratingBg   = { met: 'rgba(39,174,96,.13)', notmet: 'rgba(231,76,60,.12)', ni: 'rgba(240,180,41,.15)', '': 'rgba(180,180,180,.1)' };
+  const allRatings = ['met', 'notmet', 'ni', ''];
+
+  // Build breakdown map so we can quickly update by sectionIndex + itemIndex
+  const breakdown = r.breakdown || [];
+
+  let html = `
+    <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <button onclick="editCall('${id}')" style="background:#f0f4f8;color:#1a5276;border:1px solid #d0dae5;padding:7px 14px;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;">← Back to Edit Form</button>
+      <span style="font-size:12px;color:#888;">Click a rating button to change it</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;padding:10px 14px;background:#f8f9ff;border-radius:8px;border:1px solid #e0e8f5;flex-wrap:wrap;">
+      <span style="font-size:12px;font-weight:700;color:#555;white-space:nowrap;">Legend:</span>
+      <span style="background:rgba(39,174,96,.15);color:#1e8449;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">✅ Met</span>
+      <span style="background:rgba(231,76,60,.12);color:#c0392b;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">❌ Not Met</span>
+      <span style="background:rgba(240,180,41,.15);color:#7d6608;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">🔶 Needs Impr.</span>
+      <span style="background:rgba(180,180,180,.1);color:#888;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;">⬜ Not Assessed</span>
+    </div>
+  `;
+
+  if (!breakdown.length) {
+    html += `<div style="text-align:center;padding:40px;color:#aaa;font-size:14px;">⚠️ No checklist breakdown data found for this record.</div>`;
+  } else {
+    breakdown.forEach((section, si) => {
+      html += `
+        <div style="margin-bottom:18px;border:1.5px solid #dce8f5;border-radius:10px;overflow:hidden;">
+          <div style="background:linear-gradient(135deg,#1a3c5e,#1a5276);color:#fff;padding:10px 16px;font-weight:800;font-size:13px;display:flex;justify-content:space-between;align-items:center;">
+            <span>${section.title}</span>
+            <span id="cl-sec-score-${si}" style="font-size:12px;opacity:.85;"></span>
+          </div>
+      `;
+      (section.items || []).forEach((item, ii) => {
+        const curRating = item.rating || '';
+        const btnRow = allRatings.map(rv => {
+          const isActive = (rv === curRating);
+          const activeStyle = isActive ? `background:${ratingColor[rv]};color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.18);` : `background:rgba(0,0,0,.04);color:#555;`;
+          return `<button id="clbtn-${si}-${ii}-${rv||'blank'}" onclick="setChecklistRating('${id}',${si},${ii},'${rv}')" style="${activeStyle}border:1.5px solid ${isActive ? ratingColor[rv] : '#dce8f5'};padding:4px 10px;border-radius:18px;font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap;">${ratingLabel[rv]}</button>`;
+        }).join('');
+        html += `
+          <div id="cl-item-${si}-${ii}" style="padding:10px 14px;border-bottom:1px solid #eef3f9;display:flex;align-items:center;justify-content:space-between;gap:12px;background:${ratingBg[curRating]};transition:background .2s;">
+            <span style="font-size:12px;color:#2c3e50;flex:1;line-height:1.5;">${item.label}</span>
+            <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end;">${btnRow}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+    });
+  }
+
+  html += `
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid #eef3f9;">
+      <button class="btn btn-reset" onclick="editCall('${id}')">← Back</button>
+      <button class="btn btn-submit" onclick="saveChecklistRatingEdits('${id}')">💾 Save Checklist Changes</button>
+    </div>
+  `;
+
+  body.innerHTML = html;
+
+  // Update section score labels after render
+  breakdown.forEach((section, si) => {
+    updateSectionScoreLabel(id, si);
+  });
+}
+
+function setChecklistRating(id, si, ii, newRating) {
+  const r = records.find(rec => String(rec.id) === String(id));
+  if (!r || !r.breakdown || !r.breakdown[si]) return;
+  r.breakdown[si].items[ii].rating = newRating;
+
+  // Refresh the item row highlight
+  const ratingBg = { met: 'rgba(39,174,96,.13)', notmet: 'rgba(231,76,60,.12)', ni: 'rgba(240,180,41,.15)', '': 'rgba(180,180,180,.1)' };
+  const ratingColor = { met: '#27ae60', notmet: '#e74c3c', ni: '#f0b429', '': '#aaa' };
+  const ratingLabel = { met: '✅ Met', notmet: '❌ Not Met', ni: '🔶 Needs Impr.', '': '⬜ Not Assessed' };
+  const allRatings = ['met', 'notmet', 'ni', ''];
+  const row = document.getElementById(`cl-item-${si}-${ii}`);
+  if (row) row.style.background = ratingBg[newRating];
+  allRatings.forEach(rv => {
+    const btn = document.getElementById(`clbtn-${si}-${ii}-${rv||'blank'}`);
+    if (!btn) return;
+    const isActive = rv === newRating;
+    btn.style.background = isActive ? ratingColor[rv] : 'rgba(0,0,0,.04)';
+    btn.style.color = isActive ? '#fff' : '#555';
+    btn.style.borderColor = isActive ? ratingColor[rv] : '#dce8f5';
+    btn.style.boxShadow = isActive ? '0 2px 6px rgba(0,0,0,.18)' : 'none';
+  });
+  updateSectionScoreLabel(id, si);
+}
+
+function updateSectionScoreLabel(id, si) {
+  const r = records.find(rec => String(rec.id) === String(id));
+  if (!r || !r.breakdown || !r.breakdown[si]) return;
+  const items = r.breakdown[si].items || [];
+  const met = items.filter(it => it.rating === 'met').length;
+  const nm  = items.filter(it => it.rating === 'notmet').length;
+  const ni  = items.filter(it => it.rating === 'ni').length;
+  const assessed = met + nm + ni;
+  const lbl = document.getElementById(`cl-sec-score-${si}`);
+  if (lbl) lbl.textContent = `✅ ${met}  ❌ ${nm}  🔶 ${ni}  (${assessed}/${items.length} assessed)`;
+}
+
+async function saveChecklistRatingEdits(id) {
+  const r = records.find(rec => String(rec.id) === String(id));
+  if (!r || !r.breakdown) return;
+
+  // Recalculate counts from updated breakdown
+  let metCount = 0, nmCount = 0, niCount = 0, assessed = 0;
+  r.breakdown.forEach(sec => {
+    const items = sec.items || [];
+    const secMet = items.filter(it => it.rating === 'met').length;
+    const secNm  = items.filter(it => it.rating === 'notmet').length;
+    const secNi  = items.filter(it => it.rating === 'ni').length;
+    const secAss = secMet + secNm + secNi;
+    sec.met = secMet; sec.notmet = secNm; sec.ni = secNi; sec.assessed = secAss;
+    metCount += secMet; nmCount += secNm; niCount += secNi; assessed += secAss;
+  });
+  r.metCount = metCount;
+  r.nmCount  = nmCount;
+  r.niCount  = niCount;
+  r.assessed = assessed;
+  r.pct = assessed > 0 ? Math.round((metCount / assessed) * 100) : 0;
+
+  // Persist
+  localStorage.setItem('tnvl_calls', JSON.stringify(records));
+  try {
+    const res = await fetch(`${getApiBase()}/api/records/${r.id}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(r)
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    showToast(`✅ Checklist ratings saved! Score updated to ${r.pct}%`, '#27ae60');
+  } catch(e) {
+    showToast('⚠️ Saved locally but server sync failed: ' + e.message, '#e05c2a');
+  }
+
   closeModal();
   renderDashboard();
 }
@@ -2299,7 +2449,7 @@ function downloadIndividualCallLogCSV() {
   const headers = [
     'Date', 'Agent', 'Lead ID', 'Customer', 'Call Type', 'Lead Status', 
     'Sale Value Category', 'Move Value', 'Met Count', 'Not Met Count', 'Needs Improvement Count', 
-    'Score %', 'Evaluator', 'Monitoring Category'
+    'Score %', 'Evaluator', 'Priority Based Monitoring Category'
   ];
 
   const esc = v => {
@@ -2436,7 +2586,7 @@ function downloadReportCSV(){
     'Move Value Category','Move Value','Lead Status','Cue Card Usage',
     'Conversion Probability','Total - Met','Total - Not Met',
     'Total - Needs Improvement','Defect Rate (Not Met + Needs Improvement)',
-    'Adherence %','Grading','Monitoring Category',
+    'Adherence %','Grading','Priority Based Monitoring Category',
     'Call Summary','Feedback (Positive)','Feedback (Needs Improvement)'
   ];
 
@@ -2831,6 +2981,7 @@ async function sendReportEmail() {
                   <th style="border: 1px solid #1d4ed8;">Defect %</th>
                   <th style="border: 1px solid #1d4ed8;">Adher. %</th>
                   <th style="border: 1px solid #1d4ed8;">Grading</th>
+                  <th style="border: 1px solid #1d4ed8;">Priority Based Monitoring Category</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -2861,6 +3012,7 @@ async function sendReportEmail() {
           <td style="border: 1px solid #e2e8f0; text-align: center;">${defectRate}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 800; color: #1e3a8a;">${r.pct}%</td>
           <td style="border: 1px solid #e2e8f0; text-align: center;"><span style="${getGradingStyle(r.pct, g)}">${g}</span></td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.monitoringCategory || ''}</td>
         </tr>`;
     });
 
@@ -2881,6 +3033,7 @@ async function sendReportEmail() {
         <td style="border: 1px solid #94a3b8; text-align: center;">${totParams}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totApp}</td>
         <td colspan="5" style="border: 1px solid #94a3b8;"></td>
+        <td style="border: 1px solid #94a3b8;"></td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totMet}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totNm}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totNi}</td>
