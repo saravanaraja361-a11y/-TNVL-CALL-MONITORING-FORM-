@@ -110,9 +110,8 @@ app.put('/api/records/:id', async (req, res) => {
     const updated = await CallRecord.findOneAndUpdate(
       { id: String(req.params.id) },
       { $set: req.body },
-      { new: true }
+      { upsert: true, new: true }
     );
-    if (!updated) return res.status(404).json({ success: false, error: 'Record not found' });
     console.log(`[CLOUD] ✅ Record UPDATED! | ID: ${req.params.id}`);
     res.json({ success: true, record: updated });
   } catch (e) {
