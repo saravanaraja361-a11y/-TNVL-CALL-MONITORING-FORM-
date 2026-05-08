@@ -4880,14 +4880,12 @@
       };
 
       const headers = [
-        'S. No', 'Call Date', 'Audit Date', 'Agent Name', 'Lead ID',
-        'Total Parameters (Met+Not Met+Needs Improvement+NA)',
-        'Total Applicable Parameters (Excludes NA)',
+        'S. No', 'Priority Based Monitoring Category', 'Call Date', 'Audit Date', 'Agent Name', 'Lead ID',
         'Move Value Category', 'Move Value', 'Lead Status', 'Cue Card Usage',
-        'Conversion Probability', 'Total - Met', 'Total - Not Met',
+        'Conversion Probability', 'Total Parameters (Met+Not Met+Needs Improvement+NA)',
+        'Total Applicable Parameters (Excludes NA)', 'Total - Met', 'Total - Not Met',
         'Total - Needs Improvement', 'Defect Rate (Not Met + Needs Improvement)',
-        'Adherence %', 'Grading', 'Priority Based Monitoring Category',
-        'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
+        'Adherence %', 'Grading', 'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
       ];
 
       const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -4913,24 +4911,24 @@
 
         return [
           esc(i + 1),
+          esc(r.monitoringCategory || ''),
           esc(fmtDate(r.datetime || r.date)),
           esc(fmtDate(r.date)),
           esc(r.agent),
           esc(r.leadId || ''),
-          esc(totalParams),
-          esc(r.assessed),
           esc(r.moveValueCategory || ''),
           esc(r.moveValueAmount || ''),
           esc(r.leadStatus || ''),
           esc(r.cueCardUsage || ''),
           esc(r.conversionProbability || ''),
+          esc(totalParams),
+          esc(r.assessed),
           esc(r.metCount),
           esc(r.nmCount),
           esc(r.niCount),
           esc(defectRate),
           esc(r.pct + '%'),
           esc(grading),
-          esc(r.monitoringCategory || ''),
           esc(feedback.summary),
           esc(feedback.positive),
           esc(feedback.ni)
@@ -4949,18 +4947,18 @@
       const totGrading = getGrading(totalAdherence);
 
       const totalRow = [
-        esc('Total'), esc(''), esc(''), esc(filtered.length + ' calls'), esc(''),
-        esc(totParams),
-        esc(totAssessed),
+        esc('Total'), esc(''), esc(''), esc(''), esc(filtered.length + ' calls'), esc(''),
         esc(''),
         esc(totMoveVal),
         esc(''), esc(''), esc(''),
+        esc(totParams),
+        esc(totAssessed),
         esc(totMet), esc(totNm), esc(totNi),
         esc(totDefectRate),
         esc(totalAdherence + '%'),
         esc(totGrading),
         esc(''),
-        esc(''), esc(''), esc('')
+        esc(''), esc('')
       ].join(',');
 
       rows.push(totalRow);
@@ -5263,25 +5261,23 @@
             <table border="0" cellpadding="10" style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: left; min-width: 1000px;">
               <thead>
                 <tr style="background-color: #2563eb; color: #ffffff;">
-                  <th style="border: 1px solid #1d4ed8;">S.No</th>
+                  <th style="border: 1px solid #1d4ed8;">S. No</th>
+                  <th style="border: 1px solid #1d4ed8;">Priority Based Monitoring Category</th>
                   <th style="border: 1px solid #1d4ed8;">Call Date</th>
                   <th style="border: 1px solid #1d4ed8;">Audit Date</th>
-                  <th style="border: 1px solid #1d4ed8;">Agent</th>
+                  <th style="border: 1px solid #1d4ed8;">Agent Name</th>
                   <th style="border: 1px solid #1d4ed8;">Lead ID</th>
-                  <th style="border: 1px solid #1d4ed8;">Total Params</th>
-                  <th style="border: 1px solid #1d4ed8;">Appl. Params</th>
-                  <th style="border: 1px solid #1d4ed8;">Move Cat.</th>
+                  <th style="border: 1px solid #1d4ed8;">Move Value Category</th>
                   <th style="border: 1px solid #1d4ed8;">Move Value</th>
                   <th style="border: 1px solid #1d4ed8;">Lead Status</th>
-                  <th style="border: 1px solid #1d4ed8;">Cue Card</th>
-                  <th style="border: 1px solid #1d4ed8;">Conv. Prob.</th>
-                  <th style="border: 1px solid #1d4ed8;">Met</th>
-                  <th style="border: 1px solid #1d4ed8;">NM</th>
-                  <th style="border: 1px solid #1d4ed8;">NI</th>
-                  <th style="border: 1px solid #1d4ed8;">Defect %</th>
-                  <th style="border: 1px solid #1d4ed8;">Adher. %</th>
+                  <th style="border: 1px solid #1d4ed8;">Total Parameters (Met+Not Met+Needs Improvement+NA)</th>
+                  <th style="border: 1px solid #1d4ed8;">Total Applicable Parameters (Excludes NA)</th>
+                  <th style="border: 1px solid #1d4ed8;">Total - Met</th>
+                  <th style="border: 1px solid #1d4ed8;">Total - Not Met</th>
+                  <th style="border: 1px solid #1d4ed8;">Total - Needs Improvement</th>
+                  <th style="border: 1px solid #1d4ed8;">Defect Rate (Not Met + Needs Improvement)</th>
+                  <th style="border: 1px solid #1d4ed8;">Adherence %</th>
                   <th style="border: 1px solid #1d4ed8;">Grading</th>
-                  <th style="border: 1px solid #1d4ed8;">Priority Based Monitoring Category</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -5295,24 +5291,22 @@
           html += `
         <tr style="background-color: ${rowBg}; color: #334155;">
           <td style="border: 1px solid #e2e8f0; text-align: center;">${i + 1}</td>
+          <td style="border: 1px solid #e2e8f0;">${r.monitoringCategory || ''}</td>
           <td style="border: 1px solid #e2e8f0;">${fmtDate(r.datetime || r.date)}</td>
           <td style="border: 1px solid #e2e8f0;">${fmtDate(r.date)}</td>
           <td style="border: 1px solid #e2e8f0; font-weight: bold;">${r.agent}</td>
           <td style="border: 1px solid #e2e8f0;">${r.leadId || ''}</td>
-          <td style="border: 1px solid #e2e8f0; text-align: center;">${totalParams}</td>
-          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.assessed}</td>
           <td style="border: 1px solid #e2e8f0;">${r.moveValueCategory || ''}</td>
           <td style="border: 1px solid #e2e8f0;">${r.moveValueAmount || ''}</td>
           <td style="border: 1px solid #e2e8f0;">${r.leadStatus || ''}</td>
-          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.cueCardUsage || ''}</td>
-          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.conversionProbability || ''}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${totalParams}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.assessed}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; color: #16a34a; font-weight: bold;">${r.metCount}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; color: #dc2626; font-weight: bold;">${r.nmCount}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; color: #ca8a04; font-weight: bold;">${r.niCount}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center;">${defectRate}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 800; color: #1e3a8a;">${r.pct}%</td>
           <td style="border: 1px solid #e2e8f0; text-align: center;"><span style="${getGradingStyle(r.pct, g)}">${g}</span></td>
-          <td style="border: 1px solid #e2e8f0; text-align: center;">${r.monitoringCategory || ''}</td>
         </tr>`;
         });
 
@@ -5329,11 +5323,10 @@
 
         html += `
       <tr style="background-color: #cbd5e1; color: #0f172a; font-weight: bold;">
-        <td colspan="5" style="border: 1px solid #94a3b8; text-align: center;">GRAND TOTAL (${totCalls} Calls)</td>
+        <td colspan="6" style="border: 1px solid #94a3b8; text-align: center;">GRAND TOTAL (${totCalls} Calls)</td>
+        <td colspan="4" style="border: 1px solid #94a3b8;"></td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totParams}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totApp}</td>
-        <td colspan="5" style="border: 1px solid #94a3b8;"></td>
-        <td style="border: 1px solid #94a3b8;"></td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totMet}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totNm}</td>
         <td style="border: 1px solid #94a3b8; text-align: center;">${totNi}</td>
