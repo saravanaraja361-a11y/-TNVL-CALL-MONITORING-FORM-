@@ -4362,6 +4362,15 @@
         <option value="Mid Value" ${r.moveValueCategory === 'Mid Value' ? 'selected' : ''}>Mid Value</option>
         <option value="High Value" ${r.moveValueCategory === 'High Value' ? 'selected' : ''}>High Value</option>
       </select>
+      <label>Priority Based Call Monitoring Category</label>
+      <select id="e-priority-category">
+        <option value="">— Select Priority —</option>
+        <option value="High Priority" ${r.priorityCategory === 'High Priority' ? 'selected' : ''}>High Priority</option>
+        <option value="Medium Priority" ${r.priorityCategory === 'Medium Priority' ? 'selected' : ''}>Medium Priority</option>
+        <option value="Low Priority" ${r.priorityCategory === 'Low Priority' ? 'selected' : ''}>Low Priority</option>
+        <option value="Routine Monitoring" ${r.priorityCategory === 'Routine Monitoring' ? 'selected' : ''}>Routine Monitoring</option>
+        <option value="Quality Assurance" ${r.priorityCategory === 'Quality Assurance' ? 'selected' : ''}>Quality Assurance</option>
+      </select>
       <label>Evaluator Name</label>
       <select id="e-evaluator">
         ${DEFAULT_EVALUATORS.map(e => `<option value="${e}" ${r.evaluator === e ? 'selected' : ''}>${e}</option>`).join('')}
@@ -4385,6 +4394,7 @@
       r.callType = document.getElementById('e-calltype').value;
       r.leadStatus = document.getElementById('e-status').value;
       r.moveValueCategory = document.getElementById('e-salevalue').value;
+      r.priorityCategory = document.getElementById('e-priority-category').value;
       r.evaluator = document.getElementById('e-evaluator').value;
 
       // Save to localStorage
