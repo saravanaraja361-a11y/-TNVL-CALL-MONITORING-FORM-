@@ -2640,6 +2640,7 @@
               <option>Closed</option>
               <option>Open</option>
               <option>Booked</option>
+              <option>Lost</option>
             </select>
           </div>
           <div><label>Cue Card Usage</label>
@@ -2657,6 +2658,8 @@
               <option value="High Value">High Value</option>
               <option value="Follow-up call">Follow-up call</option>
               <option value="Close to booking but lost">Close to booking but lost</option>
+              <option value="Prospects">Prospects</option>
+              <option value="Mid Value">Mid Value</option>
             </select>
           </div>
         </div>
@@ -4355,6 +4358,7 @@
         <option value="Open" ${r.leadStatus === 'Open' ? 'selected' : ''}>Open</option>
         <option value="Closed" ${r.leadStatus === 'Closed' ? 'selected' : ''}>Closed</option>
         <option value="Booked" ${r.leadStatus === 'Booked' ? 'selected' : ''}>Booked</option>
+        <option value="Lost" ${r.leadStatus === 'Lost' ? 'selected' : ''}>Lost</option>
       </select>
       <label>Sale Value Category</label>
       <select id="e-salevalue">
@@ -4363,13 +4367,15 @@
         <option value="High Value" ${r.moveValueCategory === 'High Value' ? 'selected' : ''}>High Value</option>
       </select>
       <label>Priority Based Call Monitoring Category</label>
-      <select id="e-priority-category">
+      <select id="e-monitoring-category">
         <option value="">— Select Priority —</option>
-        <option value="High Priority" ${r.priorityCategory === 'High Priority' ? 'selected' : ''}>High Priority</option>
-        <option value="Medium Priority" ${r.priorityCategory === 'Medium Priority' ? 'selected' : ''}>Medium Priority</option>
-        <option value="Low Priority" ${r.priorityCategory === 'Low Priority' ? 'selected' : ''}>Low Priority</option>
-        <option value="Routine Monitoring" ${r.priorityCategory === 'Routine Monitoring' ? 'selected' : ''}>Routine Monitoring</option>
-        <option value="Quality Assurance" ${r.priorityCategory === 'Quality Assurance' ? 'selected' : ''}>Quality Assurance</option>
+        <option value="Booked" ${r.monitoringCategory === 'Booked' ? 'selected' : ''}>Booked</option>
+        <option value="Complaint/Escalation Call" ${r.monitoringCategory === 'Complaint/Escalation Call' ? 'selected' : ''}>Complaint/Escalation Call</option>
+        <option value="High Value" ${r.monitoringCategory === 'High Value' ? 'selected' : ''}>High Value</option>
+        <option value="Follow-up call" ${r.monitoringCategory === 'Follow-up call' ? 'selected' : ''}>Follow-up call</option>
+        <option value="Close to booking but lost" ${r.monitoringCategory === 'Close to booking but lost' ? 'selected' : ''}>Close to booking but lost</option>
+        <option value="Prospects" ${r.monitoringCategory === 'Prospects' ? 'selected' : ''}>Prospects</option>
+        <option value="Mid Value" ${r.monitoringCategory === 'Mid Value' ? 'selected' : ''}>Mid Value</option>
       </select>
       <label>Evaluator Name</label>
       <select id="e-evaluator">
@@ -4394,7 +4400,7 @@
       r.callType = document.getElementById('e-calltype').value;
       r.leadStatus = document.getElementById('e-status').value;
       r.moveValueCategory = document.getElementById('e-salevalue').value;
-      r.priorityCategory = document.getElementById('e-priority-category').value;
+      r.monitoringCategory = document.getElementById('e-monitoring-category').value;
       r.evaluator = document.getElementById('e-evaluator').value;
 
       // Save to localStorage
