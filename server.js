@@ -1065,4 +1065,38 @@ app.listen(PORT, '0.0.0.0', async () => {
   console.log(`   👥 Everyone on this link sees the same data now!`);
   console.log(`   📧 EMAIL: Brevo HTTP API ✅ (Render compatible)`);
   console.log(`   📊 Records: ${count} total in database\n`);
+
+  try {
+    const recordsToFix = await CallRecord.find({
+      $or: [
+        { monitoringCategory: { $exists: false } },
+        { monitoringCategory: "" },
+        { monitoringCategory: null }
+      ]
+    });
+    if (recordsToFix.length > 0) {
+      console.log(`[BACKFILL] Found ${recordsToFix.length} records without monitoringCategory. Backfilling...`);
+      let updatedCount = 0;
+      for (const r of recordsToFix) {
+        const leadStatus = (r.leadStatus || '').toLowerCase();
+        const moveVal = (r.moveValueCategory || '').toLowerCase();
+        const callType = (r.callType || '').toLowerCase();
+        
+        let cat = 'Prospects';
+        if (leadStatus === 'booked') cat = 'Booked';
+        else if (leadStatus === 'lost') cat = 'Close to booking but lost';
+        else if (callType.includes('complaint') || callType.includes('escalation')) cat = 'Complaint/Escalation Call';
+        else if (callType.includes('follow-up') || callType.includes('follow up') || callType.includes('f/u')) cat = 'Follow-up call';
+        else if (moveVal === 'high value') cat = 'High Value';
+        else if (moveVal === 'mid value') cat = 'Mid Value';
+        
+        r.monitoringCategory = cat;
+        await r.save();
+        updatedCount++;
+      }
+      console.log(`[BACKFILL] Successfully backfilled ${updatedCount} records in MongoDB.`);
+    }
+  } catch (err) {
+    console.error('[BACKFILL] Error during backfill:', err.message);
+  }
 });
