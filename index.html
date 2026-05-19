@@ -2909,6 +2909,144 @@
         <button class="sub-tab-btn" id="subtab-report-btn" onclick="switchSubTab('reports')">
           📥 Reports
         </button>
+        <button class="sub-tab-btn" id="subtab-dashboard-btn" onclick="switchSubTab('dashboard')">
+          📊 Dashboard
+        </button>
+      </div>
+
+      <!-- Dashboard sub-panel -->
+      <div class="sub-panel" id="subpanel-dashboard">
+        <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+          
+          <div class="filter-bar" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;">
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W1]</label><input type="date" id="dash-call-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W1]</label><input type="date" id="dash-call-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W2]</label><input type="date" id="dash-call-from-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W2]</label><input type="date" id="dash-call-to-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1" onchange="renderTeamDashboard()"></div>
+            <button class="btn-filter" onclick="renderTeamDashboard()" style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Load Dashboard</button>
+            <button class="btn-filter" onclick="clearDashboardFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
+          </div>
+
+          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000;">
+            <tr style="background:#1a5276; color:#fff;">
+              <th style="padding:10px; border:1px solid #000; width:34%;">AGENTS LIST (PRESENT)</th>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents-w2">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents-total">-</td>
+            </tr>
+            <tr style="background:#1a5276; color:#fff;">
+              <th style="padding:10px; border:1px solid #000;">TEAM LEVEL PERFORMANCE</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 1</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 2</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">1+2</th>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">No. of Agents</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-total">0</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Calls to be monitored/Agent</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent">3</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w2">3</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-total">3</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Total calls to be monitored (Target)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-total">0</td>
+            </tr>
+            <tr style="background:#eafaf1;">
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Calls Monitored (Achieved)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-total">0</td>
+            </tr>
+            <tr style="background:#fdf2f2;">
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Deficit #s</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-total">0</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Total Applicable Parameters (Met+NotMet+Needs Improvement)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-total">0</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Total Met</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-total">0</td>
+            </tr>
+            <tr style="background:#eaf0f7;">
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Adherance % (Met/Total Applicable Parameters)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-total">0%</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Errors - Not Met - A</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-total">0</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Errors - Needs Improvement (Partially Met) - B</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-total">0</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Errors (A + B)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-total">0</td>
+            </tr>
+            <tr style="background:#fdf2f2;">
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Defect Rate</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-total">0%</td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000;">Average Error/Call - Target</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+            </tr>
+            <tr>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Average Error/Call - Achieved</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-total">0</td>
+            </tr>
+          </table>
+          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
+            <tr style="background:#1a5276; color:#fff;">
+              <th colspan="4" style="padding:10px; border:1px solid #000; font-size:16px;">Calls Monitored – Break-Up</th>
+            </tr>
+            <tr style="background:#f8faff; font-weight:bold;">
+              <td style="padding:10px; border:1px solid #000; width:40%;">Priority Based Monitoring Category</td>
+              <td style="padding:10px; border:1px solid #000; width:20%; text-align:center;">Count</td>
+              <td style="padding:10px; border:1px solid #000; width:20%; text-align:center;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; width:20%; text-align:center;">% of $</td>
+            </tr>
+            <tbody id="dash-breakup-tbody">
+              <!-- Rows will be injected here -->
+            </tbody>
+            <tr style="background:#1a5276; color:#fff; font-weight:bold;">
+              <td style="padding:10px; border:1px solid #000; text-align:center;">Total</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; color:#1a5276;" id="dash-breakup-total-revenue">$0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+            </tr>
+          </table>
+        </div>
       </div>
 
       <!-- Reports sub-panel -->
@@ -4855,12 +4993,160 @@
       document.getElementById('subtab-aoi-btn').classList.toggle('active', tab === 'aoi');
       const rptBtn = document.getElementById('subtab-report-btn');
       if (rptBtn) rptBtn.classList.toggle('active', tab === 'reports');
+      const dashBtn = document.getElementById('subtab-dashboard-btn');
+      if (dashBtn) dashBtn.classList.toggle('active', tab === 'dashboard');
+
       document.getElementById('subpanel-performance').classList.toggle('active', tab === 'performance');
       document.getElementById('subpanel-aoi').classList.toggle('active', tab === 'aoi');
       const rptPanel = document.getElementById('subpanel-reports');
       if (rptPanel) rptPanel.classList.toggle('active', tab === 'reports');
+      const dashPanel = document.getElementById('subpanel-dashboard');
+      if (dashPanel) dashPanel.classList.toggle('active', tab === 'dashboard');
       if (tab === 'aoi') renderAOI();
+      if (tab === 'dashboard') renderTeamDashboard();
       if (tab === 'reports') { initMultiSelect('rpt-ms-wrap', 'rpt-agents-trigger', 'rpt-agents-dropdown'); initMultiSelect('tsm-ms-wrap', 'tsm-agents-trigger', 'tsm-agents-dropdown'); updateEvaluatorList(); }
+    }
+
+    function clearDashboardFilters() {
+      document.getElementById('dash-call-from').value = '';
+      document.getElementById('dash-call-to').value = '';
+      document.getElementById('dash-call-from-w2').value = '';
+      document.getElementById('dash-call-to-w2').value = '';
+      document.getElementById('dash-target').value = '3';
+      renderTeamDashboard();
+    }
+
+    function calculateDashboardStats(callFrom, callTo) {
+      let filtered = deduplicateReportRecords(records);
+      if (callFrom) filtered = filtered.filter(r => r.date >= callFrom);
+      if (callTo) filtered = filtered.filter(r => r.date <= callTo);
+      
+      const agentsPresent = [...new Set(filtered.map(r => r.agent).filter(a => a))].sort();
+      const noOfAgents = agentsPresent.length;
+      const targetAgent = parseInt(document.getElementById('dash-target').value) || 3;
+      const totalTarget = noOfAgents * targetAgent;
+      
+      const achieved = filtered.length;
+      const deficit = achieved - totalTarget;
+
+      let totalMet = 0, totalNm = 0, totalNi = 0, totalApplicable = 0;
+      filtered.forEach(r => {
+        totalMet += (r.metCount || 0);
+        totalNm += (r.nmCount || 0);
+        totalNi += (r.niCount || 0);
+        totalApplicable += (r.assessed || 0);
+      });
+
+      const totalErrors = totalNm + totalNi;
+      const adherence = totalApplicable > 0 ? ((totalMet / totalApplicable) * 100).toFixed(1) : 0;
+      const defectRate = totalApplicable > 0 ? ((totalErrors / totalApplicable) * 100).toFixed(1) : 0;
+      const avgErrorAchieved = achieved > 0 ? (totalErrors / achieved).toFixed(1) : 0;
+
+      return { agentsPresent, noOfAgents, targetAgent, totalTarget, achieved, deficit, totalMet, totalNm, totalNi, totalApplicable, totalErrors, adherence, defectRate, avgErrorAchieved };
+    }
+
+    function renderTeamDashboard() {
+      const from1 = document.getElementById('dash-call-from').value;
+      const to1 = document.getElementById('dash-call-to').value;
+      const from2 = document.getElementById('dash-call-from-w2').value;
+      const to2 = document.getElementById('dash-call-to-w2').value;
+      
+      const w1 = calculateDashboardStats(from1, to1);
+      const w2 = calculateDashboardStats(from2, to2);
+      
+      const targetAgent = parseInt(document.getElementById('dash-target').value) || 3;
+      const tStats = {
+        agentsPresent: [...new Set([...w1.agentsPresent, ...w2.agentsPresent])].sort(),
+        noOfAgents: w1.noOfAgents + w2.noOfAgents,
+        targetAgent: targetAgent,
+        totalTarget: w1.totalTarget + w2.totalTarget,
+        achieved: w1.achieved + w2.achieved,
+        deficit: (w1.achieved + w2.achieved) - (w1.totalTarget + w2.totalTarget),
+        totalMet: w1.totalMet + w2.totalMet,
+        totalNm: w1.totalNm + w2.totalNm,
+        totalNi: w1.totalNi + w2.totalNi,
+        totalApplicable: w1.totalApplicable + w2.totalApplicable,
+        totalErrors: w1.totalErrors + w2.totalErrors
+      };
+      
+      tStats.adherence = tStats.totalApplicable > 0 ? ((tStats.totalMet / tStats.totalApplicable) * 100).toFixed(1) : 0;
+      tStats.defectRate = tStats.totalApplicable > 0 ? ((tStats.totalErrors / tStats.totalApplicable) * 100).toFixed(1) : 0;
+      tStats.avgErrorAchieved = tStats.achieved > 0 ? (tStats.totalErrors / tStats.achieved).toFixed(1) : 0;
+
+      const updateCol = (suffix, stats) => {
+        document.getElementById('dash-val-agents' + suffix).textContent = stats.agentsPresent.join(' | ') || '-';
+        document.getElementById('dash-val-no-agents' + suffix).textContent = stats.noOfAgents;
+        document.getElementById('dash-val-target-agent' + suffix).textContent = stats.targetAgent;
+        document.getElementById('dash-val-target-total' + suffix).textContent = stats.totalTarget;
+        document.getElementById('dash-val-achieved' + suffix).textContent = stats.achieved;
+        
+        const deficitEl = document.getElementById('dash-val-deficit' + suffix);
+        deficitEl.textContent = stats.deficit;
+        deficitEl.style.color = stats.deficit < 0 ? '#c0392b' : '#1e8449';
+        
+        document.getElementById('dash-val-applicable' + suffix).textContent = stats.totalApplicable;
+        document.getElementById('dash-val-met' + suffix).textContent = stats.totalMet;
+        document.getElementById('dash-val-adherence' + suffix).textContent = `${stats.adherence}%`;
+        document.getElementById('dash-val-nm' + suffix).textContent = stats.totalNm;
+        document.getElementById('dash-val-ni' + suffix).textContent = stats.totalNi;
+        document.getElementById('dash-val-errors' + suffix).textContent = stats.totalErrors;
+        document.getElementById('dash-val-defect-rate' + suffix).textContent = `${stats.defectRate}%`;
+        document.getElementById('dash-val-avg-error' + suffix).textContent = stats.avgErrorAchieved;
+      };
+
+      updateCol('', w1);
+      updateCol('-w2', w2);
+      updateCol('-total', tStats);
+
+      let tFiltered = deduplicateReportRecords(records).filter(r => {
+        const inW1 = (!from1 || r.date >= from1) && (!to1 || r.date <= to1);
+        const inW2 = (!from2 || r.date >= from2) && (!to2 || r.date <= to2);
+        const w1Active = from1 || to1;
+        const w2Active = from2 || to2;
+        if (w1Active && w2Active) return inW1 || inW2;
+        if (w1Active) return inW1;
+        if (w2Active) return inW2;
+        return true;
+      });
+
+      const categories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
+      let breakupData = categories.map(c => ({ name: c, count: 0, revenue: 0 }));
+      
+      tFiltered.forEach(r => {
+        const cat = r.monitoringCategory;
+        if (cat) {
+          const bd = breakupData.find(b => b.name === cat);
+          if (bd) {
+            bd.count++;
+            bd.revenue += (parseFloat(r.moveValueAmount) || 0);
+          }
+        }
+      });
+      
+      let totalCount = 0;
+      let totalRev = 0;
+      breakupData.forEach(b => { totalCount += b.count; totalRev += b.revenue; });
+      
+      const tbody = document.getElementById('dash-breakup-tbody');
+      tbody.innerHTML = '';
+      breakupData.forEach(b => {
+        const pct = totalRev > 0 ? ((b.revenue / totalRev) * 100).toFixed(1) : '0.0';
+        let dispName = b.name;
+        if (dispName === 'Complaint/Escalation Call') dispName = 'Complaints/Escalation Call';
+        if (dispName === 'Follow-up call') dispName = 'Follow - Up call';
+        if (dispName === 'Mid Value') dispName = 'Mid - Value';
+        
+        tbody.innerHTML += `
+          <tr>
+            <td style="padding:10px; border:1px solid #000;">${dispName}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center;">${pct}%</td>
+          </tr>
+        `;
+      });
+      document.getElementById('dash-breakup-total-count').textContent = totalCount;
+      document.getElementById('dash-breakup-total-revenue').textContent = `$${totalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
     }
 
     function downloadReportCSV() {
