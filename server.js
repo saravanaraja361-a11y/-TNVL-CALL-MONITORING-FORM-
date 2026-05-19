@@ -30,6 +30,7 @@ const recordSchema = new mongoose.Schema({
   conversionProbability: String,
   leadStatus: String,
   cueCardUsage: String,
+  monitoringCategory: String,
   recordingLink: String,
   metCount: Number,
   nmCount: Number,
