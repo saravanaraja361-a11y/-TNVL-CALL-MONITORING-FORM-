@@ -10,6 +10,7 @@
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -2617,6 +2618,19 @@
     tr.dash-sales-category-row {
       cursor: default;
     }
+
+    .dash-export-bar {
+      margin-top: 28px;
+      padding: 20px 24px;
+      background: linear-gradient(135deg, #f8faff 0%, #eaf0f7 100%);
+      border: 1.5px solid #dce8f5;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 2px 8px rgba(26, 82, 118, 0.06);
+    }
   </style>
 </head>
 
@@ -3312,6 +3326,17 @@
               <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-ac-total-all">0</td>
             </tr>
           </table>
+
+          <div class="dash-export-bar">
+            <div style="flex:1;min-width:220px;">
+              <div style="font-weight:800;font-size:16px;color:#1a5276;">Export Dashboard Reports</div>
+              <div style="font-size:13px;color:#4a7a9b;margin-top:4px;">Download all dashboard tables as a colorful Excel workbook (.xlsx) — one sheet per report. Load filters first, then export.</div>
+            </div>
+            <button type="button" id="btn-dash-export-excel" class="btn-filter" onclick="exportDashboardToExcel()"
+              style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(39,174,96,.35);">
+              📥 Download Excel Report
+            </button>
+          </div>
         </div>
       </div>
 
@@ -5580,6 +5605,10 @@
       else dashSalesExpanded.delete(sectionId);
     }
 
+    function getSalesErrorsSectionId(title) {
+      return 'dash-sales-sec-' + REVENUE_IMPACTING_ERRORS.indexOf(title);
+    }
+
     function getRevenueSectionSubItems(sectionTitle, w1Items, w2Items, w3Items, w4Items) {
       const canon = (SECTIONS.find(s => s.title === sectionTitle)?.items || []);
       const labels = new Set(canon);
@@ -5632,8 +5661,7 @@
       let grandW3Nm = 0, grandW3Ni = 0, grandW4Nm = 0, grandW4Ni = 0;
       let grandTotNm = 0, grandTotNi = 0;
 
-      const categoryRows = REVENUE_IMPACTING_ERRORS.map((title, secIdx) => {
-        const sectionId = 'dash-sales-sec-' + secIdx;
+      const sortedCategories = REVENUE_IMPACTING_ERRORS.map(title => {
         const w1Nm = w1[title]?.notmet || 0;
         const w1Ni = w1[title]?.ni || 0;
         const w2Nm = w2[title]?.notmet || 0;
@@ -5644,12 +5672,20 @@
         const w4Ni = w4[title]?.ni || 0;
         const tNm = w1Nm + w2Nm + w3Nm + w4Nm;
         const tNi = w1Ni + w2Ni + w3Ni + w4Ni;
+        return { title, w1Nm, w1Ni, w2Nm, w2Ni, w3Nm, w3Ni, w4Nm, w4Ni, tNm, tNi, sortTotal: tNm + tNi };
+      }).sort((a, b) => b.sortTotal - a.sortTotal);
 
-        grandW1Nm += w1Nm; grandW1Ni += w1Ni;
-        grandW2Nm += w2Nm; grandW2Ni += w2Ni;
-        grandW3Nm += w3Nm; grandW3Ni += w3Ni;
-        grandW4Nm += w4Nm; grandW4Ni += w4Ni;
-        grandTotNm += tNm; grandTotNi += tNi;
+      sortedCategories.forEach(cat => {
+        grandW1Nm += cat.w1Nm; grandW1Ni += cat.w1Ni;
+        grandW2Nm += cat.w2Nm; grandW2Ni += cat.w2Ni;
+        grandW3Nm += cat.w3Nm; grandW3Ni += cat.w3Ni;
+        grandW4Nm += cat.w4Nm; grandW4Ni += cat.w4Ni;
+        grandTotNm += cat.tNm; grandTotNi += cat.tNi;
+      });
+
+      const categoryRows = sortedCategories.map(cat => {
+        const { title, w1Nm, w1Ni, w2Nm, w2Ni, w3Nm, w3Ni, w4Nm, w4Ni, tNm, tNi } = cat;
+        const sectionId = getSalesErrorsSectionId(title);
 
         const subItems = getRevenueSectionSubItems(title, w1Items, w2Items, w3Items, w4Items)
           .filter(sub => sub.sortTotal > 0);
@@ -6130,6 +6166,444 @@
         document.getElementById('dash-ac-total-' + id).textContent = acCatTotals[i];
       });
       document.getElementById('dash-ac-total-all').textContent = acGrandTotal;
+    }
+
+    const DASH_XL = {
+      border: { top: { style: 'thin', color: { argb: 'FF000000' } }, left: { style: 'thin', color: { argb: 'FF000000' } }, bottom: { style: 'thin', color: { argb: 'FF000000' } }, right: { style: 'thin', color: { argb: 'FF000000' } } },
+      headerFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5276' } },
+      subFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF154360' } },
+      lightFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFF' } },
+      grandFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5276' } },
+      greenFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAFAF1' } },
+      redFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDF2F2' } },
+      blueFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF0F7' } },
+      whiteFont: { bold: true, color: { argb: 'FFFFFFFF' } },
+      nmFont: { color: { argb: 'FFC0392B' }, bold: true },
+      niFont: { color: { argb: 'FFD35400' }, bold: true },
+      totalFont: { color: { argb: 'FF1A5276' }, bold: true }
+    };
+
+    function dashXlSanitizeSheetName(name) {
+      return String(name).replace(/[\\/*?:\[\]]/g, '').slice(0, 31);
+    }
+
+    function dashXlApplyRowStyle(row, fill, font, align) {
+      row.eachCell({ includeEmpty: true }, cell => {
+        cell.fill = fill || DASH_XL.lightFill;
+        cell.font = font || { size: 11, color: { argb: 'FF000000' } };
+        cell.alignment = { vertical: 'middle', horizontal: align || 'center', wrapText: true };
+        cell.border = DASH_XL.border;
+      });
+    }
+
+    function dashXlAddTitle(sheet, title, colCount) {
+      sheet.mergeCells(1, 1, 1, colCount);
+      const cell = sheet.getCell(1, 1);
+      cell.value = title;
+      cell.fill = DASH_XL.headerFill;
+      cell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { vertical: 'middle', horizontal: 'left' };
+      cell.border = DASH_XL.border;
+      sheet.getRow(1).height = 28;
+      return 2;
+    }
+
+    function dashXlAddFilterInfo(sheet, startRow, filters) {
+      const lines = [
+        `Generated: ${new Date().toLocaleString()}`,
+        `WK-1: ${filters.w1Range || '—'} | WK-2: ${filters.w2Range || '—'} | WK-3: ${filters.w3Range || '—'} | WK-4: ${filters.w4Range || '—'}`,
+        `Calls to monitor/agent: ${filters.target} | Agent×Category: ${filters.acRange || '—'}`
+      ];
+      lines.forEach((line, i) => {
+        const row = sheet.getRow(startRow + i);
+        row.getCell(1).value = line;
+        row.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF4A7A9B' } };
+        sheet.mergeCells(startRow + i, 1, startRow + i, 8);
+      });
+      return startRow + lines.length + 1;
+    }
+
+    function collectDashboardExportData() {
+      const from1 = document.getElementById('dash-call-from').value;
+      const to1 = document.getElementById('dash-call-to').value;
+      const from2 = document.getElementById('dash-call-from-w2').value;
+      const to2 = document.getElementById('dash-call-to-w2').value;
+      const from3 = document.getElementById('dash-call-from-w3').value;
+      const to3 = document.getElementById('dash-call-to-w3').value;
+      const from4 = document.getElementById('dash-call-from-w4').value;
+      const to4 = document.getElementById('dash-call-to-w4').value;
+      const acFrom = document.getElementById('dash-ac-from')?.value || '';
+      const acTo = document.getElementById('dash-ac-to')?.value || '';
+      const target = parseInt(document.getElementById('dash-target').value) || 3;
+
+      const w1 = calculateDashboardStats(from1, to1);
+      const w2 = calculateDashboardStats(from2, to2);
+      const w3 = calculateDashboardStats(from3, to3);
+      const w4 = calculateDashboardStats(from4, to4);
+      const weeks = [w1, w2, w3, w4];
+      const tStats = {
+        agentsPresent: [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort(),
+        noOfAgents: w1.noOfAgents + w2.noOfAgents + w3.noOfAgents + w4.noOfAgents,
+        targetAgent: target,
+        totalTarget: w1.totalTarget + w2.totalTarget + w3.totalTarget + w4.totalTarget,
+        achieved: w1.achieved + w2.achieved + w3.achieved + w4.achieved,
+        deficit: (w1.achieved + w2.achieved + w3.achieved + w4.achieved) - (w1.totalTarget + w2.totalTarget + w3.totalTarget + w4.totalTarget),
+        totalMet: w1.totalMet + w2.totalMet + w3.totalMet + w4.totalMet,
+        totalNm: w1.totalNm + w2.totalNm + w3.totalNm + w4.totalNm,
+        totalNi: w1.totalNi + w2.totalNi + w3.totalNi + w4.totalNi,
+        totalApplicable: w1.totalApplicable + w2.totalApplicable + w3.totalApplicable + w4.totalApplicable,
+        totalErrors: w1.totalErrors + w2.totalErrors + w3.totalErrors + w4.totalErrors,
+        adherence: 0,
+        defectRate: 0,
+        avgErrorAchieved: 0
+      };
+      tStats.adherence = tStats.totalApplicable > 0 ? ((tStats.totalMet / tStats.totalApplicable) * 100).toFixed(1) : 0;
+      tStats.defectRate = tStats.totalApplicable > 0 ? ((tStats.totalErrors / tStats.totalApplicable) * 100).toFixed(1) : 0;
+      tStats.avgErrorAchieved = tStats.achieved > 0 ? (tStats.totalErrors / tStats.achieved).toFixed(1) : 0;
+
+      const w1Filtered = filterDashboardWeekRecords(from1, to1);
+      const w2Filtered = filterDashboardWeekRecords(from2, to2);
+      const w3Filtered = filterDashboardWeekRecords(from3, to3);
+      const w4Filtered = filterDashboardWeekRecords(from4, to4);
+      const w1Items = aggregateRevenueItemErrors(w1Filtered);
+      const w2Items = aggregateRevenueItemErrors(w2Filtered);
+      const w3Items = aggregateRevenueItemErrors(w3Filtered);
+      const w4Items = aggregateRevenueItemErrors(w4Filtered);
+
+      const fmtRange = (f, t) => (f && t) ? `${f} to ${t}` : '—';
+      const filters = {
+        w1Range: fmtRange(from1, to1), w2Range: fmtRange(from2, to2), w3Range: fmtRange(from3, to3), w4Range: fmtRange(from4, to4),
+        acRange: (acFrom && acTo) ? `${acFrom} to ${acTo}` : '—', target
+      };
+
+      const teamMetricRows = [
+        ['AGENTS LIST (PRESENT)', ...weeks.map(w => w.agentsPresent.join(' | ') || '-'), tStats.agentsPresent.join(' | ') || '-'],
+        ['No. of Agents', ...weeks.map(w => w.noOfAgents), tStats.noOfAgents],
+        ['Calls to be monitored/Agent', ...weeks.map(w => w.targetAgent), tStats.targetAgent],
+        ['Total calls to be monitored (Target)', ...weeks.map(w => w.totalTarget), tStats.totalTarget],
+        ['Total Calls Monitored (Achieved)', ...weeks.map(w => w.achieved), tStats.achieved],
+        ['Deficit #s', ...weeks.map(w => w.deficit), tStats.deficit],
+        ['Total Applicable Parameters', ...weeks.map(w => w.totalApplicable), tStats.totalApplicable],
+        ['Total Met', ...weeks.map(w => w.totalMet), tStats.totalMet],
+        ['Adherance %', ...weeks.map(w => w.adherence + '%'), tStats.adherence + '%'],
+        ['Errors - Not Met - A', ...weeks.map(w => w.totalNm), tStats.totalNm],
+        ['Errors - Needs Improvement - B', ...weeks.map(w => w.totalNi), tStats.totalNi],
+        ['Total Errors (A + B)', ...weeks.map(w => w.totalErrors), tStats.totalErrors],
+        ['Defect Rate', ...weeks.map(w => w.defectRate + '%'), tStats.defectRate + '%'],
+        ['Average Error/Call - Achieved', ...weeks.map(w => w.avgErrorAchieved), tStats.avgErrorAchieved]
+      ];
+
+      const categories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
+      const emptyBreakupCat = () => ({ w1Count: 0, w1Revenue: 0, w1Met: 0, w1Applicable: 0, w2Count: 0, w2Revenue: 0, w2Met: 0, w2Applicable: 0, w3Count: 0, w3Revenue: 0, w3Met: 0, w3Applicable: 0, w4Count: 0, w4Revenue: 0, w4Met: 0, w4Applicable: 0 });
+      let breakupData = categories.map(c => ({ name: c, ...emptyBreakupCat() }));
+      const addBreakupWeek = (filtered, weekKey) => {
+        filtered.forEach(r => {
+          const cat = r.monitoringCategory;
+          if (!cat) return;
+          const bd = breakupData.find(b => b.name === cat);
+          if (!bd) return;
+          bd[weekKey + 'Count']++;
+          bd[weekKey + 'Revenue'] += (parseFloat(r.moveValueAmount) || 0);
+          bd[weekKey + 'Met'] += (r.metCount || 0);
+          bd[weekKey + 'Applicable'] += (r.assessed || 0);
+        });
+      };
+      addBreakupWeek(w1Filtered, 'w1');
+      addBreakupWeek(w2Filtered, 'w2');
+      addBreakupWeek(w3Filtered, 'w3');
+      addBreakupWeek(w4Filtered, 'w4');
+      const calcAdh = (met, app) => app > 0 ? ((met / app) * 100).toFixed(1) + '%' : '0.0%';
+      breakupData = breakupData.map(b => {
+        const w1A = calcAdh(b.w1Met, b.w1Applicable);
+        const w2A = calcAdh(b.w2Met, b.w2Applicable);
+        const w3A = calcAdh(b.w3Met, b.w3Applicable);
+        const w4A = calcAdh(b.w4Met, b.w4Applicable);
+        const tMet = b.w1Met + b.w2Met + b.w3Met + b.w4Met;
+        const tApp = b.w1Applicable + b.w2Applicable + b.w3Applicable + b.w4Applicable;
+        let dispName = b.name;
+        if (dispName === 'Complaint/Escalation Call') dispName = 'Complaints/Escalation Call';
+        if (dispName === 'Follow-up call') dispName = 'Follow - Up call';
+        if (dispName === 'Mid Value') dispName = 'Mid - Value';
+        return {
+          name: dispName,
+          w1Count: b.w1Count, w1Rev: b.w1Revenue, w1Adh: w1A,
+          w2Count: b.w2Count, w2Rev: b.w2Revenue, w2Adh: w2A,
+          w3Count: b.w3Count, w3Rev: b.w3Revenue, w3Adh: w3A,
+          w4Count: b.w4Count, w4Rev: b.w4Revenue, w4Adh: w4A,
+          tCount: b.w1Count + b.w2Count + b.w3Count + b.w4Count,
+          tRev: b.w1Revenue + b.w2Revenue + b.w3Revenue + b.w4Revenue,
+          tAdh: calcAdh(tMet, tApp)
+        };
+      });
+
+      const sortedSales = REVENUE_IMPACTING_ERRORS.map(title => {
+        const w1Nm = aggregateRevenueSectionErrors(w1Filtered)[title]?.notmet || 0;
+        const w1Ni = aggregateRevenueSectionErrors(w1Filtered)[title]?.ni || 0;
+        const w2Nm = aggregateRevenueSectionErrors(w2Filtered)[title]?.notmet || 0;
+        const w2Ni = aggregateRevenueSectionErrors(w2Filtered)[title]?.ni || 0;
+        const w3Nm = aggregateRevenueSectionErrors(w3Filtered)[title]?.notmet || 0;
+        const w3Ni = aggregateRevenueSectionErrors(w3Filtered)[title]?.ni || 0;
+        const w4Nm = aggregateRevenueSectionErrors(w4Filtered)[title]?.notmet || 0;
+        const w4Ni = aggregateRevenueSectionErrors(w4Filtered)[title]?.ni || 0;
+        const tNm = w1Nm + w2Nm + w3Nm + w4Nm;
+        const tNi = w1Ni + w2Ni + w3Ni + w4Ni;
+        return { title, w1Nm, w1Ni, w2Nm, w2Ni, w3Nm, w3Ni, w4Nm, w4Ni, tNm, tNi, sortTotal: tNm + tNi };
+      }).sort((a, b) => b.sortTotal - a.sortTotal);
+
+      const salesRows = [];
+      sortedSales.forEach(cat => {
+        salesRows.push({ type: 'category', title: cat.title, ...cat });
+        getRevenueSectionSubItems(cat.title, w1Items, w2Items, w3Items, w4Items)
+          .filter(s => s.sortTotal > 0)
+          .forEach(sub => salesRows.push({ type: 'sub', title: '    ' + sub.label, w1Nm: sub.w1Nm, w1Ni: sub.w1Ni, w2Nm: sub.w2Nm, w2Ni: sub.w2Ni, w3Nm: sub.w3Nm, w3Ni: sub.w3Ni, w4Nm: sub.w4Nm, w4Ni: sub.w4Ni, tNm: sub.tNm, tNi: sub.tNi }));
+      });
+
+      const allAgents = [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort();
+      const agentRows = allAgents.map(agentName => {
+        const calc = (filtered) => {
+          const recs = filtered.filter(r => r.agent === agentName);
+          const achieved = recs.length;
+          let met = 0, nm = 0, ni = 0, app = 0;
+          recs.forEach(r => { met += r.metCount || 0; nm += r.nmCount || 0; ni += r.niCount || 0; app += r.assessed || 0; });
+          const err = nm + ni;
+          return { achieved, adherence: app > 0 ? ((met / app) * 100).toFixed(1) : '0.0', avgError: achieved > 0 ? (err / achieved).toFixed(1) : '0.0', grading: getAgentGrading(app > 0 ? ((met / app) * 100).toFixed(1) : '0.0', achieved) };
+        };
+        const a1 = calc(w1Filtered), a2 = calc(w2Filtered), a3 = calc(w3Filtered), a4 = calc(w4Filtered);
+        const tAch = a1.achieved + a2.achieved + a3.achieved + a4.achieved;
+        let tMet = 0, tApp = 0, tErr = 0;
+        [w1Filtered, w2Filtered, w3Filtered, w4Filtered].forEach(f => f.filter(r => r.agent === agentName).forEach(r => {
+          tMet += r.metCount || 0; tApp += r.assessed || 0; tErr += (r.nmCount || 0) + (r.niCount || 0);
+        }));
+        const tAdh = tApp > 0 ? ((tMet / tApp) * 100).toFixed(1) : '0.0';
+        return { agentName, a1, a2, a3, a4, tAch, tAdh, tAvg: tAch > 0 ? (tErr / tAch).toFixed(1) : '0.0', tGrade: getAgentGrading(tAdh, tAch) };
+      });
+
+      const acCategories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
+      let acDeduped = [];
+      if (isDashAcFiltered(acFrom, acTo)) {
+        acDeduped = deduplicateReportRecords(records).filter(r => r.date >= acFrom && r.date <= acTo);
+      }
+      const acAgents = isDashAcFiltered(acFrom, acTo) ? getAllAgents() : [];
+      const acRows = acAgents.map(agentName => {
+        const agentRecs = acDeduped.filter(r => r.agent === agentName);
+        const counts = acCategories.map(cat => agentRecs.filter(r => r.monitoringCategory === cat).length);
+        return { agentName, counts, total: agentRecs.length };
+      });
+      const acTotals = acCategories.map((_, i) => acRows.reduce((s, r) => s + r.counts[i], 0));
+      const acGrand = acRows.reduce((s, r) => s + r.total, 0);
+
+      return { filters, teamMetricRows, breakupData, salesRows, sortedSales, agentRows, acCategories, acRows, acTotals, acGrand };
+    }
+
+    async function exportDashboardToExcel() {
+      if (typeof ExcelJS === 'undefined') {
+        showToast('Excel export library failed to load. Please refresh the page.', '#e74c3c');
+        return;
+      }
+      const btn = document.getElementById('btn-dash-export-excel');
+      const origText = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Exporting...'; }
+      try {
+        renderTeamDashboard();
+        const data = collectDashboardExportData();
+        const wb = new ExcelJS.Workbook();
+        wb.creator = 'TNVL Call Monitoring';
+        wb.created = new Date();
+
+        // Sheet 1: Team Performance
+        const wsTeam = wb.addWorksheet(dashXlSanitizeSheetName('Team Performance'));
+        let r = dashXlAddTitle(wsTeam, 'TEAM LEVEL PERFORMANCE', 6);
+        r = dashXlAddFilterInfo(wsTeam, r, data.filters);
+        const teamHdr = wsTeam.getRow(r);
+        ['Metric', 'WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', '1+2+3+4'].forEach((h, i) => { teamHdr.getCell(i + 1).value = h; });
+        dashXlApplyRowStyle(teamHdr, DASH_XL.subFill, DASH_XL.whiteFont);
+        r++;
+        data.teamMetricRows.forEach((rowData, idx) => {
+          const row = wsTeam.getRow(r);
+          rowData.forEach((v, i) => { row.getCell(i + 1).value = v; });
+          const fill = rowData[0].includes('Achieved') ? DASH_XL.greenFill : rowData[0].includes('Deficit') ? DASH_XL.redFill : (idx % 2 ? DASH_XL.lightFill : undefined);
+          dashXlApplyRowStyle(row, fill, undefined, idx === 0 ? 'left' : 'center');
+          if (idx === 0) row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
+          r++;
+        });
+        wsTeam.getColumn(1).width = 42;
+        for (let c = 2; c <= 6; c++) wsTeam.getColumn(c).width = 14;
+
+        // Sheet 2: Calls Break-Up
+        const wsBreak = wb.addWorksheet(dashXlSanitizeSheetName('Calls Break-Up'));
+        r = dashXlAddTitle(wsBreak, 'CALLS MONITORED – BREAK-UP', 16);
+        r = dashXlAddFilterInfo(wsBreak, r, data.filters);
+        const br1 = wsBreak.getRow(r);
+        br1.getCell(1).value = 'Category';
+        ['WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', '1+2+3+4 (TOTAL)'].forEach((w, wi) => {
+          wsBreak.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
+          br1.getCell(2 + wi * 3).value = w;
+        });
+        dashXlApplyRowStyle(br1, DASH_XL.subFill, DASH_XL.whiteFont);
+        r++;
+        const br2 = wsBreak.getRow(r);
+        br2.getCell(1).value = '';
+        for (let w = 0; w < 5; w++) ['Count', 'Revenue', 'Adherance %'].forEach((h, i) => { br2.getCell(2 + w * 3 + i).value = h; });
+        dashXlApplyRowStyle(br2, DASH_XL.lightFill, { bold: true, size: 10 });
+        r++;
+        data.breakupData.forEach(b => {
+          const row = wsBreak.getRow(r);
+          const vals = [b.name, b.w1Count, b.w1Rev, b.w1Adh, b.w2Count, b.w2Rev, b.w2Adh, b.w3Count, b.w3Rev, b.w3Adh, b.w4Count, b.w4Rev, b.w4Adh, b.tCount, b.tRev, b.tAdh];
+          vals.forEach((v, i) => { row.getCell(i + 1).value = v; });
+          dashXlApplyRowStyle(row, DASH_XL.lightFill);
+          row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
+          r++;
+        });
+        wsBreak.getColumn(1).width = 28;
+
+        const dashXlWriteSalesCells = (sheet, rowNum, col, nm, ni) => {
+          const n = nm || 0, i = ni || 0;
+          sheet.getCell(rowNum, col).value = n;
+          sheet.getCell(rowNum, col + 1).value = i;
+          sheet.getCell(rowNum, col + 2).value = n + i;
+          [col, col + 1, col + 2].forEach((c, idx) => {
+            const cell = sheet.getCell(rowNum, c);
+            cell.border = DASH_XL.border;
+            cell.alignment = { horizontal: 'center' };
+            if (idx === 0) { cell.font = n > 0 ? DASH_XL.nmFont : {}; cell.fill = DASH_XL.redFill; }
+            if (idx === 1) { cell.font = i > 0 ? DASH_XL.niFont : {}; cell.fill = DASH_XL.lightFill; }
+            if (idx === 2) { cell.font = DASH_XL.totalFont; cell.fill = DASH_XL.blueFill; }
+          });
+        };
+
+        // Sheet 3: Errors Impacting Sales
+        const wsSales = wb.addWorksheet(dashXlSanitizeSheetName('Errors Impacting Sales'));
+        r = dashXlAddTitle(wsSales, 'ERRORS IMPACTING SALES', 16);
+        r = dashXlAddFilterInfo(wsSales, r, data.filters);
+        const sl1 = wsSales.getRow(r);
+        sl1.getCell(1).value = 'Revenue Impacting Errors';
+        ['WK-1', 'WK-2', 'WK-3', 'WK-4', 'Total'].forEach((w, wi) => {
+          wsSales.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
+          sl1.getCell(2 + wi * 3).value = w;
+        });
+        dashXlApplyRowStyle(sl1, DASH_XL.subFill, DASH_XL.whiteFont);
+        r++;
+        const sl2 = wsSales.getRow(r);
+        sl2.getCell(1).value = '';
+        for (let w = 0; w < 5; w++) ['Not Met', 'Needs Impr.', 'Total'].forEach((h, i) => { sl2.getCell(2 + w * 3 + i).value = h; });
+        dashXlApplyRowStyle(sl2, DASH_XL.lightFill, { bold: true, size: 10 });
+        r++;
+        let gW1n = 0, gW1i = 0, gW2n = 0, gW2i = 0, gW3n = 0, gW3i = 0, gW4n = 0, gW4i = 0, gTn = 0, gTi = 0;
+        data.salesRows.forEach(item => {
+          const row = wsSales.getRow(r);
+          row.getCell(1).value = item.title;
+          row.getCell(1).fill = item.type === 'category' ? DASH_XL.blueFill : DASH_XL.lightFill;
+          row.getCell(1).font = item.type === 'category' ? { bold: true, size: 11 } : { size: 10 };
+          row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
+          row.getCell(1).border = DASH_XL.border;
+          dashXlWriteSalesCells(wsSales, r, 2, item.w1Nm, item.w1Ni);
+          dashXlWriteSalesCells(wsSales, r, 5, item.w2Nm, item.w2Ni);
+          dashXlWriteSalesCells(wsSales, r, 8, item.w3Nm, item.w3Ni);
+          dashXlWriteSalesCells(wsSales, r, 11, item.w4Nm, item.w4Ni);
+          dashXlWriteSalesCells(wsSales, r, 14, item.tNm, item.tNi);
+          r++;
+          if (item.type === 'category') {
+            gW1n += item.w1Nm; gW1i += item.w1Ni; gW2n += item.w2Nm; gW2i += item.w2Ni;
+            gW3n += item.w3Nm; gW3i += item.w3Ni; gW4n += item.w4Nm; gW4i += item.w4Ni;
+            gTn += item.tNm; gTi += item.tNi;
+          }
+        });
+        const grandSales = wsSales.getRow(r);
+        grandSales.getCell(1).value = 'Grand Total';
+        dashXlApplyRowStyle(grandSales, DASH_XL.grandFill, DASH_XL.whiteFont, 'left');
+        dashXlWriteSalesCells(wsSales, r, 2, gW1n, gW1i);
+        dashXlWriteSalesCells(wsSales, r, 5, gW2n, gW2i);
+        dashXlWriteSalesCells(wsSales, r, 8, gW3n, gW3i);
+        dashXlWriteSalesCells(wsSales, r, 11, gW4n, gW4i);
+        dashXlWriteSalesCells(wsSales, r, 14, gTn, gTi);
+        wsSales.getColumn(1).width = 48;
+
+        // Sheet 4: Agent Performance
+        const wsAgent = wb.addWorksheet(dashXlSanitizeSheetName('Agent Performance'));
+        r = dashXlAddTitle(wsAgent, 'AGENT WISE PERFORMANCE SUMMARY', 17);
+        r = dashXlAddFilterInfo(wsAgent, r, data.filters);
+        const ag1 = wsAgent.getRow(r);
+        ag1.getCell(1).value = 'Agent Name';
+        ['WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4'].forEach((w, wi) => {
+          wsAgent.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
+          ag1.getCell(2 + wi * 3).value = w;
+        });
+        wsAgent.mergeCells(r, 14, r, 17);
+        ag1.getCell(14).value = '1+2+3+4 (TOTAL)';
+        dashXlApplyRowStyle(ag1, DASH_XL.subFill, DASH_XL.whiteFont);
+        r++;
+        const ag2 = wsAgent.getRow(r);
+        ag2.getCell(1).value = '';
+        for (let w = 0; w < 4; w++) ['Calls', 'Adherence%', 'Avg Error/Call'].forEach((h, i) => {
+          ag2.getCell(2 + w * 3 + i).value = h;
+        });
+        ['Calls', 'Adherence%', 'Avg Error/Call', 'Grading'].forEach((h, i) => {
+          ag2.getCell(14 + i).value = h;
+        });
+        dashXlApplyRowStyle(ag2, DASH_XL.lightFill, { bold: true, size: 10 });
+        r++;
+        data.agentRows.forEach(ar => {
+          const row = wsAgent.getRow(r);
+          row.getCell(1).value = ar.agentName;
+          [ar.a1, ar.a2, ar.a3, ar.a4].forEach((wk, wi) => {
+            const base = 2 + wi * 3;
+            row.getCell(base).value = wk.achieved;
+            row.getCell(base + 1).value = wk.adherence + '%';
+            row.getCell(base + 2).value = wk.avgError;
+          });
+          row.getCell(14).value = ar.tAch;
+          row.getCell(15).value = ar.tAdh + '%';
+          row.getCell(16).value = ar.tAvg;
+          row.getCell(17).value = ar.tGrade;
+          dashXlApplyRowStyle(row, DASH_XL.lightFill);
+          row.getCell(1).alignment = { horizontal: 'left' };
+          row.getCell(17).font = { bold: true };
+          r++;
+        });
+        wsAgent.getColumn(1).width = 18;
+
+        // Sheet 5: Agent by Category
+        const wsAc = wb.addWorksheet(dashXlSanitizeSheetName('Agent by Category'));
+        r = dashXlAddTitle(wsAc, 'CALLS BY AGENT × CATEGORY', 9);
+        r = dashXlAddFilterInfo(wsAc, r, data.filters);
+        const acHdr = wsAc.getRow(r);
+        ['Agent', 'Booked', 'High Value', 'Follow-Up', 'Close to booking', 'Complaints', 'Mid-Value', 'Prospects', 'Total'].forEach((h, i) => {
+          acHdr.getCell(i + 1).value = h;
+        });
+        dashXlApplyRowStyle(acHdr, DASH_XL.subFill, DASH_XL.whiteFont);
+        r++;
+        data.acRows.forEach(ar => {
+          const row = wsAc.getRow(r);
+          row.getCell(1).value = ar.agentName;
+          ar.counts.forEach((cnt, i) => { row.getCell(i + 2).value = cnt; });
+          row.getCell(9).value = ar.total;
+          dashXlApplyRowStyle(row, DASH_XL.lightFill);
+          row.getCell(1).alignment = { horizontal: 'left' };
+          r++;
+        });
+        const acTot = wsAc.getRow(r);
+        acTot.getCell(1).value = 'Total';
+        data.acTotals.forEach((cnt, i) => { acTot.getCell(i + 2).value = cnt; });
+        acTot.getCell(9).value = data.acGrand;
+        dashXlApplyRowStyle(acTot, DASH_XL.grandFill, DASH_XL.whiteFont, 'left');
+
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `TNVL_Dashboard_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ Dashboard exported to Excel successfully!', '#27ae60');
+      } catch (err) {
+        console.error(err);
+        showToast('❌ Export failed: ' + (err.message || 'Unknown error'), '#e74c3c');
+      } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = origText; }
+      }
     }
 
     function downloadReportCSV() {
