@@ -2112,6 +2112,47 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, .25);
     }
 
+    .modal.modal-wide {
+      max-width: 960px;
+    }
+
+    .dash-comments-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .dash-comments-table th,
+    .dash-comments-table td {
+      border: 1px solid #dce8f5;
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+
+    .dash-comments-table th {
+      background: #1a5276;
+      color: #fff;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    .dash-comments-table input[type="date"],
+    .dash-comments-table textarea,
+    .dash-comments-table select {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid #dce8f5;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+
+    .dash-comments-table textarea {
+      min-height: 56px;
+      resize: vertical;
+    }
+
     .modal-hdr {
       background: linear-gradient(135deg, #1a5276, #1a3c5e);
       color: #fff;
@@ -2930,6 +2971,7 @@
             <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1" onchange="renderTeamDashboard()"></div>
             <button class="btn-filter" onclick="renderTeamDashboard()" style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Load Dashboard</button>
             <button class="btn-filter" onclick="clearDashboardFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
+            <button class="btn-filter" onclick="openDashboardCommentsModal()" style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💬 Comments</button>
           </div>
 
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000;">
@@ -3064,6 +3106,45 @@
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
+              <th colspan="17" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
+            </tr>
+            <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent Name</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 1</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 2</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 3</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 4</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">1+2+3+4 (TOTAL)</td>
+            </tr>
+            <tr style="background:#f8faff; font-weight:bold; text-align:center;">
+              <!-- Week 1 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Week 2 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Week 3 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Week 4 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Total -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+            </tr>
+            <tbody id="dash-agent-tbody">
+              <!-- Rows will be injected here -->
+            </tbody>
+          </table>
+          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
+            <tr style="background:#1a5276; color:#fff;">
               <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls Monitored – Break-Up</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
@@ -3125,41 +3206,30 @@
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="17" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
+              <th colspan="11" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">ERRORS IMPACTING SALES</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No</td>
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent Name</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 1</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 2</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 3</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 4</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">1+2+3+4 (TOTAL)</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:28%; vertical-align:middle; text-align:left;">Revenue Impacting Errors</td>
+              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-1</td>
+              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-2</td>
+              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-3</td>
+              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-4</td>
+              <td colspan="2" style="padding:10px; border:1px solid #000;">Total</td>
             </tr>
             <tr style="background:#f8faff; font-weight:bold; text-align:center;">
-              <!-- Week 1 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
-              <!-- Week 2 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
-              <!-- Week 3 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
-              <!-- Week 4 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
-              <!-- Total -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
             </tr>
-            <tbody id="dash-agent-tbody">
-              <!-- Rows will be injected here -->
+            <tbody id="dash-sales-errors-tbody">
+              <!-- Rows injected by renderTeamDashboard -->
             </tbody>
           </table>
           <div class="filter-bar dash-ac-filter-bar" style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
@@ -3727,7 +3797,7 @@
 
   <!-- Modal -->
   <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
-    <div class="modal">
+    <div class="modal" id="modal-panel">
       <div class="modal-hdr">
         <h3 id="modal-title">Detail</h3><button class="modal-close" onclick="closeModal()">✕</button>
       </div>
@@ -5180,6 +5250,137 @@
       renderTeamDashboard();
     }
 
+    let dashCommentsDraft = [];
+
+    function escAttr(str = '') {
+      return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    }
+
+    function loadDashCommentsFromLocal() {
+      try {
+        return JSON.parse(localStorage.getItem('tnvl_dash_comments') || '[]');
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveDashCommentsToLocal(comments) {
+      try {
+        localStorage.setItem('tnvl_dash_comments', JSON.stringify(comments));
+      } catch (e) { }
+    }
+
+    async function fetchDashboardComments() {
+      try {
+        const res = await fetch(`${getApiBase()}/api/dashboard-comments`);
+        if (!res.ok) throw new Error('Server error');
+        const data = await res.json();
+        const comments = (data || []).map(c => ({
+          date: c.date || '',
+          comment: c.comment || '',
+          updatedBy: c.updatedBy || ''
+        }));
+        saveDashCommentsToLocal(comments);
+        return comments;
+      } catch (e) {
+        return loadDashCommentsFromLocal();
+      }
+    }
+
+    function renderDashboardCommentsModalBody() {
+      const rows = dashCommentsDraft.length
+        ? dashCommentsDraft.map((row, i) => `
+          <tr data-idx="${i}">
+            <td style="text-align:center;font-weight:700;">${i + 1}</td>
+            <td><input type="date" value="${escAttr(row.date)}" onchange="dashCommentsDraft[${i}].date=this.value"></td>
+            <td><textarea placeholder="Enter comment for this date…" oninput="dashCommentsDraft[${i}].comment=this.value">${escHtml(row.comment || '')}</textarea></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="text" value="${escAttr(row.updatedBy || '')}" placeholder="Name" oninput="dashCommentsDraft[${i}].updatedBy=this.value" style="flex:1;min-width:0;">
+                <button type="button" onclick="removeDashboardCommentRow(${i})" style="flex-shrink:0;background:#fdf2f2;color:#c0392b;border:1px solid #f5b7b1;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">Remove</button>
+              </div>
+            </td>
+          </tr>`).join('')
+        : `<tr><td colspan="4" style="text-align:center;color:#888;padding:24px;font-style:italic;">No comments yet. Click “Add Row” to add a date-wise comment.</td></tr>`;
+
+      return `
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:flex-end;margin-bottom:16px;">
+          <button type="button" onclick="addDashboardCommentRow()" style="background:#eaf0f7;color:#1a5276;border:1px solid #dce8f5;padding:10px 18px;border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;">➕ Add Row</button>
+          <button type="button" onclick="saveDashboardComments()" style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💾 Save</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="dash-comments-table">
+            <thead>
+              <tr>
+                <th style="width:50px;text-align:center;">S.No</th>
+                <th style="width:140px;">Date</th>
+                <th>Comments</th>
+                <th style="width:220px;">Updated By</th>
+              </tr>
+            </thead>
+            <tbody id="dash-comments-tbody">${rows}</tbody>
+          </table>
+        </div>
+        <p style="margin-top:12px;font-size:12px;color:#64748b;">Add one row per date. Comments are shared with everyone on this dashboard and saved to the cloud when the server is online.</p>
+      `;
+    }
+
+    async function openDashboardCommentsModal() {
+      showToast('⏳ Loading comments…', '#1a6bb5');
+      dashCommentsDraft = await fetchDashboardComments();
+      document.getElementById('modal-panel').classList.add('modal-wide');
+      openModal('💬 Dashboard Comments', renderDashboardCommentsModalBody());
+    }
+
+    function addDashboardCommentRow() {
+      dashCommentsDraft.push({ date: '', comment: '', updatedBy: '' });
+      document.getElementById('modal-body').innerHTML = renderDashboardCommentsModalBody();
+    }
+
+    function removeDashboardCommentRow(idx) {
+      dashCommentsDraft.splice(idx, 1);
+      document.getElementById('modal-body').innerHTML = renderDashboardCommentsModalBody();
+    }
+
+    async function saveDashboardComments() {
+      const payload = dashCommentsDraft
+        .filter(r => r.date)
+        .map(r => ({
+          date: r.date,
+          comment: (r.comment || '').trim(),
+          updatedBy: (r.updatedBy || '').trim()
+        }));
+
+      const dates = payload.map(r => r.date);
+      if (new Set(dates).size !== dates.length) {
+        showToast('⚠️ Each row must have a unique date', '#e05c2a');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${getApiBase()}/api/dashboard-comments`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ comments: payload })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || data.details || `Error ${res.status}`);
+        dashCommentsDraft = (data.comments || []).map(c => ({
+          date: c.date || '',
+          comment: c.comment || '',
+          updatedBy: c.updatedBy || ''
+        }));
+        saveDashCommentsToLocal(dashCommentsDraft);
+        document.getElementById('modal-body').innerHTML = renderDashboardCommentsModalBody();
+        showToast(`✅ Saved ${dashCommentsDraft.length} comment${dashCommentsDraft.length !== 1 ? 's' : ''}`, '#27ae60');
+      } catch (e) {
+        saveDashCommentsToLocal(payload);
+        dashCommentsDraft = payload;
+        showToast(`⚠️ Saved locally only (server: ${e.message})`, '#e05c2a');
+        document.getElementById('modal-body').innerHTML = renderDashboardCommentsModalBody();
+      }
+    }
+
     function applyAdherenceStyle(el, val) {
       const numericVal = parseFloat(val);
       el.style.fontWeight = 'bold';
@@ -5256,6 +5457,58 @@
       if (isNaN(achVal) || isNaN(tgtVal)) return 'color: #000;';
       if (achVal <= tgtVal) return 'background: rgba(46, 204, 113, 0.12); color: #1e8449; font-weight: bold;';
       return 'background: rgba(192, 57, 43, 0.12); color: #c0392b; font-weight: bold;';
+    }
+
+    const REVENUE_IMPACTING_ERRORS = [
+      'Inventory Capture (Room-to-Room)',
+      'Access & Constraints (Time & Cost Impact)',
+      'Packing & Add-On Services',
+      'Pricing & Estimate \u2013 Long Distance',
+      'Pricing & Estimate \u2013 Local Moves',
+      'TNVL Trust Builders & Transparency',
+      'Sale Technique - Booking & Payment Process'
+    ];
+
+    function aggregateRevenueSectionErrors(filtered) {
+      const counts = {};
+      REVENUE_IMPACTING_ERRORS.forEach(title => { counts[title] = { notmet: 0, ni: 0 }; });
+      filtered.forEach(r => {
+        if (!r.breakdown) return;
+        r.breakdown.forEach(sec => {
+          const bucket = counts[sec.title];
+          if (!bucket) return;
+          bucket.notmet += sec.notmet || 0;
+          bucket.ni += sec.ni || 0;
+        });
+      });
+      return counts;
+    }
+
+    function renderSalesErrorsReport(w1Filtered, w2Filtered, w3Filtered, w4Filtered) {
+      const w1 = aggregateRevenueSectionErrors(w1Filtered);
+      const w2 = aggregateRevenueSectionErrors(w2Filtered);
+      const w3 = aggregateRevenueSectionErrors(w3Filtered);
+      const w4 = aggregateRevenueSectionErrors(w4Filtered);
+      const cell = (val, type) => {
+        const n = val || 0;
+        const color = n > 0 ? (type === 'nm' ? '#c0392b' : '#d35400') : '#999';
+        const weight = n > 0 ? 'bold' : 'normal';
+        return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:${weight};">${n}</td>`;
+      };
+      const tbody = document.getElementById('dash-sales-errors-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = REVENUE_IMPACTING_ERRORS.map(title => {
+        const tNm = (w1[title]?.notmet || 0) + (w2[title]?.notmet || 0) + (w3[title]?.notmet || 0) + (w4[title]?.notmet || 0);
+        const tNi = (w1[title]?.ni || 0) + (w2[title]?.ni || 0) + (w3[title]?.ni || 0) + (w4[title]?.ni || 0);
+        return `<tr>
+          <td style="padding:10px; border:1px solid #000; font-weight:bold;">${escHtml(title)}</td>
+          ${cell(w1[title]?.notmet, 'nm')}${cell(w1[title]?.ni, 'ni')}
+          ${cell(w2[title]?.notmet, 'nm')}${cell(w2[title]?.ni, 'ni')}
+          ${cell(w3[title]?.notmet, 'nm')}${cell(w3[title]?.ni, 'ni')}
+          ${cell(w4[title]?.notmet, 'nm')}${cell(w4[title]?.ni, 'ni')}
+          ${cell(tNm, 'nm')}${cell(tNi, 'ni')}
+        </tr>`;
+      }).join('');
     }
 
     function calculateDashboardStats(callFrom, callTo) {
@@ -5523,6 +5776,8 @@
       
       document.getElementById('dash-breakup-total-count-total').textContent = grandTotalCount;
       document.getElementById('dash-breakup-total-revenue-total').textContent = `$${grandTotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      renderSalesErrorsReport(w1Filtered, w2Filtered, w3Filtered, w4Filtered);
 
       // --- Agent Wise Performance Summary Calculation ---
       const allAgents = [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort();
@@ -6539,7 +6794,10 @@
       openModal(`📋 Call Detail — ${r.agent}`, `<div class="msec-title">Call Summary</div>${rows.map(([k, v]) => `<div class="mrow"><span>${k}</span><span style="font-weight:${k === 'Final Score' ? 700 : 400}">${v}</span></div>`).join('')}${r.breakdown.map(sec => `<div class="msec-title">${sec.title} — ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni} / ${sec.assessed} assessed</div>${sec.items.map(item => `<div class="mrow"><span>${item.label}</span>${ratingLabel(item.rating)}</div>`).join('')}`).join('')}`);
     }
     function openModal(title, body) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-body').innerHTML = body; document.getElementById('modal').classList.add('open'); }
-    function closeModal() { document.getElementById('modal').classList.remove('open'); }
+    function closeModal() {
+      document.getElementById('modal').classList.remove('open');
+      document.getElementById('modal-panel').classList.remove('modal-wide');
+    }
 
     function tskSummaryChip(recordId) { const r = records.find(x => String(x.id) === String(recordId)); if (r && r.tskSummary) return `<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`; if (r && r.leadId) { const match = Object.values(tskSummaries).find(s => s.leadId && s.leadId === r.leadId.replace(/\D/g, '')); if (match) { r.tskSummary = match; return `<span class="sum-chip" onclick="tskViewSummary('${recordId}')">📄 View Summary</span>`; } } return `<span class="no-sum">—</span>`; }
     function tskViewSummary(recordId) { const r = records.find(x => String(x.id) === String(recordId)); if (!r || !r.tskSummary) return; const s = r.tskSummary; openModal(`📄 Call Summary — ${s.fileName || r.agent}`, `<div style="display:flex;gap:16px;flex-wrap:wrap;padding:10px 14px;background:#f0f6ff;border-radius:7px;margin-bottom:14px;font-size:13px;"><div>📄 File: <strong>${s.fileName || '—'}</strong></div><div>👤 Agent: <strong>${r.agent}</strong></div><div>📅 Date: <strong>${r.date}</strong></div>${r.leadId ? `<div>🔖 Lead: <strong>${r.leadId}</strong></div>` : ''}</div><div class="sum-modal-body">${escHtml(s.text)}</div><button class="sum-copy-btn" onclick="tskCopySummary('${recordId}')">📋 Copy Summary</button>`); }
