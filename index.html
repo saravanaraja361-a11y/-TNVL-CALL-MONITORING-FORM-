@@ -2579,6 +2579,44 @@
         border-bottom: 2px solid #e0ecf8;
       }
     }
+
+    .dash-sales-expand-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      margin-right: 8px;
+      border: 1.5px solid #1a5276;
+      border-radius: 4px;
+      background: #fff;
+      color: #1a5276;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+      vertical-align: middle;
+      padding: 0;
+    }
+
+    .dash-sales-expand-btn:hover {
+      background: #eaf0f7;
+    }
+
+    tr.dash-sales-sub-row td:first-child {
+      padding-left: 42px !important;
+      font-weight: normal;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    tr.dash-sales-sub-row {
+      background: #fafcff;
+    }
+
+    tr.dash-sales-category-row {
+      cursor: default;
+    }
   </style>
 </head>
 
@@ -2960,15 +2998,15 @@
         <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
           
           <div class="filter-bar" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;">
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W1]</label><input type="date" id="dash-call-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W1]</label><input type="date" id="dash-call-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W2]</label><input type="date" id="dash-call-from-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W2]</label><input type="date" id="dash-call-to-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W3]</label><input type="date" id="dash-call-from-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W3]</label><input type="date" id="dash-call-to-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W4]</label><input type="date" id="dash-call-from-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W4]</label><input type="date" id="dash-call-to-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
-            <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W1]</label><input type="date" id="dash-call-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W1]</label><input type="date" id="dash-call-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W2]</label><input type="date" id="dash-call-from-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W2]</label><input type="date" id="dash-call-to-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W3]</label><input type="date" id="dash-call-from-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W3]</label><input type="date" id="dash-call-to-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W4]</label><input type="date" id="dash-call-from-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W4]</label><input type="date" id="dash-call-to-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1"></div>
             <button class="btn-filter" onclick="renderTeamDashboard()" style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Load Dashboard</button>
             <button class="btn-filter" onclick="clearDashboardFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
             <button class="btn-filter" onclick="openDashboardCommentsModal()" style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💬 Comments</button>
@@ -3001,11 +3039,11 @@
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Calls to be monitored/Agent</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent">3</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w2">3</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w3">3</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w4">3</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-total">3</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total calls to be monitored (Target)</td>
@@ -3089,11 +3127,11 @@
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Average Error/Call - Target</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w3" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w4" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w3" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w4" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Average Error/Call - Achieved</td>
@@ -3106,16 +3144,16 @@
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="17" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
+              <th colspan="18" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
               <td rowspan="2" style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No</td>
               <td rowspan="2" style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent Name</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 1</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 2</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 3</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 4</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">1+2+3+4 (TOTAL)</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 1</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 2</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 3</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 4</td>
+              <td colspan="4" style="padding:10px; border:1px solid #000; width:18%;">1+2+3+4 (TOTAL)</td>
             </tr>
             <tr style="background:#f8faff; font-weight:bold; text-align:center;">
               <!-- Week 1 -->
@@ -3138,6 +3176,7 @@
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Grading</td>
             </tr>
             <tbody id="dash-agent-tbody">
               <!-- Rows will be injected here -->
@@ -3159,23 +3198,23 @@
               <!-- Week 1 -->
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Adherance %</td>
               <!-- Week 2 -->
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Adherance %</td>
               <!-- Week 3 -->
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Adherance %</td>
               <!-- Week 4 -->
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Adherance %</td>
               <!-- Total -->
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
               <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Adherance %</td>
             </tr>
             <tbody id="dash-breakup-tbody">
               <!-- Rows will be injected here -->
@@ -3185,48 +3224,53 @@
               <!-- Week 1 -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w1">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w1">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w1">0%</td>
               <!-- Week 2 -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w2">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w2">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w2">0%</td>
               <!-- Week 3 -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w3">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w3">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w3">0%</td>
               <!-- Week 4 -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w4">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w4">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w4">0%</td>
               <!-- Total -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-total">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-total">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-total">0%</td>
             </tr>
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="11" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">ERRORS IMPACTING SALES</th>
+              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">ERRORS IMPACTING SALES</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:28%; vertical-align:middle; text-align:left;">Revenue Impacting Errors</td>
-              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-1</td>
-              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-2</td>
-              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-3</td>
-              <td colspan="2" style="padding:10px; border:1px solid #000;">WK-4</td>
-              <td colspan="2" style="padding:10px; border:1px solid #000;">Total</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:22%; vertical-align:middle; text-align:left;">Revenue Impacting Errors</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000;">WK-1</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000;">WK-2</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000;">WK-3</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000;">WK-4</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000;">Total</td>
             </tr>
             <tr style="background:#f8faff; font-weight:bold; text-align:center;">
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#1a5276;">Total</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#1a5276;">Total</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#1a5276;">Total</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#1a5276;">Total</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#c0392b;">Not Met</td>
               <td style="padding:8px; border:1px solid #000; font-size:12px; color:#d35400;">Needs Improvement</td>
+              <td style="padding:8px; border:1px solid #000; font-size:12px; color:#1a5276;">Total</td>
             </tr>
             <tbody id="dash-sales-errors-tbody">
               <!-- Rows injected by renderTeamDashboard -->
@@ -3234,8 +3278,8 @@
           </table>
           <div class="filter-bar dash-ac-filter-bar" style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
             <div style="font-weight:700;font-size:13px;color:#1a5276;width:100%;">Filter — Calls by Agent × Category</div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">From Date</label><input type="date" id="dash-ac-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;" onchange="renderTeamDashboard()"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">To Date</label><input type="date" id="dash-ac-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">From Date</label><input type="date" id="dash-ac-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">To Date</label><input type="date" id="dash-ac-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
             <button type="button" class="btn-filter" onclick="clearDashboardAcFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
           </div>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:0;">
@@ -5459,6 +5503,25 @@
       return 'background: rgba(192, 57, 43, 0.12); color: #c0392b; font-weight: bold;';
     }
 
+    function getAgentGrading(adherencePct, callsCount) {
+      if (!callsCount) return '0';
+      const p = parseFloat(adherencePct);
+      if (isNaN(p)) return '0';
+      if (p >= 90) return 'Excellent';
+      if (p >= 80) return 'Good';
+      if (p >= 70) return 'Average';
+      return 'Poor';
+    }
+
+    function getGradingStyleStr(grade, adherencePct) {
+      if (grade === '0') return 'color: #999;';
+      const p = parseFloat(adherencePct);
+      if (grade === 'Excellent' || p >= 90) return 'background: rgba(39, 174, 96, 0.12); color: #27ae60; font-weight: bold;';
+      if (grade === 'Good' || p >= 80) return 'background: rgba(45, 179, 111, 0.08); color: #2db36f; font-weight: bold;';
+      if (grade === 'Average' || p >= 70) return 'background: rgba(224, 160, 26, 0.12); color: #d35400; font-weight: bold;';
+      return 'background: rgba(192, 57, 43, 0.12); color: #c0392b; font-weight: bold;';
+    }
+
     const REVENUE_IMPACTING_ERRORS = [
       'Inventory Capture (Room-to-Room)',
       'Access & Constraints (Time & Cost Impact)',
@@ -5484,37 +5547,195 @@
       return counts;
     }
 
+    function aggregateRevenueItemErrors(filtered) {
+      const items = {};
+      REVENUE_IMPACTING_ERRORS.forEach(title => { items[title] = {}; });
+      filtered.forEach(r => {
+        if (!r.breakdown) return;
+        r.breakdown.forEach(sec => {
+          if (!items[sec.title]) return;
+          (sec.items || []).forEach(item => {
+            if (item.rating === 'met' || item.rating === 'skip') return;
+            const label = item.label || 'Unknown';
+            if (!items[sec.title][label]) items[sec.title][label] = { notmet: 0, ni: 0 };
+            if (item.rating === 'notmet') items[sec.title][label].notmet++;
+            else if (item.rating === 'ni') items[sec.title][label].ni++;
+          });
+        });
+      });
+      return items;
+    }
+
+    const dashSalesExpanded = new Set();
+
+    function toggleSalesErrorsSection(sectionId) {
+      const btn = document.querySelector(`.dash-sales-expand-btn[data-section="${sectionId}"]`);
+      const subRows = document.querySelectorAll(`tr.dash-sales-sub-row[data-parent="${sectionId}"]`);
+      if (!btn) return;
+      const willExpand = btn.getAttribute('aria-expanded') !== 'true';
+      btn.setAttribute('aria-expanded', willExpand ? 'true' : 'false');
+      btn.textContent = willExpand ? '−' : '+';
+      subRows.forEach(row => { row.style.display = willExpand ? '' : 'none'; });
+      if (willExpand) dashSalesExpanded.add(sectionId);
+      else dashSalesExpanded.delete(sectionId);
+    }
+
+    function getRevenueSectionSubItems(sectionTitle, w1Items, w2Items, w3Items, w4Items) {
+      const canon = (SECTIONS.find(s => s.title === sectionTitle)?.items || []);
+      const labels = new Set(canon);
+      [w1Items, w2Items, w3Items, w4Items].forEach(week => {
+        Object.keys((week[sectionTitle] || {})).forEach(l => labels.add(l));
+      });
+      return [...labels].map(label => {
+        const w1Nm = w1Items[sectionTitle]?.[label]?.notmet || 0;
+        const w1Ni = w1Items[sectionTitle]?.[label]?.ni || 0;
+        const w2Nm = w2Items[sectionTitle]?.[label]?.notmet || 0;
+        const w2Ni = w2Items[sectionTitle]?.[label]?.ni || 0;
+        const w3Nm = w3Items[sectionTitle]?.[label]?.notmet || 0;
+        const w3Ni = w3Items[sectionTitle]?.[label]?.ni || 0;
+        const w4Nm = w4Items[sectionTitle]?.[label]?.notmet || 0;
+        const w4Ni = w4Items[sectionTitle]?.[label]?.ni || 0;
+        const tNm = w1Nm + w2Nm + w3Nm + w4Nm;
+        const tNi = w1Ni + w2Ni + w3Ni + w4Ni;
+        return { label, w1Nm, w1Ni, w2Nm, w2Ni, w3Nm, w3Ni, w4Nm, w4Ni, tNm, tNi, sortTotal: tNm + tNi };
+      }).sort((a, b) => b.sortTotal - a.sortTotal);
+    }
+
     function renderSalesErrorsReport(w1Filtered, w2Filtered, w3Filtered, w4Filtered) {
       const w1 = aggregateRevenueSectionErrors(w1Filtered);
       const w2 = aggregateRevenueSectionErrors(w2Filtered);
       const w3 = aggregateRevenueSectionErrors(w3Filtered);
       const w4 = aggregateRevenueSectionErrors(w4Filtered);
-      const cell = (val, type) => {
+      const w1Items = aggregateRevenueItemErrors(w1Filtered);
+      const w2Items = aggregateRevenueItemErrors(w2Filtered);
+      const w3Items = aggregateRevenueItemErrors(w3Filtered);
+      const w4Items = aggregateRevenueItemErrors(w4Filtered);
+      const cell = (val, type, isGrand) => {
         const n = val || 0;
-        const color = n > 0 ? (type === 'nm' ? '#c0392b' : '#d35400') : '#999';
-        const weight = n > 0 ? 'bold' : 'normal';
-        return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:${weight};">${n}</td>`;
+        const color = n > 0 ? (type === 'nm' ? '#c0392b' : '#d35400') : (isGrand ? '#cbd5e1' : '#999');
+        const weight = n > 0 || isGrand ? 'bold' : 'normal';
+        const bg = isGrand ? 'background:#eaf0f7;' : '';
+        return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:${weight}; ${bg}">${n}</td>`;
       };
+      const cellWeekTotal = (nm, ni, isGrand) => {
+        const n = (nm || 0) + (ni || 0);
+        const color = n > 0 ? '#1a5276' : (isGrand ? '#cbd5e1' : '#999');
+        const bg = isGrand ? 'background:#eaf0f7;' : 'background:#f8faff;';
+        return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:bold; ${bg}">${n}</td>`;
+      };
+      const weekCells = (nm, ni, isGrand) => `${cell(nm, 'nm', isGrand)}${cell(ni, 'ni', isGrand)}${cellWeekTotal(nm, ni, isGrand)}`;
+
       const tbody = document.getElementById('dash-sales-errors-tbody');
       if (!tbody) return;
-      tbody.innerHTML = REVENUE_IMPACTING_ERRORS.map(title => {
-        const tNm = (w1[title]?.notmet || 0) + (w2[title]?.notmet || 0) + (w3[title]?.notmet || 0) + (w4[title]?.notmet || 0);
-        const tNi = (w1[title]?.ni || 0) + (w2[title]?.ni || 0) + (w3[title]?.ni || 0) + (w4[title]?.ni || 0);
-        return `<tr>
-          <td style="padding:10px; border:1px solid #000; font-weight:bold;">${escHtml(title)}</td>
-          ${cell(w1[title]?.notmet, 'nm')}${cell(w1[title]?.ni, 'ni')}
-          ${cell(w2[title]?.notmet, 'nm')}${cell(w2[title]?.ni, 'ni')}
-          ${cell(w3[title]?.notmet, 'nm')}${cell(w3[title]?.ni, 'ni')}
-          ${cell(w4[title]?.notmet, 'nm')}${cell(w4[title]?.ni, 'ni')}
-          ${cell(tNm, 'nm')}${cell(tNi, 'ni')}
+
+      let grandW1Nm = 0, grandW1Ni = 0, grandW2Nm = 0, grandW2Ni = 0;
+      let grandW3Nm = 0, grandW3Ni = 0, grandW4Nm = 0, grandW4Ni = 0;
+      let grandTotNm = 0, grandTotNi = 0;
+
+      const categoryRows = REVENUE_IMPACTING_ERRORS.map((title, secIdx) => {
+        const sectionId = 'dash-sales-sec-' + secIdx;
+        const w1Nm = w1[title]?.notmet || 0;
+        const w1Ni = w1[title]?.ni || 0;
+        const w2Nm = w2[title]?.notmet || 0;
+        const w2Ni = w2[title]?.ni || 0;
+        const w3Nm = w3[title]?.notmet || 0;
+        const w3Ni = w3[title]?.ni || 0;
+        const w4Nm = w4[title]?.notmet || 0;
+        const w4Ni = w4[title]?.ni || 0;
+        const tNm = w1Nm + w2Nm + w3Nm + w4Nm;
+        const tNi = w1Ni + w2Ni + w3Ni + w4Ni;
+
+        grandW1Nm += w1Nm; grandW1Ni += w1Ni;
+        grandW2Nm += w2Nm; grandW2Ni += w2Ni;
+        grandW3Nm += w3Nm; grandW3Ni += w3Ni;
+        grandW4Nm += w4Nm; grandW4Ni += w4Ni;
+        grandTotNm += tNm; grandTotNi += tNi;
+
+        const subItems = getRevenueSectionSubItems(title, w1Items, w2Items, w3Items, w4Items)
+          .filter(sub => sub.sortTotal > 0);
+        const isExpanded = dashSalesExpanded.has(sectionId);
+        const subDisplay = isExpanded ? '' : 'none';
+
+        let html = `<tr class="dash-sales-category-row">
+          <td style="padding:10px; border:1px solid #000; font-weight:bold;">
+            <button type="button" class="dash-sales-expand-btn" data-section="${sectionId}" aria-expanded="${isExpanded ? 'true' : 'false'}" onclick="toggleSalesErrorsSection('${sectionId}')" title="Show sub-categories">${isExpanded ? '−' : '+'}</button>${escHtml(title)}
+          </td>
+          ${weekCells(w1Nm, w1Ni)}
+          ${weekCells(w2Nm, w2Ni)}
+          ${weekCells(w3Nm, w3Ni)}
+          ${weekCells(w4Nm, w4Ni)}
+          ${weekCells(tNm, tNi)}
         </tr>`;
+
+        if (!subItems.length) {
+          html += `<tr class="dash-sales-sub-row dash-sales-sub-empty" data-parent="${sectionId}" style="display:${subDisplay};">
+            <td colspan="16" style="padding:8px 10px 8px 42px; border:1px solid #000; font-size:12px; color:#888; font-style:italic;">No Not Met / Needs Improvement items in selected period</td>
+          </tr>`;
+        } else {
+          subItems.forEach(sub => {
+            html += `<tr class="dash-sales-sub-row" data-parent="${sectionId}" style="display:${subDisplay};">
+              <td style="padding:10px; border:1px solid #000;">${escHtml(sub.label)}</td>
+              ${weekCells(sub.w1Nm, sub.w1Ni)}
+              ${weekCells(sub.w2Nm, sub.w2Ni)}
+              ${weekCells(sub.w3Nm, sub.w3Ni)}
+              ${weekCells(sub.w4Nm, sub.w4Ni)}
+              ${weekCells(sub.tNm, sub.tNi)}
+            </tr>`;
+          });
+        }
+
+        return html;
       }).join('');
+
+      const grandTotalRow = `<tr style="background:#1a5276; color:#fff; font-weight:bold;">
+        <td style="padding:10px; border:1px solid #000; text-align:left;">Grand Total</td>
+        ${weekCells(grandW1Nm, grandW1Ni, true)}
+        ${weekCells(grandW2Nm, grandW2Ni, true)}
+        ${weekCells(grandW3Nm, grandW3Ni, true)}
+        ${weekCells(grandW4Nm, grandW4Ni, true)}
+        ${weekCells(grandTotNm, grandTotNi, true)}
+      </tr>`;
+
+      tbody.innerHTML = categoryRows + grandTotalRow;
+    }
+
+    function isDashWeekFiltered(callFrom, callTo) {
+      return !!(callFrom && callTo);
+    }
+
+    function isDashAcFiltered(callFrom, callTo) {
+      return !!(callFrom && callTo);
+    }
+
+    function emptyDashboardStats() {
+      return {
+        agentsPresent: [],
+        noOfAgents: 0,
+        targetAgent: 0,
+        totalTarget: 0,
+        achieved: 0,
+        deficit: 0,
+        totalMet: 0,
+        totalNm: 0,
+        totalNi: 0,
+        totalApplicable: 0,
+        totalErrors: 0,
+        adherence: 0,
+        defectRate: 0,
+        avgErrorAchieved: 0
+      };
+    }
+
+    function filterDashboardWeekRecords(callFrom, callTo) {
+      if (!isDashWeekFiltered(callFrom, callTo)) return [];
+      let filtered = deduplicateReportRecords(records);
+      filtered = filtered.filter(r => r.date >= callFrom && r.date <= callTo);
+      return filtered;
     }
 
     function calculateDashboardStats(callFrom, callTo) {
-      let filtered = deduplicateReportRecords(records);
-      if (callFrom) filtered = filtered.filter(r => r.date >= callFrom);
-      if (callTo) filtered = filtered.filter(r => r.date <= callTo);
+      if (!isDashWeekFiltered(callFrom, callTo)) return emptyDashboardStats();
+      const filtered = filterDashboardWeekRecords(callFrom, callTo);
       
       const agentsPresent = [...new Set(filtered.map(r => r.agent).filter(a => a))].sort();
       const noOfAgents = agentsPresent.length;
@@ -5612,124 +5833,98 @@
       updateCol('-w4', w4);
       updateCol('-total', tStats);
 
-      let w1Filtered = deduplicateReportRecords(records);
-      if (from1) w1Filtered = w1Filtered.filter(r => r.date >= from1);
-      if (to1) w1Filtered = w1Filtered.filter(r => r.date <= to1);
-
-      let w2Filtered = deduplicateReportRecords(records);
-      if (from2) w2Filtered = w2Filtered.filter(r => r.date >= from2);
-      if (to2) w2Filtered = w2Filtered.filter(r => r.date <= to2);
-
-      let w3Filtered = deduplicateReportRecords(records);
-      if (from3) w3Filtered = w3Filtered.filter(r => r.date >= from3);
-      if (to3) w3Filtered = w3Filtered.filter(r => r.date <= to3);
-
-      let w4Filtered = deduplicateReportRecords(records);
-      if (from4) w4Filtered = w4Filtered.filter(r => r.date >= from4);
-      if (to4) w4Filtered = w4Filtered.filter(r => r.date <= to4);
+      const w1Filtered = filterDashboardWeekRecords(from1, to1);
+      const w2Filtered = filterDashboardWeekRecords(from2, to2);
+      const w3Filtered = filterDashboardWeekRecords(from3, to3);
+      const w4Filtered = filterDashboardWeekRecords(from4, to4);
 
       const categories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
       
-      let breakupData = categories.map(c => ({
-        name: c,
-        w1Count: 0,
-        w1Revenue: 0,
-        w2Count: 0,
-        w2Revenue: 0,
-        w3Count: 0,
-        w3Revenue: 0,
-        w4Count: 0,
-        w4Revenue: 0,
-        totalCount: 0,
-        totalRevenue: 0
-      }));
-
-      // Calculate Week 1
-      w1Filtered.forEach(r => {
-        const cat = r.monitoringCategory;
-        if (cat) {
-          const bd = breakupData.find(b => b.name === cat);
-          if (bd) {
-            bd.w1Count++;
-            bd.w1Revenue += (parseFloat(r.moveValueAmount) || 0);
-          }
-        }
+      const emptyBreakupCat = () => ({
+        w1Count: 0, w1Revenue: 0, w1Met: 0, w1Applicable: 0,
+        w2Count: 0, w2Revenue: 0, w2Met: 0, w2Applicable: 0,
+        w3Count: 0, w3Revenue: 0, w3Met: 0, w3Applicable: 0,
+        w4Count: 0, w4Revenue: 0, w4Met: 0, w4Applicable: 0
       });
 
-      // Calculate Week 2
-      w2Filtered.forEach(r => {
-        const cat = r.monitoringCategory;
-        if (cat) {
-          const bd = breakupData.find(b => b.name === cat);
-          if (bd) {
-            bd.w2Count++;
-            bd.w2Revenue += (parseFloat(r.moveValueAmount) || 0);
-          }
-        }
-      });
+      let breakupData = categories.map(c => ({ name: c, ...emptyBreakupCat() }));
 
-      // Calculate Week 3
-      w3Filtered.forEach(r => {
-        const cat = r.monitoringCategory;
-        if (cat) {
+      const addBreakupWeek = (filtered, weekKey) => {
+        filtered.forEach(r => {
+          const cat = r.monitoringCategory;
+          if (!cat) return;
           const bd = breakupData.find(b => b.name === cat);
-          if (bd) {
-            bd.w3Count++;
-            bd.w3Revenue += (parseFloat(r.moveValueAmount) || 0);
-          }
-        }
-      });
+          if (!bd) return;
+          bd[weekKey + 'Count']++;
+          bd[weekKey + 'Revenue'] += (parseFloat(r.moveValueAmount) || 0);
+          bd[weekKey + 'Met'] += (r.metCount || 0);
+          bd[weekKey + 'Applicable'] += (r.assessed || 0);
+        });
+      };
 
-      // Calculate Week 4
-      w4Filtered.forEach(r => {
-        const cat = r.monitoringCategory;
-        if (cat) {
-          const bd = breakupData.find(b => b.name === cat);
-          if (bd) {
-            bd.w4Count++;
-            bd.w4Revenue += (parseFloat(r.moveValueAmount) || 0);
-          }
-        }
-      });
+      addBreakupWeek(w1Filtered, 'w1');
+      addBreakupWeek(w2Filtered, 'w2');
+      addBreakupWeek(w3Filtered, 'w3');
+      addBreakupWeek(w4Filtered, 'w4');
 
-      // Calculate combined totals
-      let w1TotalCount = 0, w1TotalRev = 0;
-      let w2TotalCount = 0, w2TotalRev = 0;
-      let w3TotalCount = 0, w3TotalRev = 0;
-      let w4TotalCount = 0, w4TotalRev = 0;
-      let grandTotalCount = 0, grandTotalRev = 0;
+      const calcBreakupAdherence = (met, applicable) =>
+        applicable > 0 ? ((met / applicable) * 100).toFixed(1) : '0.0';
+
+      let w1TotalCount = 0, w1TotalRev = 0, w1TotalMet = 0, w1TotalApplicable = 0;
+      let w2TotalCount = 0, w2TotalRev = 0, w2TotalMet = 0, w2TotalApplicable = 0;
+      let w3TotalCount = 0, w3TotalRev = 0, w3TotalMet = 0, w3TotalApplicable = 0;
+      let w4TotalCount = 0, w4TotalRev = 0, w4TotalMet = 0, w4TotalApplicable = 0;
+      let grandTotalCount = 0, grandTotalRev = 0, grandTotalMet = 0, grandTotalApplicable = 0;
 
       breakupData.forEach(b => {
         b.totalCount = b.w1Count + b.w2Count + b.w3Count + b.w4Count;
         b.totalRevenue = b.w1Revenue + b.w2Revenue + b.w3Revenue + b.w4Revenue;
+        b.totalMet = b.w1Met + b.w2Met + b.w3Met + b.w4Met;
+        b.totalApplicable = b.w1Applicable + b.w2Applicable + b.w3Applicable + b.w4Applicable;
+        b.w1Adherence = calcBreakupAdherence(b.w1Met, b.w1Applicable);
+        b.w2Adherence = calcBreakupAdherence(b.w2Met, b.w2Applicable);
+        b.w3Adherence = calcBreakupAdherence(b.w3Met, b.w3Applicable);
+        b.w4Adherence = calcBreakupAdherence(b.w4Met, b.w4Applicable);
+        b.totalAdherence = calcBreakupAdherence(b.totalMet, b.totalApplicable);
 
         w1TotalCount += b.w1Count;
         w1TotalRev += b.w1Revenue;
+        w1TotalMet += b.w1Met;
+        w1TotalApplicable += b.w1Applicable;
         w2TotalCount += b.w2Count;
         w2TotalRev += b.w2Revenue;
+        w2TotalMet += b.w2Met;
+        w2TotalApplicable += b.w2Applicable;
         w3TotalCount += b.w3Count;
         w3TotalRev += b.w3Revenue;
+        w3TotalMet += b.w3Met;
+        w3TotalApplicable += b.w3Applicable;
         w4TotalCount += b.w4Count;
         w4TotalRev += b.w4Revenue;
+        w4TotalMet += b.w4Met;
+        w4TotalApplicable += b.w4Applicable;
         grandTotalCount += b.totalCount;
         grandTotalRev += b.totalRevenue;
+        grandTotalMet += b.totalMet;
+        grandTotalApplicable += b.totalApplicable;
       });
+
+      const w1TotalAdherence = calcBreakupAdherence(w1TotalMet, w1TotalApplicable);
+      const w2TotalAdherence = calcBreakupAdherence(w2TotalMet, w2TotalApplicable);
+      const w3TotalAdherence = calcBreakupAdherence(w3TotalMet, w3TotalApplicable);
+      const w4TotalAdherence = calcBreakupAdherence(w4TotalMet, w4TotalApplicable);
+      const grandTotalAdherence = calcBreakupAdherence(grandTotalMet, grandTotalApplicable);
+
+      const setBreakupTotalAdherence = (id, val) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = `${val}%`;
+        el.style.cssText = 'padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ' + getAdherenceStyleStr(val);
+      };
 
       const tbody = document.getElementById('dash-breakup-tbody');
       tbody.innerHTML = '';
       breakupData.forEach(b => {
-        const w1Pct = w1TotalRev > 0 ? ((b.w1Revenue / w1TotalRev) * 100).toFixed(1) : '0.0';
-        const w2Pct = w2TotalRev > 0 ? ((b.w2Revenue / w2TotalRev) * 100).toFixed(1) : '0.0';
-        const w3Pct = w3TotalRev > 0 ? ((b.w3Revenue / w3TotalRev) * 100).toFixed(1) : '0.0';
-        const w4Pct = w4TotalRev > 0 ? ((b.w4Revenue / w4TotalRev) * 100).toFixed(1) : '0.0';
-        const totalPct = grandTotalRev > 0 ? ((b.totalRevenue / grandTotalRev) * 100).toFixed(1) : '0.0';
-
-        const styleW1 = parseFloat(w1Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
-        const styleW2 = parseFloat(w2Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
-        const styleW3 = parseFloat(w3Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
-        const styleW4 = parseFloat(w4Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
-        const styleTotal = parseFloat(totalPct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
-
         let dispName = b.name;
         if (dispName === 'Complaint/Escalation Call') dispName = 'Complaints/Escalation Call';
         if (dispName === 'Follow-up call') dispName = 'Follow - Up call';
@@ -5739,43 +5934,48 @@
           <tr>
             <td style="padding:10px; border:1px solid #000; font-weight:bold;">${dispName}</td>
             <!-- Week 1 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW1}">${b.w1Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW1}">$${b.w1Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW1}">${w1Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w1Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w1Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w1Adherence)}">${b.w1Adherence}%</td>
             <!-- Week 2 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW2}">${b.w2Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW2}">$${b.w2Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW2}">${w2Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w2Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w2Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w2Adherence)}">${b.w2Adherence}%</td>
             <!-- Week 3 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW3}">${b.w3Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW3}">$${b.w3Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW3}">${w3Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w3Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w3Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w3Adherence)}">${b.w3Adherence}%</td>
             <!-- Week 4 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW4}">${b.w4Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW4}">$${b.w4Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW4}">${w4Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w4Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w4Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w4Adherence)}">${b.w4Adherence}%</td>
             <!-- Total -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleTotal}">${b.totalCount}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleTotal}">$${b.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleTotal}">${totalPct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.totalCount}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.totalAdherence)}">${b.totalAdherence}%</td>
           </tr>
         `;
       });
 
       document.getElementById('dash-breakup-total-count-w1').textContent = w1TotalCount;
       document.getElementById('dash-breakup-total-revenue-w1').textContent = `$${w1TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      setBreakupTotalAdherence('dash-breakup-total-adherence-w1', w1TotalAdherence);
       
       document.getElementById('dash-breakup-total-count-w2').textContent = w2TotalCount;
       document.getElementById('dash-breakup-total-revenue-w2').textContent = `$${w2TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      setBreakupTotalAdherence('dash-breakup-total-adherence-w2', w2TotalAdherence);
 
       document.getElementById('dash-breakup-total-count-w3').textContent = w3TotalCount;
       document.getElementById('dash-breakup-total-revenue-w3').textContent = `$${w3TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      setBreakupTotalAdherence('dash-breakup-total-adherence-w3', w3TotalAdherence);
 
       document.getElementById('dash-breakup-total-count-w4').textContent = w4TotalCount;
       document.getElementById('dash-breakup-total-revenue-w4').textContent = `$${w4TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      setBreakupTotalAdherence('dash-breakup-total-adherence-w4', w4TotalAdherence);
       
       document.getElementById('dash-breakup-total-count-total').textContent = grandTotalCount;
       document.getElementById('dash-breakup-total-revenue-total').textContent = `$${grandTotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      setBreakupTotalAdherence('dash-breakup-total-adherence-total', grandTotalAdherence);
 
       renderSalesErrorsReport(w1Filtered, w2Filtered, w3Filtered, w4Filtered);
 
@@ -5848,6 +6048,7 @@
         const totalErrors = w1Errors + w2Errors + w3Errors + w4Errors;
         const totalAdherence = totalApplicable > 0 ? ((totalMet / totalApplicable) * 100).toFixed(1) : '0.0';
         const totalAvgError = totalAchieved > 0 ? (totalErrors / totalAchieved).toFixed(1) : '0.0';
+        const totalGrading = getAgentGrading(totalAdherence, totalAchieved);
 
         const tgtW1 = parseFloat(document.getElementById('dash-avg-error-target').value) || 25;
         const tgtW2 = parseFloat(document.getElementById('dash-avg-error-target-w2').value) || 25;
@@ -5880,6 +6081,7 @@
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7;">${totalAchieved}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(totalAdherence)}">${totalAdherence}%</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAvgErrorStyleStr(totalAvgError, tgtTotal)}">${totalAvgError}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7; ${getGradingStyleStr(totalGrading, totalAdherence)}">${totalGrading}</td>
           </tr>
         `;
       });
@@ -5890,11 +6092,13 @@
 
       const acFrom = document.getElementById('dash-ac-from')?.value || '';
       const acTo = document.getElementById('dash-ac-to')?.value || '';
-      let acDeduped = deduplicateReportRecords(records);
-      if (acFrom) acDeduped = acDeduped.filter(r => r.date >= acFrom);
-      if (acTo) acDeduped = acDeduped.filter(r => r.date <= acTo);
+      const acFiltered = isDashAcFiltered(acFrom, acTo);
+      let acDeduped = [];
+      if (acFiltered) {
+        acDeduped = deduplicateReportRecords(records).filter(r => r.date >= acFrom && r.date <= acTo);
+      }
 
-      const acAgents = getAllAgents();
+      const acAgents = acFiltered ? getAllAgents() : [];
 
       const acTbody = document.getElementById('dash-agent-category-tbody');
       acTbody.innerHTML = '';
