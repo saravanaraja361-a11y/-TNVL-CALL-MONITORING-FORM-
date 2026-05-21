@@ -3164,33 +3164,8 @@
           </table>
           <div class="filter-bar dash-ac-filter-bar" style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
             <div style="font-weight:700;font-size:13px;color:#1a5276;width:100%;">Filter — Calls by Agent × Category</div>
-            <div>
-              <label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Agents</label>
-              <div class="multi-select-wrap" id="dac-ms-wrap">
-                <button type="button" class="multi-select-trigger" id="dac-agents-trigger">All agents</button>
-                <div class="multi-select-dropdown" id="dac-agents-dropdown">
-                  <div class="ms-search"><input type="text" placeholder="Search agents..." id="dac-agent-search" onkeyup="filterAgentOptions('dac')"></div>
-                  <div class="ms-options" id="dac-agent-options"></div>
-                  <div class="ms-actions">
-                    <button type="button" onclick="selectAllAgents('dac')">All</button>
-                    <button type="button" onclick="deselectAllAgents('dac')">None</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div style="min-width:200px;">
-              <label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Monitoring Category</label>
-              <select id="dash-ac-category" onchange="renderTeamDashboard()" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;font-size:13px;font-weight:600;color:#1a5276;outline:none;">
-                <option value="">All categories</option>
-                <option value="Booked">Booked</option>
-                <option value="High Value">High Value</option>
-                <option value="Follow-up call">Follow-Up</option>
-                <option value="Close to booking but lost">Came close but lost</option>
-                <option value="Complaint/Escalation Call">Complaints/Escalation Call</option>
-                <option value="Mid Value">Mid - Value</option>
-                <option value="Prospects">Prospects</option>
-              </select>
-            </div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">From Date</label><input type="date" id="dash-ac-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">To Date</label><input type="date" id="dash-ac-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;" onchange="renderTeamDashboard()"></div>
             <button type="button" class="btn-filter" onclick="clearDashboardAcFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
           </div>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:0;">
@@ -4476,13 +4451,13 @@
       if (optionsContainer) optionsContainer.innerHTML = agents.map(a => `<label><input type="checkbox" value="${String(a).replace(/"/g, '&quot;')}" ${prev.length === 0 || prev.includes(a) ? 'checked' : ''}> ${escHtml(a)}</label>`).join('');
       wrap._clickOutside ||= function (e) { if (!wrap.contains(e.target)) wrap.classList.remove('open'); };
       trigger.onclick = () => { wrap.classList.toggle('open'); }; document.removeEventListener('click', wrap._clickOutside); document.addEventListener('click', wrap._clickOutside);
-      const checkboxes = optionsContainer ? optionsContainer.querySelectorAll('input') : []; checkboxes.forEach(cb => cb.addEventListener('change', () => { updateMultiSelectLabel(wrapId, triggerId); if (wrapId === 'dac-ms-wrap') renderTeamDashboard(); }));
+      const checkboxes = optionsContainer ? optionsContainer.querySelectorAll('input') : []; checkboxes.forEach(cb => cb.addEventListener('change', () => updateMultiSelectLabel(wrapId, triggerId)));
       updateMultiSelectLabel(wrapId, triggerId);
     }
     function updateMultiSelectLabel(wrapId, triggerId) { const wrap = document.getElementById(wrapId), sel = getSelectedAgents(wrapId), trigger = document.getElementById(triggerId), total = wrap?.querySelectorAll('.multi-select-dropdown input[type="checkbox"]')?.length || 0; if (trigger) { if (sel.length === 0) trigger.textContent = 'No agents'; else if (total > 0 && sel.length === total) trigger.textContent = 'All agents'; else trigger.textContent = `${sel.length} agent${sel.length > 1 ? 's' : ''} selected`; } }
     function filterAgentOptions(type) { const si = document.getElementById(`${type}-agent-search`), oc = document.getElementById(`${type}-agent-options`), st = si.value.toLowerCase(), labels = oc ? oc.querySelectorAll('label') : []; labels.forEach(l => { l.classList.toggle('hidden', !l.textContent.toLowerCase().includes(st)); }); }
-    function selectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = true); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); if (type === 'dac') renderTeamDashboard(); }
-    function deselectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = false); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); if (type === 'dac') renderTeamDashboard(); }
+    function selectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = true); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); }
+    function deselectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = false); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); }
 
     function pctColor(p) { return p > 90 ? '#27ae60' : p >= 80 ? '#2db36f' : p >= 70 ? '#e0a01a' : '#c0392b'; }
     function ratingBadge(p) {
@@ -5180,19 +5155,15 @@
       const dashPanel = document.getElementById('subpanel-dashboard');
       if (dashPanel) dashPanel.classList.toggle('active', tab === 'dashboard');
       if (tab === 'aoi') renderAOI();
-      if (tab === 'dashboard') {
-        initMultiSelect('dac-ms-wrap', 'dac-agents-trigger', 'dac-agents-dropdown');
-        renderTeamDashboard();
-      }
+      if (tab === 'dashboard') renderTeamDashboard();
       if (tab === 'reports') { initMultiSelect('rpt-ms-wrap', 'rpt-agents-trigger', 'rpt-agents-dropdown'); initMultiSelect('tsm-ms-wrap', 'tsm-agents-trigger', 'tsm-agents-dropdown'); updateEvaluatorList(); }
     }
 
     function clearDashboardAcFilters() {
-      const catEl = document.getElementById('dash-ac-category');
-      if (catEl) catEl.value = '';
-      const drop = document.getElementById('dac-agents-dropdown');
-      if (drop) drop.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
-      updateMultiSelectLabel('dac-ms-wrap', 'dac-agents-trigger');
+      const fromEl = document.getElementById('dash-ac-from');
+      const toEl = document.getElementById('dash-ac-to');
+      if (fromEl) fromEl.value = '';
+      if (toEl) toEl.value = '';
       renderTeamDashboard();
     }
 
@@ -5317,9 +5288,6 @@
     }
 
     function renderTeamDashboard() {
-      const dacOpts = document.getElementById('dac-agent-options');
-      if (dacOpts && !dacOpts.innerHTML) initMultiSelect('dac-ms-wrap', 'dac-agents-trigger', 'dac-agents-dropdown');
-
       const from1 = document.getElementById('dash-call-from').value;
       const to1 = document.getElementById('dash-call-to').value;
       const from2 = document.getElementById('dash-call-from-w2').value;
@@ -5665,17 +5633,13 @@
       const acCategories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
       const acCatIds = ['booked', 'highvalue', 'followup', 'closetobooking', 'complaint', 'midvalue', 'prospects'];
 
-      // Combine all week-filtered records and deduplicate
-      const allWeekRecs = [...w1Filtered, ...w2Filtered, ...w3Filtered, ...w4Filtered];
-      let acDeduped = deduplicateReportRecords(allWeekRecs);
+      const acFrom = document.getElementById('dash-ac-from')?.value || '';
+      const acTo = document.getElementById('dash-ac-to')?.value || '';
+      let acDeduped = deduplicateReportRecords(records);
+      if (acFrom) acDeduped = acDeduped.filter(r => r.date >= acFrom);
+      if (acTo) acDeduped = acDeduped.filter(r => r.date <= acTo);
 
-      const acCatFilter = document.getElementById('dash-ac-category')?.value || '';
-      if (acCatFilter) acDeduped = acDeduped.filter(r => r.monitoringCategory === acCatFilter);
-
-      const selectedAcAgents = getSelectedAgents('dac-ms-wrap');
-      const acAgents = selectedAcAgents.length
-        ? allAgents.filter(a => selectedAcAgents.includes(a))
-        : allAgents;
+      const acAgents = getAllAgents();
 
       const acTbody = document.getElementById('dash-agent-category-tbody');
       acTbody.innerHTML = '';
