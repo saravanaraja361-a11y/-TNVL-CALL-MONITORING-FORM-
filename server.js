@@ -49,6 +49,14 @@ const recordSchema = new mongoose.Schema({
 
 const CallRecord = mongoose.model('CallRecord', recordSchema);
 
+const dashboardCommentSchema = new mongoose.Schema({
+  date: { type: String, required: true, unique: true },
+  comment: { type: String, default: '' },
+  updatedBy: { type: String, default: '' },
+  updatedAt: { type: Date, default: Date.now }
+});
+const DashboardComment = mongoose.model('DashboardComment', dashboardCommentSchema);
+
 const app = express();
 
 app.use(cors());
@@ -1039,6 +1047,44 @@ app.post('/api/send-report-email', async (req, res) => {
   } catch (error) {
     console.error('❌ Brevo Error:', error.message);
     res.status(500).json({ error: 'Failed to send report', details: error.message });
+  }
+});
+
+// ── Dashboard comments (date-wise notes) ─────────────────────────────────────
+app.get('/api/dashboard-comments', async (_req, res) => {
+  try {
+    const comments = await DashboardComment.find({}).sort({ date: -1 });
+    res.json(comments);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to load comments', details: e.message });
+  }
+});
+
+app.put('/api/dashboard-comments', async (req, res) => {
+  const { comments } = req.body;
+  if (!Array.isArray(comments)) {
+    return res.status(400).json({ error: 'comments array is required' });
+  }
+  const valid = comments.filter(c => c && c.date);
+  const dates = valid.map(c => c.date);
+  if (new Set(dates).size !== dates.length) {
+    return res.status(400).json({ error: 'Each comment must have a unique date' });
+  }
+  try {
+    await DashboardComment.deleteMany({});
+    if (valid.length) {
+      await DashboardComment.insertMany(valid.map(c => ({
+        date: c.date,
+        comment: (c.comment || '').trim(),
+        updatedBy: (c.updatedBy || '').trim(),
+        updatedAt: new Date()
+      })));
+    }
+    const saved = await DashboardComment.find({}).sort({ date: -1 });
+    console.log(`[CLOUD] 💬 Dashboard comments saved → ${saved.length} entries`);
+    res.json({ success: true, comments: saved });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to save comments', details: e.message });
   }
 });
 
