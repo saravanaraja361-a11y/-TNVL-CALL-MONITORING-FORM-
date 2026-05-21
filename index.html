@@ -2923,6 +2923,10 @@
             <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W1]</label><input type="date" id="dash-call-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
             <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W2]</label><input type="date" id="dash-call-from-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
             <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W2]</label><input type="date" id="dash-call-to-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W3]</label><input type="date" id="dash-call-from-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W3]</label><input type="date" id="dash-call-to-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W4]</label><input type="date" id="dash-call-from-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W4]</label><input type="date" id="dash-call-to-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;" onchange="renderTeamDashboard()"></div>
             <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1" onchange="renderTeamDashboard()"></div>
             <button class="btn-filter" onclick="renderTeamDashboard()" style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Load Dashboard</button>
             <button class="btn-filter" onclick="clearDashboardFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
@@ -2930,125 +2934,167 @@
 
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000;">
             <tr style="background:#1a5276; color:#fff;">
-              <th style="padding:10px; border:1px solid #000; width:34%;">AGENTS LIST (PRESENT)</th>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents-w2">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:22%;" id="dash-val-agents-total">-</td>
+              <th style="padding:10px; border:1px solid #000; width:30%;">AGENTS LIST (PRESENT)</th>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w2">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w3">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w4">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-total">-</td>
             </tr>
             <tr style="background:#1a5276; color:#fff;">
               <th style="padding:10px; border:1px solid #000;">TEAM LEVEL PERFORMANCE</th>
               <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 1</th>
               <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 2</th>
-              <th style="padding:10px; border:1px solid #000; text-align:center;">1+2</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 3</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">WEEK 4</th>
+              <th style="padding:10px; border:1px solid #000; text-align:center;">1+2+3+4</th>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">No. of Agents</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Calls to be monitored/Agent</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent">3</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w2">3</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w3">3</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w4">3</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-total">3</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total calls to be monitored (Target)</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-total">0</td>
             </tr>
             <tr style="background:#eafaf1;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Calls Monitored (Achieved)</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-total">0</td>
             </tr>
             <tr style="background:#fdf2f2;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Deficit #s</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total Applicable Parameters (Met+NotMet+Needs Improvement)</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total Met</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-total">0</td>
             </tr>
             <tr style="background:#eaf0f7;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Adherance % (Met/Total Applicable Parameters)</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence">0%</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w3">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w4">0%</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-total">0%</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Errors - Not Met - A</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Errors - Needs Improvement (Partially Met) - B</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Errors (A + B)</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-total">0</td>
             </tr>
             <tr style="background:#fdf2f2;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Defect Rate</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate">0%</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w3">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w4">0%</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-total">0%</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Average Error/Call - Target</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w3" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w4" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" onchange="renderTeamDashboard()" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Average Error/Call - Achieved</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w4">0</td>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-total">0</td>
             </tr>
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="10" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls Monitored – Break-Up</th>
+              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls Monitored – Break-Up</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:22%; vertical-align:middle; text-align:left;">Priority Based Monitoring Category</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">WEEK 1</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">WEEK 2</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">1+2 (TOTAL)</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:20%; vertical-align:middle; text-align:left;">Priority Based Monitoring Category</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 1</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 2</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 3</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 4</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">1+2+3+4 (TOTAL)</td>
             </tr>
             <tr style="background:#f8faff; font-weight:bold; text-align:center;">
               <!-- Week 1 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:7%;">Count</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:11%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
               <!-- Week 2 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:7%;">Count</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:11%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <!-- Week 3 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
+              <!-- Week 4 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
               <!-- Total -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:7%;">Count</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:11%;">Revenue</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">% of $</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">Count</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;">Revenue</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:4%;">% of $</td>
             </tr>
             <tbody id="dash-breakup-tbody">
               <!-- Rows will be injected here -->
@@ -3063,6 +3109,14 @@
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w2">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w2">$0.00</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <!-- Week 3 -->
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w3">$0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
+              <!-- Week 4 -->
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w4">$0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;">100%</td>
               <!-- Total -->
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-total">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-total">$0.00</td>
@@ -3071,32 +3125,103 @@
           </table>
           <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="11" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
+              <th colspan="17" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:5%; vertical-align:middle; text-align:center;">S. No</td>
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:17%; vertical-align:middle; text-align:left;">Agent Name</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">WEEK 1</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">WEEK 2</td>
-              <td colspan="3" style="padding:10px; border:1px solid #000; width:26%;">1+2 (TOTAL)</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No</td>
+              <td rowspan="2" style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent Name</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 1</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 2</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 3</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">WEEK 4</td>
+              <td colspan="3" style="padding:10px; border:1px solid #000; width:17%;">1+2+3+4 (TOTAL)</td>
             </tr>
             <tr style="background:#f8faff; font-weight:bold; text-align:center;">
               <!-- Week 1 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Avg Error/Call</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
               <!-- Week 2 -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Avg Error/Call</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Week 3 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
+              <!-- Week 4 -->
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
               <!-- Total -->
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:8%;"># of Calls Monitored</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Adherence%</td>
-              <td style="padding:10px; border:1px solid #000; font-size:12px; width:9%;">Avg Error/Call</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:5%;"># of Calls Monitored</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Adherence%</td>
+              <td style="padding:10px; border:1px solid #000; font-size:12px; width:6%;">Avg Error/Call</td>
             </tr>
             <tbody id="dash-agent-tbody">
               <!-- Rows will be injected here -->
             </tbody>
+          </table>
+          <div class="filter-bar dash-ac-filter-bar" style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
+            <div style="font-weight:700;font-size:13px;color:#1a5276;width:100%;">Filter — Calls by Agent × Category</div>
+            <div>
+              <label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Agents</label>
+              <div class="multi-select-wrap" id="dac-ms-wrap">
+                <button type="button" class="multi-select-trigger" id="dac-agents-trigger">All agents</button>
+                <div class="multi-select-dropdown" id="dac-agents-dropdown">
+                  <div class="ms-search"><input type="text" placeholder="Search agents..." id="dac-agent-search" onkeyup="filterAgentOptions('dac')"></div>
+                  <div class="ms-options" id="dac-agent-options"></div>
+                  <div class="ms-actions">
+                    <button type="button" onclick="selectAllAgents('dac')">All</button>
+                    <button type="button" onclick="deselectAllAgents('dac')">None</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="min-width:200px;">
+              <label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Monitoring Category</label>
+              <select id="dash-ac-category" onchange="renderTeamDashboard()" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;font-size:13px;font-weight:600;color:#1a5276;outline:none;">
+                <option value="">All categories</option>
+                <option value="Booked">Booked</option>
+                <option value="High Value">High Value</option>
+                <option value="Follow-up call">Follow-Up</option>
+                <option value="Close to booking but lost">Came close but lost</option>
+                <option value="Complaint/Escalation Call">Complaints/Escalation Call</option>
+                <option value="Mid Value">Mid - Value</option>
+                <option value="Prospects">Prospects</option>
+              </select>
+            </div>
+            <button type="button" class="btn-filter" onclick="clearDashboardAcFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
+          </div>
+          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:0;">
+            <tr style="background:#1a5276; color:#fff;">
+              <th colspan="9" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls by Agent × Category</th>
+            </tr>
+            <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
+              <td style="padding:10px; border:1px solid #000; text-align:left; width:15%;">Agent</td>
+              <td style="padding:10px; border:1px solid #000; width:10%;">Booked</td>
+              <td style="padding:10px; border:1px solid #000; width:11%;">High Value</td>
+              <td style="padding:10px; border:1px solid #000; width:10%;">Follow-Up</td>
+              <td style="padding:10px; border:1px solid #000; width:13%;">Came close but lost</td>
+              <td style="padding:10px; border:1px solid #000; width:14%;">Complaints/Escalation Call</td>
+              <td style="padding:10px; border:1px solid #000; width:10%;">Mid - Value</td>
+              <td style="padding:10px; border:1px solid #000; width:10%;">Prospects</td>
+              <td style="padding:10px; border:1px solid #000; width:7%; font-weight:bold;">Total</td>
+            </tr>
+            <tbody id="dash-agent-category-tbody">
+              <!-- Rows will be injected here -->
+            </tbody>
+            <tr style="background:#1a5276; color:#fff; font-weight:bold;">
+              <td style="padding:10px; border:1px solid #000; text-align:left;">Total</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-booked">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-highvalue">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-followup">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-closetobooking">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-complaint">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-midvalue">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-prospects">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-ac-total-all">0</td>
+            </tr>
           </table>
         </div>
       </div>
@@ -4351,13 +4476,13 @@
       if (optionsContainer) optionsContainer.innerHTML = agents.map(a => `<label><input type="checkbox" value="${String(a).replace(/"/g, '&quot;')}" ${prev.length === 0 || prev.includes(a) ? 'checked' : ''}> ${escHtml(a)}</label>`).join('');
       wrap._clickOutside ||= function (e) { if (!wrap.contains(e.target)) wrap.classList.remove('open'); };
       trigger.onclick = () => { wrap.classList.toggle('open'); }; document.removeEventListener('click', wrap._clickOutside); document.addEventListener('click', wrap._clickOutside);
-      const checkboxes = optionsContainer ? optionsContainer.querySelectorAll('input') : []; checkboxes.forEach(cb => cb.addEventListener('change', () => updateMultiSelectLabel(wrapId, triggerId)));
+      const checkboxes = optionsContainer ? optionsContainer.querySelectorAll('input') : []; checkboxes.forEach(cb => cb.addEventListener('change', () => { updateMultiSelectLabel(wrapId, triggerId); if (wrapId === 'dac-ms-wrap') renderTeamDashboard(); }));
       updateMultiSelectLabel(wrapId, triggerId);
     }
     function updateMultiSelectLabel(wrapId, triggerId) { const wrap = document.getElementById(wrapId), sel = getSelectedAgents(wrapId), trigger = document.getElementById(triggerId), total = wrap?.querySelectorAll('.multi-select-dropdown input[type="checkbox"]')?.length || 0; if (trigger) { if (sel.length === 0) trigger.textContent = 'No agents'; else if (total > 0 && sel.length === total) trigger.textContent = 'All agents'; else trigger.textContent = `${sel.length} agent${sel.length > 1 ? 's' : ''} selected`; } }
     function filterAgentOptions(type) { const si = document.getElementById(`${type}-agent-search`), oc = document.getElementById(`${type}-agent-options`), st = si.value.toLowerCase(), labels = oc ? oc.querySelectorAll('label') : []; labels.forEach(l => { l.classList.toggle('hidden', !l.textContent.toLowerCase().includes(st)); }); }
-    function selectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = true); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); }
-    function deselectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = false); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); }
+    function selectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = true); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); if (type === 'dac') renderTeamDashboard(); }
+    function deselectAllAgents(type) { const oc = document.getElementById(`${type}-agent-options`); if (oc) oc.querySelectorAll('input:not(:disabled)').forEach(cb => cb.checked = false); updateMultiSelectLabel(`${type}-ms-wrap`, `${type}-agents-trigger`); if (type === 'dac') renderTeamDashboard(); }
 
     function pctColor(p) { return p > 90 ? '#27ae60' : p >= 80 ? '#2db36f' : p >= 70 ? '#e0a01a' : '#c0392b'; }
     function ratingBadge(p) {
@@ -5055,8 +5180,20 @@
       const dashPanel = document.getElementById('subpanel-dashboard');
       if (dashPanel) dashPanel.classList.toggle('active', tab === 'dashboard');
       if (tab === 'aoi') renderAOI();
-      if (tab === 'dashboard') renderTeamDashboard();
+      if (tab === 'dashboard') {
+        initMultiSelect('dac-ms-wrap', 'dac-agents-trigger', 'dac-agents-dropdown');
+        renderTeamDashboard();
+      }
       if (tab === 'reports') { initMultiSelect('rpt-ms-wrap', 'rpt-agents-trigger', 'rpt-agents-dropdown'); initMultiSelect('tsm-ms-wrap', 'tsm-agents-trigger', 'tsm-agents-dropdown'); updateEvaluatorList(); }
+    }
+
+    function clearDashboardAcFilters() {
+      const catEl = document.getElementById('dash-ac-category');
+      if (catEl) catEl.value = '';
+      const drop = document.getElementById('dac-agents-dropdown');
+      if (drop) drop.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+      updateMultiSelectLabel('dac-ms-wrap', 'dac-agents-trigger');
+      renderTeamDashboard();
     }
 
     function clearDashboardFilters() {
@@ -5064,8 +5201,90 @@
       document.getElementById('dash-call-to').value = '';
       document.getElementById('dash-call-from-w2').value = '';
       document.getElementById('dash-call-to-w2').value = '';
+      document.getElementById('dash-call-from-w3').value = '';
+      document.getElementById('dash-call-to-w3').value = '';
+      document.getElementById('dash-call-from-w4').value = '';
+      document.getElementById('dash-call-to-w4').value = '';
       document.getElementById('dash-target').value = '3';
       renderTeamDashboard();
+    }
+
+    function applyAdherenceStyle(el, val) {
+      const numericVal = parseFloat(val);
+      el.style.fontWeight = 'bold';
+      if (isNaN(numericVal) || numericVal === 0) {
+        el.style.background = '';
+        el.style.color = '#1a5276';
+        return;
+      }
+      if (numericVal >= 90) {
+        el.style.background = 'rgba(39, 174, 96, 0.12)';
+        el.style.color = '#27ae60';
+      } else if (numericVal >= 80) {
+        el.style.background = 'rgba(45, 179, 111, 0.08)';
+        el.style.color = '#2db36f';
+      } else if (numericVal >= 70) {
+        el.style.background = 'rgba(224, 160, 26, 0.12)';
+        el.style.color = '#d35400';
+      } else {
+        el.style.background = 'rgba(192, 57, 43, 0.12)';
+        el.style.color = '#c0392b';
+      }
+    }
+
+    function applyDefectRateStyle(el, val) {
+      const numericVal = parseFloat(val);
+      el.style.fontWeight = 'bold';
+      if (isNaN(numericVal)) {
+        el.style.background = '';
+        el.style.color = '';
+        return;
+      }
+      if (numericVal < 10) {
+        el.style.background = 'rgba(39, 174, 96, 0.12)';
+        el.style.color = '#27ae60';
+      } else if (numericVal < 25) {
+        el.style.background = 'rgba(211, 84, 0, 0.12)';
+        el.style.color = '#d35400';
+      } else {
+        el.style.background = 'rgba(192, 57, 43, 0.12)';
+        el.style.color = '#c0392b';
+      }
+    }
+
+    function applyAvgErrorStyle(el, ach, tgt) {
+      const achVal = parseFloat(ach);
+      const tgtVal = parseFloat(tgt);
+      el.style.fontWeight = 'bold';
+      if (isNaN(achVal) || isNaN(tgtVal)) {
+        el.style.background = '';
+        el.style.color = '';
+        return;
+      }
+      if (achVal <= tgtVal) {
+        el.style.background = 'rgba(46, 204, 113, 0.12)';
+        el.style.color = '#1e8449';
+      } else {
+        el.style.background = 'rgba(192, 57, 43, 0.12)';
+        el.style.color = '#c0392b';
+      }
+    }
+
+    function getAdherenceStyleStr(val) {
+      const numericVal = parseFloat(val);
+      if (isNaN(numericVal) || numericVal === 0) return 'color: #000;';
+      if (numericVal >= 90) return 'background: rgba(39, 174, 96, 0.12); color: #27ae60; font-weight: bold;';
+      if (numericVal >= 80) return 'background: rgba(45, 179, 111, 0.08); color: #2db36f; font-weight: bold;';
+      if (numericVal >= 70) return 'background: rgba(224, 160, 26, 0.12); color: #d35400; font-weight: bold;';
+      return 'background: rgba(192, 57, 43, 0.12); color: #c0392b; font-weight: bold;';
+    }
+
+    function getAvgErrorStyleStr(ach, tgt) {
+      const achVal = parseFloat(ach);
+      const tgtVal = parseFloat(tgt);
+      if (isNaN(achVal) || isNaN(tgtVal)) return 'color: #000;';
+      if (achVal <= tgtVal) return 'background: rgba(46, 204, 113, 0.12); color: #1e8449; font-weight: bold;';
+      return 'background: rgba(192, 57, 43, 0.12); color: #c0392b; font-weight: bold;';
     }
 
     function calculateDashboardStats(callFrom, callTo) {
@@ -5098,27 +5317,36 @@
     }
 
     function renderTeamDashboard() {
+      const dacOpts = document.getElementById('dac-agent-options');
+      if (dacOpts && !dacOpts.innerHTML) initMultiSelect('dac-ms-wrap', 'dac-agents-trigger', 'dac-agents-dropdown');
+
       const from1 = document.getElementById('dash-call-from').value;
       const to1 = document.getElementById('dash-call-to').value;
       const from2 = document.getElementById('dash-call-from-w2').value;
       const to2 = document.getElementById('dash-call-to-w2').value;
+      const from3 = document.getElementById('dash-call-from-w3').value;
+      const to3 = document.getElementById('dash-call-to-w3').value;
+      const from4 = document.getElementById('dash-call-from-w4').value;
+      const to4 = document.getElementById('dash-call-to-w4').value;
       
       const w1 = calculateDashboardStats(from1, to1);
       const w2 = calculateDashboardStats(from2, to2);
+      const w3 = calculateDashboardStats(from3, to3);
+      const w4 = calculateDashboardStats(from4, to4);
       
       const targetAgent = parseInt(document.getElementById('dash-target').value) || 3;
       const tStats = {
-        agentsPresent: [...new Set([...w1.agentsPresent, ...w2.agentsPresent])].sort(),
-        noOfAgents: w1.noOfAgents + w2.noOfAgents,
+        agentsPresent: [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort(),
+        noOfAgents: w1.noOfAgents + w2.noOfAgents + w3.noOfAgents + w4.noOfAgents,
         targetAgent: targetAgent,
-        totalTarget: w1.totalTarget + w2.totalTarget,
-        achieved: w1.achieved + w2.achieved,
-        deficit: (w1.achieved + w2.achieved) - (w1.totalTarget + w2.totalTarget),
-        totalMet: w1.totalMet + w2.totalMet,
-        totalNm: w1.totalNm + w2.totalNm,
-        totalNi: w1.totalNi + w2.totalNi,
-        totalApplicable: w1.totalApplicable + w2.totalApplicable,
-        totalErrors: w1.totalErrors + w2.totalErrors
+        totalTarget: w1.totalTarget + w2.totalTarget + w3.totalTarget + w4.totalTarget,
+        achieved: w1.achieved + w2.achieved + w3.achieved + w4.achieved,
+        deficit: (w1.achieved + w2.achieved + w3.achieved + w4.achieved) - (w1.totalTarget + w2.totalTarget + w3.totalTarget + w4.totalTarget),
+        totalMet: w1.totalMet + w2.totalMet + w3.totalMet + w4.totalMet,
+        totalNm: w1.totalNm + w2.totalNm + w3.totalNm + w4.totalNm,
+        totalNi: w1.totalNi + w2.totalNi + w3.totalNi + w4.totalNi,
+        totalApplicable: w1.totalApplicable + w2.totalApplicable + w3.totalApplicable + w4.totalApplicable,
+        totalErrors: w1.totalErrors + w2.totalErrors + w3.totalErrors + w4.totalErrors
       };
       
       tStats.adherence = tStats.totalApplicable > 0 ? ((tStats.totalMet / tStats.totalApplicable) * 100).toFixed(1) : 0;
@@ -5138,16 +5366,29 @@
         
         document.getElementById('dash-val-applicable' + suffix).textContent = stats.totalApplicable;
         document.getElementById('dash-val-met' + suffix).textContent = stats.totalMet;
-        document.getElementById('dash-val-adherence' + suffix).textContent = `${stats.adherence}%`;
+        
+        const adherenceEl = document.getElementById('dash-val-adherence' + suffix);
+        adherenceEl.textContent = `${stats.adherence}%`;
+        applyAdherenceStyle(adherenceEl, stats.adherence);
+        
         document.getElementById('dash-val-nm' + suffix).textContent = stats.totalNm;
         document.getElementById('dash-val-ni' + suffix).textContent = stats.totalNi;
         document.getElementById('dash-val-errors' + suffix).textContent = stats.totalErrors;
-        document.getElementById('dash-val-defect-rate' + suffix).textContent = `${stats.defectRate}%`;
-        document.getElementById('dash-val-avg-error' + suffix).textContent = stats.avgErrorAchieved;
+        
+        const defectRateEl = document.getElementById('dash-val-defect-rate' + suffix);
+        defectRateEl.textContent = `${stats.defectRate}%`;
+        applyDefectRateStyle(defectRateEl, stats.defectRate);
+        
+        const avgErrorEl = document.getElementById('dash-val-avg-error' + suffix);
+        avgErrorEl.textContent = stats.avgErrorAchieved;
+        const targetVal = parseFloat(document.getElementById('dash-avg-error-target' + suffix).value) || 25;
+        applyAvgErrorStyle(avgErrorEl, stats.avgErrorAchieved, targetVal);
       };
 
       updateCol('', w1);
       updateCol('-w2', w2);
+      updateCol('-w3', w3);
+      updateCol('-w4', w4);
       updateCol('-total', tStats);
 
       let w1Filtered = deduplicateReportRecords(records);
@@ -5158,6 +5399,14 @@
       if (from2) w2Filtered = w2Filtered.filter(r => r.date >= from2);
       if (to2) w2Filtered = w2Filtered.filter(r => r.date <= to2);
 
+      let w3Filtered = deduplicateReportRecords(records);
+      if (from3) w3Filtered = w3Filtered.filter(r => r.date >= from3);
+      if (to3) w3Filtered = w3Filtered.filter(r => r.date <= to3);
+
+      let w4Filtered = deduplicateReportRecords(records);
+      if (from4) w4Filtered = w4Filtered.filter(r => r.date >= from4);
+      if (to4) w4Filtered = w4Filtered.filter(r => r.date <= to4);
+
       const categories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
       
       let breakupData = categories.map(c => ({
@@ -5166,6 +5415,10 @@
         w1Revenue: 0,
         w2Count: 0,
         w2Revenue: 0,
+        w3Count: 0,
+        w3Revenue: 0,
+        w4Count: 0,
+        w4Revenue: 0,
         totalCount: 0,
         totalRevenue: 0
       }));
@@ -5194,19 +5447,49 @@
         }
       });
 
+      // Calculate Week 3
+      w3Filtered.forEach(r => {
+        const cat = r.monitoringCategory;
+        if (cat) {
+          const bd = breakupData.find(b => b.name === cat);
+          if (bd) {
+            bd.w3Count++;
+            bd.w3Revenue += (parseFloat(r.moveValueAmount) || 0);
+          }
+        }
+      });
+
+      // Calculate Week 4
+      w4Filtered.forEach(r => {
+        const cat = r.monitoringCategory;
+        if (cat) {
+          const bd = breakupData.find(b => b.name === cat);
+          if (bd) {
+            bd.w4Count++;
+            bd.w4Revenue += (parseFloat(r.moveValueAmount) || 0);
+          }
+        }
+      });
+
       // Calculate combined totals
       let w1TotalCount = 0, w1TotalRev = 0;
       let w2TotalCount = 0, w2TotalRev = 0;
+      let w3TotalCount = 0, w3TotalRev = 0;
+      let w4TotalCount = 0, w4TotalRev = 0;
       let grandTotalCount = 0, grandTotalRev = 0;
 
       breakupData.forEach(b => {
-        b.totalCount = b.w1Count + b.w2Count;
-        b.totalRevenue = b.w1Revenue + b.w2Revenue;
+        b.totalCount = b.w1Count + b.w2Count + b.w3Count + b.w4Count;
+        b.totalRevenue = b.w1Revenue + b.w2Revenue + b.w3Revenue + b.w4Revenue;
 
         w1TotalCount += b.w1Count;
         w1TotalRev += b.w1Revenue;
         w2TotalCount += b.w2Count;
         w2TotalRev += b.w2Revenue;
+        w3TotalCount += b.w3Count;
+        w3TotalRev += b.w3Revenue;
+        w4TotalCount += b.w4Count;
+        w4TotalRev += b.w4Revenue;
         grandTotalCount += b.totalCount;
         grandTotalRev += b.totalRevenue;
       });
@@ -5216,7 +5499,15 @@
       breakupData.forEach(b => {
         const w1Pct = w1TotalRev > 0 ? ((b.w1Revenue / w1TotalRev) * 100).toFixed(1) : '0.0';
         const w2Pct = w2TotalRev > 0 ? ((b.w2Revenue / w2TotalRev) * 100).toFixed(1) : '0.0';
+        const w3Pct = w3TotalRev > 0 ? ((b.w3Revenue / w3TotalRev) * 100).toFixed(1) : '0.0';
+        const w4Pct = w4TotalRev > 0 ? ((b.w4Revenue / w4TotalRev) * 100).toFixed(1) : '0.0';
         const totalPct = grandTotalRev > 0 ? ((b.totalRevenue / grandTotalRev) * 100).toFixed(1) : '0.0';
+
+        const styleW1 = parseFloat(w1Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
+        const styleW2 = parseFloat(w2Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
+        const styleW3 = parseFloat(w3Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
+        const styleW4 = parseFloat(w4Pct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
+        const styleTotal = parseFloat(totalPct) >= 20.0 ? 'background: rgba(26, 82, 118, 0.08);' : '';
 
         let dispName = b.name;
         if (dispName === 'Complaint/Escalation Call') dispName = 'Complaints/Escalation Call';
@@ -5225,19 +5516,27 @@
 
         tbody.innerHTML += `
           <tr>
-            <td style="padding:10px; border:1px solid #000;">${dispName}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold;">${dispName}</td>
             <!-- Week 1 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w1Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w1Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center;">${w1Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW1}">${b.w1Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW1}">$${b.w1Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW1}">${w1Pct}%</td>
             <!-- Week 2 -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w2Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w2Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center;">${w2Pct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW2}">${b.w2Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW2}">$${b.w2Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW2}">${w2Pct}%</td>
+            <!-- Week 3 -->
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW3}">${b.w3Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW3}">$${b.w3Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW3}">${w3Pct}%</td>
+            <!-- Week 4 -->
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleW4}">${b.w4Count}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleW4}">$${b.w4Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleW4}">${w4Pct}%</td>
             <!-- Total -->
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.totalCount}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center;">${totalPct}%</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; ${styleTotal}">${b.totalCount}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276; ${styleTotal}">$${b.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${styleTotal}">${totalPct}%</td>
           </tr>
         `;
       });
@@ -5247,12 +5546,18 @@
       
       document.getElementById('dash-breakup-total-count-w2').textContent = w2TotalCount;
       document.getElementById('dash-breakup-total-revenue-w2').textContent = `$${w2TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      document.getElementById('dash-breakup-total-count-w3').textContent = w3TotalCount;
+      document.getElementById('dash-breakup-total-revenue-w3').textContent = `$${w3TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+      document.getElementById('dash-breakup-total-count-w4').textContent = w4TotalCount;
+      document.getElementById('dash-breakup-total-revenue-w4').textContent = `$${w4TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
       
       document.getElementById('dash-breakup-total-count-total').textContent = grandTotalCount;
       document.getElementById('dash-breakup-total-revenue-total').textContent = `$${grandTotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
       // --- Agent Wise Performance Summary Calculation ---
-      const allAgents = [...new Set([...w1.agentsPresent, ...w2.agentsPresent])].sort();
+      const allAgents = [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort();
       const agentTbody = document.getElementById('dash-agent-tbody');
       agentTbody.innerHTML = '';
 
@@ -5285,13 +5590,47 @@
         const w2Adherence = w2Applicable > 0 ? ((w2Met / w2Applicable) * 100).toFixed(1) : '0.0';
         const w2AvgError = w2Achieved > 0 ? (w2Errors / w2Achieved).toFixed(1) : '0.0';
 
-        // Calculate Combined (1+2) stats
-        const totalAchieved = w1Achieved + w2Achieved;
-        const totalMet = w1Met + w2Met;
-        const totalApplicable = w1Applicable + w2Applicable;
-        const totalErrors = w1Errors + w2Errors;
+        // Calculate Week 3 agent stats
+        const w3AgentRecs = w3Filtered.filter(r => r.agent === agentName);
+        const w3Achieved = w3AgentRecs.length;
+        let w3Met = 0, w3Nm = 0, w3Ni = 0, w3Applicable = 0;
+        w3AgentRecs.forEach(r => {
+          w3Met += (r.metCount || 0);
+          w3Nm += (r.nmCount || 0);
+          w3Ni += (r.niCount || 0);
+          w3Applicable += (r.assessed || 0);
+        });
+        const w3Errors = w3Nm + w3Ni;
+        const w3Adherence = w3Applicable > 0 ? ((w3Met / w3Applicable) * 100).toFixed(1) : '0.0';
+        const w3AvgError = w3Achieved > 0 ? (w3Errors / w3Achieved).toFixed(1) : '0.0';
+
+        // Calculate Week 4 agent stats
+        const w4AgentRecs = w4Filtered.filter(r => r.agent === agentName);
+        const w4Achieved = w4AgentRecs.length;
+        let w4Met = 0, w4Nm = 0, w4Ni = 0, w4Applicable = 0;
+        w4AgentRecs.forEach(r => {
+          w4Met += (r.metCount || 0);
+          w4Nm += (r.nmCount || 0);
+          w4Ni += (r.niCount || 0);
+          w4Applicable += (r.assessed || 0);
+        });
+        const w4Errors = w4Nm + w4Ni;
+        const w4Adherence = w4Applicable > 0 ? ((w4Met / w4Applicable) * 100).toFixed(1) : '0.0';
+        const w4AvgError = w4Achieved > 0 ? (w4Errors / w4Achieved).toFixed(1) : '0.0';
+
+        // Calculate Combined (1+2+3+4) stats
+        const totalAchieved = w1Achieved + w2Achieved + w3Achieved + w4Achieved;
+        const totalMet = w1Met + w2Met + w3Met + w4Met;
+        const totalApplicable = w1Applicable + w2Applicable + w3Applicable + w4Applicable;
+        const totalErrors = w1Errors + w2Errors + w3Errors + w4Errors;
         const totalAdherence = totalApplicable > 0 ? ((totalMet / totalApplicable) * 100).toFixed(1) : '0.0';
         const totalAvgError = totalAchieved > 0 ? (totalErrors / totalAchieved).toFixed(1) : '0.0';
+
+        const tgtW1 = parseFloat(document.getElementById('dash-avg-error-target').value) || 25;
+        const tgtW2 = parseFloat(document.getElementById('dash-avg-error-target-w2').value) || 25;
+        const tgtW3 = parseFloat(document.getElementById('dash-avg-error-target-w3').value) || 25;
+        const tgtW4 = parseFloat(document.getElementById('dash-avg-error-target-w4').value) || 25;
+        const tgtTotal = parseFloat(document.getElementById('dash-avg-error-target-total').value) || 25;
 
         // Inject row
         agentTbody.innerHTML += `
@@ -5300,19 +5639,74 @@
             <td style="padding:10px; border:1px solid #000; font-weight:bold;">${agentName}</td>
             <!-- Week 1 -->
             <td style="padding:10px; border:1px solid #000; text-align:center;">${w1Achieved}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;">${w1Adherence}%</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center;">${w1AvgError}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(w1Adherence)}">${w1Adherence}%</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${getAvgErrorStyleStr(w1AvgError, tgtW1)}">${w1AvgError}</td>
             <!-- Week 2 -->
             <td style="padding:10px; border:1px solid #000; text-align:center;">${w2Achieved}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;">${w2Adherence}%</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center;">${w2AvgError}</td>
-            <!-- 1+2 Total -->
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(w2Adherence)}">${w2Adherence}%</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${getAvgErrorStyleStr(w2AvgError, tgtW2)}">${w2AvgError}</td>
+            <!-- Week 3 -->
+            <td style="padding:10px; border:1px solid #000; text-align:center;">${w3Achieved}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(w3Adherence)}">${w3Adherence}%</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${getAvgErrorStyleStr(w3AvgError, tgtW3)}">${w3AvgError}</td>
+            <!-- Week 4 -->
+            <td style="padding:10px; border:1px solid #000; text-align:center;">${w4Achieved}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(w4Adherence)}">${w4Adherence}%</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; ${getAvgErrorStyleStr(w4AvgError, tgtW4)}">${w4AvgError}</td>
+            <!-- 1+2+3+4 Total -->
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7;">${totalAchieved}</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7; color:#1a5276;">${totalAdherence}%</td>
-            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7;">${totalAvgError}</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(totalAdherence)}">${totalAdherence}%</td>
+            <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAvgErrorStyleStr(totalAvgError, tgtTotal)}">${totalAvgError}</td>
           </tr>
         `;
       });
+
+      // --- Calls by Agent × Category ---
+      const acCategories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
+      const acCatIds = ['booked', 'highvalue', 'followup', 'closetobooking', 'complaint', 'midvalue', 'prospects'];
+
+      // Combine all week-filtered records and deduplicate
+      const allWeekRecs = [...w1Filtered, ...w2Filtered, ...w3Filtered, ...w4Filtered];
+      let acDeduped = deduplicateReportRecords(allWeekRecs);
+
+      const acCatFilter = document.getElementById('dash-ac-category')?.value || '';
+      if (acCatFilter) acDeduped = acDeduped.filter(r => r.monitoringCategory === acCatFilter);
+
+      const selectedAcAgents = getSelectedAgents('dac-ms-wrap');
+      const acAgents = selectedAcAgents.length
+        ? allAgents.filter(a => selectedAcAgents.includes(a))
+        : allAgents;
+
+      const acTbody = document.getElementById('dash-agent-category-tbody');
+      acTbody.innerHTML = '';
+
+      const acCatTotals = acCategories.map(() => 0);
+      let acGrandTotal = 0;
+
+      acAgents.forEach(agentName => {
+        const agentRecs = acDeduped.filter(r => r.agent === agentName);
+        const catCounts = acCategories.map(cat => agentRecs.filter(r => r.monitoringCategory === cat).length);
+        const agentTotal = agentRecs.length;
+
+        catCounts.forEach((cnt, i) => acCatTotals[i] += cnt);
+        acGrandTotal += agentTotal;
+
+        let rowHtml = `<tr>`;
+        rowHtml += `<td style="padding:10px; border:1px solid #000; font-weight:bold;">${agentName}</td>`;
+        catCounts.forEach(cnt => {
+          rowHtml += `<td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${cnt > 0 ? '' : 'color:#ccc;'}">${cnt > 0 ? cnt : '—'}</td>`;
+        });
+        rowHtml += `<td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; background:#eaf0f7;">${agentTotal}</td>`;
+        rowHtml += `</tr>`;
+
+        acTbody.innerHTML += rowHtml;
+      });
+
+      // Update category totals in footer row
+      acCatIds.forEach((id, i) => {
+        document.getElementById('dash-ac-total-' + id).textContent = acCatTotals[i];
+      });
+      document.getElementById('dash-ac-total-all').textContent = acGrandTotal;
     }
 
     function downloadReportCSV() {
