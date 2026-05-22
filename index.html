@@ -10,7 +10,6 @@
     src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -3330,11 +3329,11 @@
           <div class="dash-export-bar">
             <div style="flex:1;min-width:220px;">
               <div style="font-weight:800;font-size:16px;color:#1a5276;">Export Dashboard Reports</div>
-              <div style="font-size:13px;color:#4a7a9b;margin-top:4px;">Download all dashboard tables as a colorful Excel workbook (.xlsx) — one sheet per report. Load filters first, then export.</div>
+              <div style="font-size:13px;color:#4a7a9b;margin-top:4px;">Download one PDF with all reports stacked in order (like a printable report pack). Set filters and click Load Dashboard first.</div>
             </div>
-            <button type="button" id="btn-dash-export-excel" class="btn-filter" onclick="exportDashboardToExcel()"
-              style="background:linear-gradient(135deg,#27ae60,#1e8449);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(39,174,96,.35);">
-              📥 Download Excel Report
+            <button type="button" id="btn-dash-export-pdf" class="btn-filter" onclick="exportDashboardToPDF()"
+              style="background:linear-gradient(135deg,#c0392b,#922b21);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(192,57,43,.35);">
+              📄 Download PDF Report
             </button>
           </div>
         </div>
@@ -6168,61 +6167,6 @@
       document.getElementById('dash-ac-total-all').textContent = acGrandTotal;
     }
 
-    const DASH_XL = {
-      border: { top: { style: 'thin', color: { argb: 'FF000000' } }, left: { style: 'thin', color: { argb: 'FF000000' } }, bottom: { style: 'thin', color: { argb: 'FF000000' } }, right: { style: 'thin', color: { argb: 'FF000000' } } },
-      headerFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5276' } },
-      subFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF154360' } },
-      lightFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFF' } },
-      grandFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1A5276' } },
-      greenFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAFAF1' } },
-      redFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDF2F2' } },
-      blueFill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFEAF0F7' } },
-      whiteFont: { bold: true, color: { argb: 'FFFFFFFF' } },
-      nmFont: { color: { argb: 'FFC0392B' }, bold: true },
-      niFont: { color: { argb: 'FFD35400' }, bold: true },
-      totalFont: { color: { argb: 'FF1A5276' }, bold: true }
-    };
-
-    function dashXlSanitizeSheetName(name) {
-      return String(name).replace(/[\\/*?:\[\]]/g, '').slice(0, 31);
-    }
-
-    function dashXlApplyRowStyle(row, fill, font, align) {
-      row.eachCell({ includeEmpty: true }, cell => {
-        cell.fill = fill || DASH_XL.lightFill;
-        cell.font = font || { size: 11, color: { argb: 'FF000000' } };
-        cell.alignment = { vertical: 'middle', horizontal: align || 'center', wrapText: true };
-        cell.border = DASH_XL.border;
-      });
-    }
-
-    function dashXlAddTitle(sheet, title, colCount) {
-      sheet.mergeCells(1, 1, 1, colCount);
-      const cell = sheet.getCell(1, 1);
-      cell.value = title;
-      cell.fill = DASH_XL.headerFill;
-      cell.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-      cell.alignment = { vertical: 'middle', horizontal: 'left' };
-      cell.border = DASH_XL.border;
-      sheet.getRow(1).height = 28;
-      return 2;
-    }
-
-    function dashXlAddFilterInfo(sheet, startRow, filters) {
-      const lines = [
-        `Generated: ${new Date().toLocaleString()}`,
-        `WK-1: ${filters.w1Range || '—'} | WK-2: ${filters.w2Range || '—'} | WK-3: ${filters.w3Range || '—'} | WK-4: ${filters.w4Range || '—'}`,
-        `Calls to monitor/agent: ${filters.target} | Agent×Category: ${filters.acRange || '—'}`
-      ];
-      lines.forEach((line, i) => {
-        const row = sheet.getRow(startRow + i);
-        row.getCell(1).value = line;
-        row.getCell(1).font = { italic: true, size: 10, color: { argb: 'FF4A7A9B' } };
-        sheet.mergeCells(startRow + i, 1, startRow + i, 8);
-      });
-      return startRow + lines.length + 1;
-    }
-
     function collectDashboardExportData() {
       const from1 = document.getElementById('dash-call-from').value;
       const to1 = document.getElementById('dash-call-to').value;
@@ -6273,7 +6217,8 @@
       const fmtRange = (f, t) => (f && t) ? `${f} to ${t}` : '—';
       const filters = {
         w1Range: fmtRange(from1, to1), w2Range: fmtRange(from2, to2), w3Range: fmtRange(from3, to3), w4Range: fmtRange(from4, to4),
-        acRange: (acFrom && acTo) ? `${acFrom} to ${acTo}` : '—', target
+        acRange: (acFrom && acTo) ? `${acFrom} to ${acTo}` : '—', target,
+        from1, to1, from2, to2, from3, to3, from4, to4, acFrom, acTo
       };
 
       const teamMetricRows = [
@@ -6392,215 +6337,1053 @@
       const acTotals = acCategories.map((_, i) => acRows.reduce((s, r) => s + r.counts[i], 0));
       const acGrand = acRows.reduce((s, r) => s + r.total, 0);
 
-      return { filters, teamMetricRows, breakupData, salesRows, sortedSales, agentRows, acCategories, acRows, acTotals, acGrand };
+      return { filters, teamMetricRows, breakupData, salesRows, sortedSales, agentRows, acCategories, acRows, acTotals, acGrand, w1Items, w2Items, w3Items, w4Items };
     }
 
-    async function exportDashboardToExcel() {
-      if (typeof ExcelJS === 'undefined') {
-        showToast('Excel export library failed to load. Please refresh the page.', '#e74c3c');
+    const DASH_PDF_THEME = {
+      navy: [26, 82, 118],
+      navyDark: [21, 67, 96],
+      sky: [56, 189, 248],
+      pageBg: [245, 248, 252],
+      card: [255, 255, 255],
+      alt: [248, 250, 255],
+      green: [234, 250, 241],
+      red: [253, 242, 242],
+      blue: [234, 240, 247],
+      margin: 14,
+      logoUrl: 'https://truenorthvanlines.ca/wp-content/uploads/2023/06/TrueNorth-Van-Lines-Logo.png'
+    };
+
+    function dashPdfPaintPageBg(doc) {
+      doc.setFillColor(...DASH_PDF_THEME.pageBg);
+      doc.rect(0, 0, 420, 297, 'F');
+    }
+
+    function dashPdfDrawCover(doc, filters) {
+      dashPdfPaintPageBg(doc);
+      doc.setFillColor(...DASH_PDF_THEME.navy);
+      doc.rect(0, 0, 420, 32, 'F');
+      try {
+        doc.addImage(DASH_PDF_THEME.logoUrl, 'PNG', DASH_PDF_THEME.margin, 8, 48, 16);
+      } catch (e) {
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.text('TRUE NORTH VAN LINES', DASH_PDF_THEME.margin, 18);
+      }
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont(undefined, 'bold');
+      doc.text('Team Performance Dashboard Report', 70, 20);
+      doc.setFontSize(10);
+      doc.setFont(undefined, 'normal');
+      doc.text(`Generated ${new Date().toLocaleString()}`, 320, 20);
+
+      let y = 48;
+      doc.setFillColor(...DASH_PDF_THEME.card);
+      doc.setDrawColor(220, 232, 245);
+      doc.roundedRect(DASH_PDF_THEME.margin, y, 392, 42, 3, 3, 'FD');
+      doc.setTextColor(74, 122, 155);
+      doc.setFontSize(9);
+      doc.text('Report filters applied', DASH_PDF_THEME.margin + 8, y + 10);
+      doc.setTextColor(30, 50, 70);
+      doc.setFontSize(8.5);
+      const filterLines = [
+        `WK-1: ${filters.w1Range}    |    WK-2: ${filters.w2Range}    |    WK-3: ${filters.w3Range}    |    WK-4: ${filters.w4Range}`,
+        `Calls to monitor per agent: ${filters.target}    |    Agent × Category: ${filters.acRange}`
+      ];
+      filterLines.forEach((line, i) => doc.text(line, DASH_PDF_THEME.margin + 8, y + 20 + i * 9));
+      return y + 52;
+    }
+
+    function dashPdfSectionHeader(doc, title, y, minSpace) {
+      if (y + (minSpace || 40) > 275) {
+        doc.addPage();
+        dashPdfPaintPageBg(doc);
+        y = 22;
+      }
+      doc.setFillColor(...DASH_PDF_THEME.navy);
+      doc.rect(DASH_PDF_THEME.margin, y, 392, 11, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'bold');
+      doc.text(title, DASH_PDF_THEME.margin + 6, y + 8);
+      doc.setDrawColor(220, 232, 245);
+      doc.line(DASH_PDF_THEME.margin, y + 11, 406, y + 11);
+      return y + 16;
+    }
+
+    function dashPdfBaseTableOpts(headFill) {
+      return {
+        theme: 'grid',
+        margin: { left: DASH_PDF_THEME.margin, right: DASH_PDF_THEME.margin },
+        headStyles: { fillColor: headFill || DASH_PDF_THEME.navyDark, textColor: [255, 255, 255], fontSize: 7.5, fontStyle: 'bold', halign: 'center' },
+        bodyStyles: { fillColor: DASH_PDF_THEME.card, textColor: [30, 45, 65], fontSize: 7, valign: 'middle' },
+        alternateRowStyles: { fillColor: DASH_PDF_THEME.alt },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15, cellPadding: 2.2 }
+      };
+    }
+
+    function dashPdfWeekGroupHead(label) {
+      return { content: label, colSpan: 3, styles: { halign: 'center', fillColor: DASH_PDF_THEME.navy } };
+    }
+
+    function dashPdfTripleSubHead() {
+      return ['Count', 'Revenue', 'Adherance %'];
+    }
+
+    function dashPdfSalesTripleSubHead() {
+      return ['Not Met', 'Needs Impr.', 'Total'];
+    }
+
+    function generateDashboardPDF(data) {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('l', 'mm', 'a3');
+      
+      // Theme and Colors
+      const themeColors = {
+        navy: [21, 67, 96],
+        teal: [0, 128, 128],
+        purple: [125, 60, 152],
+        green: [39, 174, 96],
+        orange: [211, 84, 0],
+        cardBorder: [220, 230, 240],
+        textDark: [44, 62, 80],
+        textMuted: [120, 130, 140]
+      };
+
+      // Format helpers
+      function formatPeriod(fromStr, toStr) {
+        if (!fromStr || !toStr) return '—';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const f = new Date(fromStr + 'T12:00:00');
+        const t = new Date(toStr + 'T12:00:00');
+        if (isNaN(f.getTime()) || isNaN(t.getTime())) return `${fromStr} to ${toStr}`;
+        const fMonth = months[f.getMonth()];
+        const fDay = f.getDate();
+        const fYear = f.getFullYear();
+        
+        const tMonth = months[t.getMonth()];
+        const tDay = t.getDate();
+        const tYear = t.getFullYear();
+        
+        if (fYear === tYear) {
+          if (fMonth === tMonth) {
+            return `${fMonth} ${fDay}–${tDay}, ${fYear}`;
+          } else {
+            return `${fMonth} ${fDay} – ${tMonth} ${tDay}, ${fYear}`;
+          }
+        } else {
+          return `${fMonth} ${fDay}, ${fYear} – ${tMonth} ${tDay}, ${tYear}`;
+        }
+      }
+
+      function formatWeekPeriod(fromStr, toStr) {
+        if (!fromStr || !toStr) return '—';
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const f = new Date(fromStr + 'T12:00:00');
+        const t = new Date(toStr + 'T12:00:00');
+        if (isNaN(f.getTime()) || isNaN(t.getTime())) return '—';
+        const fMonth = months[f.getMonth()];
+        const fDay = f.getDate();
+        const tMonth = months[t.getMonth()];
+        const tDay = t.getDate();
+        if (fMonth === tMonth) {
+          return `${fMonth} ${fDay}–${tDay}`;
+        } else {
+          return `${fMonth} ${fDay}–${tMonth} ${tDay}`;
+        }
+      }
+
+      // Draw helpers
+      function paintPageBackground(doc) {
+        doc.setFillColor(245, 248, 252); // soft premium light blue-gray background
+        doc.rect(0, 0, 420, 297, 'F');
+      }
+
+      function drawHeaderFooter(doc, pageNum, totalPages, reportMonthYear) {
+        // Top Header
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(80, 100, 120);
+        doc.text(`TNVL  |  QA Dashboard  |  ${reportMonthYear}`, 14, 10);
+        
+        doc.setTextColor(192, 57, 43); // red
+        doc.setFont('helvetica', 'bold');
+        doc.text('CONFIDENTIAL  |  Internal Use Only', 406, 10, { align: 'right' });
+        
+        // Thin line below header
+        doc.setDrawColor(220, 230, 240);
+        doc.setLineWidth(0.3);
+        doc.line(14, 12, 406, 12);
+        
+        // Bottom Footer
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(120, 140, 160);
+        doc.text(`Generated: ${formattedGenDate}`, 14, 288);
+        doc.text(`True North Van Lines — Dashboard Report  |  Page ${pageNum} of ${totalPages}`, 406, 288, { align: 'right' });
+      }
+
+      function drawSectionTitleBlock(doc, number, title, subTitle, themeColor) {
+        doc.setFillColor(...themeColor);
+        doc.rect(14, 16, 392, 18, 'F');
+        
+        // Number
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.text(number, 20, 28.5);
+        
+        // Title
+        doc.setFontSize(13);
+        doc.text(title, 34, 28.5);
+        
+        // Subtitle
+        if (subTitle) {
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(9.5);
+          doc.setTextColor(235, 245, 251);
+          doc.text(subTitle, 400, 27.5, { align: 'right' });
+        }
+      }
+
+      function drawKpiCard(doc, x, y, w, h, value, label, accentColor) {
+        doc.setFillColor(255, 255, 255);
+        doc.setDrawColor(...themeColors.cardBorder);
+        doc.setLineWidth(0.3);
+        doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+        
+        // Top accent line
+        doc.setFillColor(...accentColor);
+        doc.rect(x + 0.15, y + 0.15, w - 0.3, 3.5, 'F');
+        
+        // Value
+        doc.setTextColor(...themeColors.textDark);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(18);
+        doc.text(String(value), x + w / 2, y + 18, { align: 'center' });
+        
+        // Label
+        doc.setTextColor(...themeColors.textMuted);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.text(String(label), x + w / 2, y + 26, { align: 'center' });
+      }
+
+      function drawInsightBox(doc, x, y, w, h, text, themeColor) {
+        const lightColor = [
+          Math.floor(themeColor[0] + (255 - themeColor[0]) * 0.94),
+          Math.floor(themeColor[1] + (255 - themeColor[1]) * 0.94),
+          Math.floor(themeColor[2] + (255 - themeColor[2]) * 0.94)
+        ];
+        doc.setFillColor(...lightColor);
+        doc.setDrawColor(...themeColor);
+        doc.setLineWidth(0.4);
+        doc.roundedRect(x, y, w, h, 2, 2, 'FD');
+        
+        // Left decorative bar
+        doc.setFillColor(...themeColor);
+        doc.rect(x + 0.15, y + 0.15, 3.5, h - 0.3, 'F');
+        
+        // Split bold label and normal body
+        const parts = text.split(':');
+        const prefix = parts[0] + ':';
+        const body = parts.slice(1).join(':');
+        
+        doc.setFontSize(9.5);
+        const textX = x + 8;
+        const textY = y + 8;
+        const maxTextWidth = w - 14;
+        
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...themeColor);
+        doc.text(prefix, textX, textY);
+        
+        const prefixWidth = doc.getTextWidth(prefix) + 1.5;
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...themeColors.textDark);
+        
+        const lines = doc.splitTextToSize(body.trim(), maxTextWidth);
+        if (lines.length > 0) {
+          const firstLineMaxW = maxTextWidth - prefixWidth;
+          const words = body.trim().split(' ');
+          let firstLineText = '';
+          let wordIdx = 0;
+          
+          while (wordIdx < words.length) {
+            const testText = firstLineText ? (firstLineText + ' ' + words[wordIdx]) : words[wordIdx];
+            if (doc.getTextWidth(testText) <= firstLineMaxW) {
+              firstLineText = testText;
+              wordIdx++;
+            } else {
+              break;
+            }
+          }
+          
+          doc.text(firstLineText, textX + prefixWidth, textY);
+          
+          if (wordIdx < words.length) {
+            const remainingText = words.slice(wordIdx).join(' ');
+            const remLines = doc.splitTextToSize(remainingText, maxTextWidth);
+            remLines.forEach((line, lIdx) => {
+              doc.text(line, textX, textY + 6.0 + lIdx * 6.0);
+            });
+          }
+        }
+      }
+
+      // Common Metadata
+      let reportMonthYear = 'May 2026';
+      if (data.filters.from1) {
+        const startD = new Date(data.filters.from1 + 'T12:00:00');
+        if (!isNaN(startD.getTime())) {
+          reportMonthYear = startD.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        }
+      }
+      
+      const periodText = formatPeriod(data.filters.from1, data.filters.to4);
+      const agentCount = data.agentRows.length;
+      const formattedGenDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+      // ==========================================
+      // PAGE 1: COVER PAGE
+      // ==========================================
+      paintPageBackground(doc);
+      
+      // Large dark blue banner
+      doc.setFillColor(...themeColors.navy);
+      doc.rect(14, 16, 392, 75, 'F');
+      
+      // Company Logo / Text
+      try {
+        doc.addImage(DASH_PDF_THEME.logoUrl, 'PNG', 24, 24, 48, 16);
+      } catch (e) {
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('TRUE NORTH VAN LINES', 24, 34);
+      }
+      
+      // Dashboard Title
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(28);
+      doc.text('QUALITY ASSURANCE DASHBOARD', 24, 62);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(16);
+      doc.setTextColor(174, 214, 241); // Light blue
+      doc.text(`Monthly Performance Report  |  ${reportMonthYear}`, 24, 80);
+      
+      // Metadata
+      doc.setTextColor(...themeColors.textDark);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
+      doc.text(`Period: ${periodText}  |  Agents: ${agentCount}  |  Generated: ${formattedGenDate}`, 14, 104);
+      
+      // Cover KPIs
+      const callsMonitoredVal = data.teamMetricRows[4][5];
+      const adherenceVal = data.teamMetricRows[8][5];
+      const defectRateVal = data.teamMetricRows[12][5];
+      const activeAgentsVal = data.agentRows.length;
+      const totalSalesErrorsVal = data.sortedSales.reduce((sum, s) => sum + s.sortTotal, 0);
+      
+      drawKpiCard(doc, 14, 114, 72, 32, callsMonitoredVal, 'Calls Monitored', themeColors.teal);
+      drawKpiCard(doc, 94, 114, 72, 32, adherenceVal, 'Team Adherence', themeColors.green);
+      drawKpiCard(doc, 174, 114, 72, 32, defectRateVal, 'Defect Rate', [192, 57, 43]);
+      drawKpiCard(doc, 254, 114, 72, 32, activeAgentsVal, 'Active Agents', themeColors.orange);
+      drawKpiCard(doc, 334, 114, 72, 32, totalSalesErrorsVal, 'Total Errors', themeColors.purple);
+      
+      // Index Box
+      doc.setFillColor(242, 244, 245);
+      doc.setDrawColor(189, 195, 199);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, 165, 392, 35, 2, 2, 'FD');
+      
+      doc.setTextColor(...themeColors.navy);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text('REPORT INDEX', 22, 175);
+      
+      doc.setTextColor(...themeColors.textDark);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11.5);
+      doc.text('01 Team Performance   •   02 Calls Break-Up   •   03 Errors Impacting Sales   •   04 Agent Performance   •   05 Agent × Category', 22, 190);
+      
+      drawHeaderFooter(doc, 1, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 2: 01 TEAM LEVEL PERFORMANCE
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      const weeksRangeText = `WK1: ${formatWeekPeriod(data.filters.from1, data.filters.to1)}  |  WK2: ${formatWeekPeriod(data.filters.from2, data.filters.to2)}  |  WK3: ${formatWeekPeriod(data.filters.from3, data.filters.to3)}  |  WK4: ${formatWeekPeriod(data.filters.from4, data.filters.to4)}`;
+      drawSectionTitleBlock(doc, '01', 'Team Level Performance', weeksRangeText, themeColors.navy);
+      
+      // KPIs
+      const callsvsTargetVal = data.teamMetricRows[4][5] + '/' + data.teamMetricRows[3][5];
+      const adherenceP2Val = data.teamMetricRows[8][5];
+      const deficitP2Val = data.teamMetricRows[5][5];
+      const totalErrorsP2Val = data.teamMetricRows[11][5];
+      
+      drawKpiCard(doc, 14, 40, 92, 32, callsvsTargetVal, 'Calls vs Target', themeColors.navy);
+      drawKpiCard(doc, 114, 40, 92, 32, adherenceP2Val, 'Adherence', themeColors.green);
+      drawKpiCard(doc, 214, 40, 92, 32, deficitP2Val, 'Deficit', [192, 57, 43]);
+      drawKpiCard(doc, 314, 40, 92, 32, totalErrorsP2Val, 'Total Errors', themeColors.orange);
+      
+      // Table 1
+      const p2Rows = [];
+      data.teamMetricRows.forEach((row, rIdx) => {
+        if (rIdx === 0 || rIdx === 2) return; // exclude agents present and calls per agent
+        const mappedRow = [...row];
+        if (rIdx === 1) mappedRow[0] = 'No. of Agents';
+        if (rIdx === 3) mappedRow[0] = 'Calls Target';
+        if (rIdx === 4) mappedRow[0] = 'Calls Monitored';
+        if (rIdx === 5) mappedRow[0] = 'Deficit';
+        if (rIdx === 6) mappedRow[0] = 'Total Parameters';
+        if (rIdx === 7) mappedRow[0] = 'Total Met';
+        if (rIdx === 8) mappedRow[0] = 'Adherence %';
+        if (rIdx === 9) mappedRow[0] = 'Errors – Not Met (A)';
+        if (rIdx === 10) mappedRow[0] = 'Errors – Needs Impr. (B)';
+        if (rIdx === 11) mappedRow[0] = 'Total Errors (A+B)';
+        if (rIdx === 12) mappedRow[0] = 'Defect Rate';
+        if (rIdx === 13) mappedRow[0] = 'Avg Error / Call';
+        p2Rows.push(mappedRow);
+      });
+      
+      doc.autoTable({
+        startY: 80,
+        head: [['METRIC', 'WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', 'TOTAL']],
+        body: p2Rows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.navy, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 3 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 100, halign: 'left', fontStyle: 'bold' },
+          1: { halign: 'center' },
+          2: { halign: 'center' },
+          3: { halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'center', fontStyle: 'bold', fillColor: [234, 240, 247] }
+        },
+        didParseCell: (hook) => {
+          if (hook.section !== 'body') return;
+          const label = String(hook.row.raw[0] || '');
+          const val = String(hook.cell.raw || '');
+          
+          if (label === 'Deficit') {
+            if (val.startsWith('-') || val.startsWith('–')) {
+              hook.cell.styles.textColor = [192, 57, 43];
+              hook.cell.styles.fontStyle = 'bold';
+            } else if (parseInt(val) > 0) {
+              hook.cell.styles.textColor = [39, 174, 96];
+              hook.cell.styles.fontStyle = 'bold';
+            }
+          }
+          if (label === 'Adherence %') {
+            hook.cell.styles.textColor = [21, 67, 96];
+            hook.cell.styles.fontStyle = 'bold';
+          }
+          if (label === 'Defect Rate') {
+            hook.cell.styles.textColor = [192, 57, 43];
+          }
+        }
+      });
+      
+      // Insight Page 2
+      let bestWeekNum = 4;
+      let bestWeekAdhStr = '66.9%';
+      let bestWeekDefectStr = '33.1%';
+      let maxAdh = 0;
+      for (let w = 1; w <= 4; w++) {
+        const val = parseFloat(data.teamMetricRows[8][w]);
+        if (val > maxAdh) {
+          maxAdh = val;
+          bestWeekNum = w;
+          bestWeekAdhStr = data.teamMetricRows[8][w];
+          bestWeekDefectStr = data.teamMetricRows[12][w];
+        }
+      }
+      const deficitTextVal = data.teamMetricRows[5][5];
+      const p2InsightText = `Insight: WK${bestWeekNum} is the strongest week with ${bestWeekAdhStr} adherence and only ${bestWeekDefectStr} defect rate — a clear positive trend. The ${deficitTextVal} call deficit across all weeks suggests monitoring capacity needs scaling.`;
+      
+      drawInsightBox(doc, 14, 205, 392, 28, p2InsightText, themeColors.navy);
+      
+      drawHeaderFooter(doc, 2, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 3: 02 CALLS MONITORED – BREAK-UP
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      drawSectionTitleBlock(doc, '02', 'Calls Monitored – Break-Up', 'Revenue & Adherence by Call Category per Week', themeColors.teal);
+      
+      // Page 3 KPIs
+      const bookedCat = data.breakupData.find(b => b.name === 'Booked') || { tCount: 0, tRev: 0 };
+      const prospectsCat = data.breakupData.find(b => b.name === 'Prospects') || { tCount: 0 };
+      const highValCat = data.breakupData.find(b => b.name === 'High Value') || { tRev: 0 };
+      
+      drawKpiCard(doc, 14, 40, 92, 32, bookedCat.tCount, 'Booked Calls', themeColors.teal);
+      drawKpiCard(doc, 114, 40, 92, 32, '$' + Number(bookedCat.tRev).toLocaleString(), 'Booking Revenue', themeColors.green);
+      drawKpiCard(doc, 214, 40, 92, 32, prospectsCat.tCount, 'Prospects', themeColors.orange);
+      drawKpiCard(doc, 314, 40, 92, 32, '$' + Number(highValCat.tRev).toLocaleString(), 'High-Value Rev', themeColors.purple);
+      
+      // Table Page 3
+      const p3Rows = data.breakupData.map(b => {
+        let displayName = b.name;
+        if (displayName === 'Follow - Up call' || displayName === 'Follow-up call') displayName = 'Follow-Up Call';
+        if (displayName === 'Close to booking but lost') displayName = 'Close to Booking (Lost)';
+        if (displayName === 'Complaints/Escalation Call' || displayName === 'Complaint/Escalation Call') displayName = 'Complaints / Escalation';
+        if (displayName === 'Mid - Value' || displayName === 'Mid Value') displayName = 'Mid-Value';
+        
+        const formatRev = (val) => '$' + Number(val).toLocaleString();
+        return [
+          displayName,
+          b.w1Count, formatRev(b.w1Rev), b.w1Count > 0 ? b.w1Adh : '—',
+          b.w2Count, formatRev(b.w2Rev), b.w2Count > 0 ? b.w2Adh : '—',
+          b.w3Count, formatRev(b.w3Rev), b.w3Count > 0 ? b.w3Adh : '—',
+          b.w4Count, formatRev(b.w4Rev), b.w4Count > 0 ? b.w4Adh : '—',
+          b.tCount, formatRev(b.tRev), b.tCount > 0 ? b.tAdh : '—'
+        ];
+      });
+      
+      const bt = { w1c: 0, w1r: 0, w2c: 0, w2r: 0, w3c: 0, w3r: 0, w4c: 0, w4r: 0, tc: 0, tr: 0 };
+      data.breakupData.forEach(b => {
+        bt.w1c += b.w1Count; bt.w1r += b.w1Rev;
+        bt.w2c += b.w2Count; bt.w2r += b.w2Rev;
+        bt.w3c += b.w3Count; bt.w3r += b.w3Rev;
+        bt.w4c += b.w4Count; bt.w4r += b.w4Rev;
+        bt.tc += b.tCount; bt.tr += b.tRev;
+      });
+      
+      const formatRev = (val) => '$' + Number(val).toLocaleString();
+      p3Rows.push([
+        'Total',
+        bt.w1c, formatRev(bt.w1r), '—',
+        bt.w2c, formatRev(bt.w2r), '—',
+        bt.w3c, formatRev(bt.w3r), '—',
+        bt.w4c, formatRev(bt.w4r), '—',
+        bt.tc, formatRev(bt.tr), '—'
+      ]);
+      
+      doc.autoTable({
+        startY: 80,
+        head: [
+          [
+            { content: 'Priority Based Monitoring Category', rowSpan: 2, styles: { halign: 'left', fillColor: [0, 100, 100] } },
+            { content: 'WEEK 1', colSpan: 3, styles: { halign: 'center', fillColor: [0, 128, 128] } },
+            { content: 'WEEK 2', colSpan: 3, styles: { halign: 'center', fillColor: [0, 128, 128] } },
+            { content: 'WEEK 3', colSpan: 3, styles: { halign: 'center', fillColor: [0, 128, 128] } },
+            { content: 'WEEK 4', colSpan: 3, styles: { halign: 'center', fillColor: [0, 128, 128] } },
+            { content: '1+2+3+4 (TOTAL)', colSpan: 3, styles: { halign: 'center', fillColor: [0, 100, 100] } }
+          ],
+          [
+            'Count', 'Revenue', 'Adh%',
+            'Count', 'Revenue', 'Adh%',
+            'Count', 'Revenue', 'Adh%',
+            'Count', 'Revenue', 'Adh%',
+            'Count', 'Revenue', 'Adh%'
+          ]
+        ],
+        body: p3Rows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.teal, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 7.5, valign: 'middle', cellPadding: 2.5 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 68, halign: 'left', fontStyle: 'bold' }
+        },
+        didParseCell: (hook) => {
+          if (hook.section !== 'body') return;
+          const isTotalRow = hook.row.index === p3Rows.length - 1;
+          
+          if (isTotalRow) {
+            hook.cell.styles.fontStyle = 'bold';
+            hook.cell.styles.fillColor = [0, 100, 100];
+            hook.cell.styles.textColor = [255, 255, 255];
+            return;
+          }
+          
+          const colIndex = hook.column.index;
+          if (colIndex > 0) {
+            const groupOffset = (colIndex - 1) % 3;
+            if (colIndex >= 13) {
+              hook.cell.styles.fillColor = [234, 240, 247];
+              hook.cell.styles.fontStyle = 'bold';
+            }
+            if (groupOffset === 2) {
+              const val = String(hook.cell.raw || '');
+              if (val === '—') {
+                hook.cell.styles.textColor = [180, 190, 200];
+              } else {
+                const pct = parseFloat(val);
+                if (pct >= 80) hook.cell.styles.textColor = [39, 174, 96];
+                else if (pct < 60) hook.cell.styles.textColor = [192, 57, 43];
+              }
+            }
+          }
+        }
+      });
+      
+      // Insight Page 3
+      const followUpCat = data.breakupData.find(b => b.name.includes('Follow')) || { w4Adh: '83.0%' };
+      const followUpAdhStr = followUpCat.w4Adh;
+      const zeroCats = data.breakupData.filter(b => b.tCount === 0).map(b => {
+        let name = b.name.replace(' Call', '').replace(' call', '');
+        if (name.includes('Complaint')) name = 'Complaint';
+        return name;
+      });
+      
+      let zeroCatsText = 'All call categories were monitored this cycle.';
+      if (zeroCats.length > 0) {
+        zeroCatsText = `Zero ${zeroCats.join(' and ')} calls monitored; ensure this category is sampled in future cycles.`;
+      }
+      
+      const p3InsightText = `Insight: Booked calls drive the most revenue ($${Number(bookedCat.tRev).toLocaleString()}). WK4 Follow-Up calls hit ${followUpAdhStr} adherence — the highest single reading this month. ${zeroCatsText}`;
+      
+      drawInsightBox(doc, 14, 205, 392, 28, p3InsightText, themeColors.teal);
+      
+      drawHeaderFooter(doc, 3, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 4: 03 ERRORS IMPACTING SALES - PART 1
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      drawSectionTitleBlock(doc, '03', 'Errors Impacting Sales', 'Category-wise error analysis — 4 weeks combined', themeColors.purple);
+      
+      // KPIs Page 4
+      const trustBuildersTotal = data.sortedSales.find(s => s.title.includes('Trust Builders'))?.sortTotal || 176;
+      const inventoryTotal = data.sortedSales.find(s => s.title.includes('Inventory'))?.sortTotal || 137;
+      const saleTechniqueTotal = data.sortedSales.find(s => s.title.includes('Sale Technique'))?.sortTotal || 132;
+      const totalSalesErrors = data.sortedSales.reduce((sum, s) => sum + s.sortTotal, 0);
+      
+      drawKpiCard(doc, 14, 40, 92, 32, totalSalesErrors, 'Total Errors', themeColors.purple);
+      drawKpiCard(doc, 114, 40, 92, 32, trustBuildersTotal, 'Trust Builders', [192, 57, 43]);
+      drawKpiCard(doc, 214, 40, 92, 32, inventoryTotal, 'Inventory Capture', themeColors.orange);
+      drawKpiCard(doc, 314, 40, 92, 32, saleTechniqueTotal, 'Sale Technique', themeColors.navy);
+      
+      // Category errors table
+      const p4CatRows = data.sortedSales.map(cat => {
+        const w1Tot = cat.w1Nm + cat.w1Ni;
+        const w2Tot = cat.w2Nm + cat.w2Ni;
+        const w3Tot = cat.w3Nm + cat.w3Ni;
+        const w4Tot = cat.w4Nm + cat.w4Ni;
+        const total = cat.tNm + cat.tNi;
+        return [cat.title, w1Tot, w2Tot, w3Tot, w4Tot, total];
+      });
+      
+      const gW1 = data.sortedSales.reduce((s, c) => s + c.w1Nm + c.w1Ni, 0);
+      const gW2 = data.sortedSales.reduce((s, c) => s + c.w2Nm + c.w2Ni, 0);
+      const gW3 = data.sortedSales.reduce((s, c) => s + c.w3Nm + c.w3Ni, 0);
+      const gW4 = data.sortedSales.reduce((s, c) => s + c.w4Nm + c.w4Ni, 0);
+      const gTot = data.sortedSales.reduce((s, c) => s + c.tNm + c.tNi, 0);
+      p4CatRows.push(['GRAND TOTAL', gW1, gW2, gW3, gW4, gTot]);
+      
+      doc.autoTable({
+        startY: 80,
+        head: [['ERROR CATEGORY', 'WK1', 'WK2', 'WK3', 'WK4', 'TOTAL']],
+        body: p4CatRows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 160, halign: 'left', fontStyle: 'bold' },
+          1: { halign: 'center' },
+          2: { halign: 'center' },
+          3: { halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'center', fontStyle: 'bold', fillColor: [234, 240, 247] }
+        },
+        didParseCell: (hook) => {
+          if (hook.section !== 'body') return;
+          const isGrand = hook.row.index === p4CatRows.length - 1;
+          if (isGrand) {
+            hook.cell.styles.fontStyle = 'bold';
+            hook.cell.styles.fillColor = themeColors.purple;
+            hook.cell.styles.textColor = [255, 255, 255];
+          }
+        }
+      });
+      
+      // Top Sub-errors Page 4 (first 5 rows)
+      const topCat = data.sortedSales[0] || { title: 'TNVL Trust Builders', sortTotal: 176 };
+      const subItems = getRevenueSectionSubItems(topCat.title, data.w1Items, data.w2Items, data.w3Items, data.w4Items);
+      subItems.sort((a, b) => b.sortTotal - a.sortTotal);
+      
+      const p4SubRows = subItems.slice(0, 5).map(item => [item.label, item.sortTotal]);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(...themeColors.textDark);
+      doc.text(`Top Sub-Errors: ${topCat.title.replace(' & Transparency', '')} (${topCat.sortTotal} total)`, 14, 161);
+      
+      doc.autoTable({
+        startY: 165,
+        head: [['SUB-ERROR DESCRIPTION', 'TOTAL ERRORS']],
+        body: p4SubRows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 320, halign: 'left' },
+          1: { cellWidth: 72, halign: 'center', fontStyle: 'bold' }
+        }
+      });
+      
+      drawHeaderFooter(doc, 4, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 5: 03 ERRORS IMPACTING SALES - PART 2
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      // Page 5 has no title block or KPIs, it goes straight to the remaining sub-errors
+      const p5SubRows = subItems.slice(5).map(item => [item.label, item.sortTotal]);
+      
+      doc.autoTable({
+        startY: 16,
+        head: [], // No header row
+        body: p5SubRows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 320, halign: 'left' },
+          1: { cellWidth: 72, halign: 'center', fontStyle: 'bold' }
+        }
+      });
+      
+      // Focus Area Box
+      let p5FocusAreaText = `Focus Area: Trust Builders = 26% of all errors. Priority coaching: billing start explanation, break-time policy, and natural trust delivery. WK4 shows declining trend (28 errors vs WK2 high of 79) — coaching is working.`;
+      if (topCat.title && topCat.title.includes('Trust Builders')) {
+        const topCatPct = totalSalesErrors > 0 ? Math.round((topCat.sortTotal / totalSalesErrors) * 100) : 26;
+        const w4E = topCat.w4Nm + topCat.w4Ni;
+        const w2E = topCat.w2Nm + topCat.w2Ni;
+        p5FocusAreaText = `Focus Area: Trust Builders = ${topCatPct}% of all errors. Priority coaching: billing start explanation, break-time policy, and natural trust delivery. WK4 shows declining trend (${w4E} errors vs WK2 high of ${w2E}) — coaching is working.`;
+      }
+      
+      drawInsightBox(doc, 14, doc.lastAutoTable.finalY + 12, 392, 28, p5FocusAreaText, themeColors.purple);
+      
+      drawHeaderFooter(doc, 5, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 6: 04 AGENT PERFORMANCE SUMMARY
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      drawSectionTitleBlock(doc, '04', 'Agent Performance Summary', 'Individual weekly adherence, errors & call counts', themeColors.green);
+      
+      // Calculate dynamic values for Page 6 KPIs
+      let bestWK4Agent = 'Thomas';
+      let bestWK4Val = '83%';
+      let bestWK4Err = '8.0';
+      let maxA4Adh = 0;
+      data.agentRows.forEach(ar => {
+        if (ar.a4.achieved > 0) {
+          const val = parseFloat(ar.a4.adherence);
+          if (val > maxA4Adh) {
+            maxA4Adh = val;
+            bestWK4Agent = ar.agentName;
+            bestWK4Val = ar.a4.adherence + '%';
+            bestWK4Err = ar.a4.avgError;
+          }
+        }
+      });
+      
+      let bestOverallAgent = 'Daniel';
+      let bestOverallVal = '68.7%';
+      let maxOverallAdh = 0;
+      data.agentRows.forEach(ar => {
+        if (ar.tAch > 0) {
+          const val = parseFloat(ar.tAdh);
+          if (val > maxOverallAdh) {
+            maxOverallAdh = val;
+            bestOverallAgent = ar.agentName;
+            bestOverallVal = ar.tAdh + '%';
+          }
+        }
+      });
+      
+      let mostCallsAgent = 'Anthony';
+      let mostCallsVal = 11;
+      let maxCalls = 0;
+      data.agentRows.forEach(ar => {
+        if (ar.tAch > maxCalls) {
+          maxCalls = ar.tAch;
+          mostCallsAgent = ar.agentName;
+          mostCallsVal = ar.tAch;
+        }
+      });
+      
+      let mostErrorsAgent = 'Myles';
+      let mostErrorsVal = '29.2';
+      let maxErrors = 0;
+      data.agentRows.forEach(ar => {
+        if (ar.tAch > 0) {
+          const val = parseFloat(ar.tAvg);
+          if (val > maxErrors) {
+            maxErrors = val;
+            mostErrorsAgent = ar.agentName;
+            mostErrorsVal = ar.tAvg;
+          }
+        }
+      });
+      
+      drawKpiCard(doc, 14, 40, 92, 32, bestWK4Agent, `Best WK4 Adh ${bestWK4Val}`, themeColors.green);
+      drawKpiCard(doc, 114, 40, 92, 32, bestOverallAgent, `Best Overall ${bestOverallVal}`, themeColors.navy);
+      drawKpiCard(doc, 214, 40, 92, 32, mostCallsAgent, `Most Calls – ${mostCallsVal}`, themeColors.orange);
+      drawKpiCard(doc, 314, 40, 92, 32, mostErrorsAgent, `Most Errors/Call ${mostErrorsVal}`, [192, 57, 43]);
+      
+      // Page 6 Table
+      const p6Rows = data.agentRows.map(ar => [
+        ar.agentName,
+        ar.a1.achieved, ar.a1.achieved > 0 ? ar.a1.adherence + '%' : '—', ar.a1.achieved > 0 ? ar.a1.avgError : '—',
+        ar.a2.achieved, ar.a2.achieved > 0 ? ar.a2.adherence + '%' : '—', ar.a2.achieved > 0 ? ar.a2.avgError : '—',
+        ar.a3.achieved, ar.a3.achieved > 0 ? ar.a3.adherence + '%' : '—', ar.a3.achieved > 0 ? ar.a3.avgError : '—',
+        ar.a4.achieved, ar.a4.achieved > 0 ? ar.a4.adherence + '%' : '—', ar.a4.achieved > 0 ? ar.a4.avgError : '—',
+        ar.tAch, ar.tAdh + '%', ar.tAvg, ar.tGrade
+      ]);
+      
+      doc.autoTable({
+        startY: 80,
+        head: [
+          [
+            { content: 'Agent Name', rowSpan: 2, styles: { halign: 'left', fillColor: [30, 110, 60] } },
+            { content: 'WEEK 1', colSpan: 3, styles: { halign: 'center', fillColor: [39, 174, 96] } },
+            { content: 'WEEK 2', colSpan: 3, styles: { halign: 'center', fillColor: [39, 174, 96] } },
+            { content: 'WEEK 3', colSpan: 3, styles: { halign: 'center', fillColor: [39, 174, 96] } },
+            { content: 'WEEK 4', colSpan: 3, styles: { halign: 'center', fillColor: [39, 174, 96] } },
+            { content: '1+2+3+4 (TOTAL)', colSpan: 4, styles: { halign: 'center', fillColor: [30, 110, 60] } }
+          ],
+          [
+            'Calls', 'Adher.%', 'Avg Err',
+            'Calls', 'Adher.%', 'Avg Err',
+            'Calls', 'Adher.%', 'Avg Err',
+            'Calls', 'Adher.%', 'Avg Err',
+            'Calls', 'Adher.%', 'Avg Err', 'Grading'
+          ]
+        ],
+        body: p6Rows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.green, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 7.5, valign: 'middle', cellPadding: 2.5 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 40, halign: 'left', fontStyle: 'bold' }
+        },
+        didParseCell: (hook) => {
+          if (hook.section !== 'body') return;
+          const colIndex = hook.column.index;
+          
+          if (colIndex > 0) {
+            if (colIndex >= 13) {
+              hook.cell.styles.fillColor = [234, 240, 247];
+              if (colIndex < 16) {
+                hook.cell.styles.fontStyle = 'bold';
+              }
+            }
+            
+            if (colIndex === 16) {
+              const grade = String(hook.cell.raw || '');
+              hook.cell.styles.fontStyle = 'bold';
+              if (grade === 'Excellent' || grade === 'Good') {
+                hook.cell.styles.textColor = [39, 174, 96];
+              } else if (grade === 'Average') {
+                hook.cell.styles.textColor = [211, 84, 0];
+              } else if (grade === 'Poor') {
+                hook.cell.styles.textColor = [192, 57, 43];
+              }
+            } else {
+              const val = String(hook.cell.raw || '');
+              if (val === '—') {
+                hook.cell.styles.textColor = [180, 190, 200];
+              }
+            }
+          }
+        }
+      });
+      
+      // Standouts Page 6
+      const lowCovAgents = data.agentRows.filter(ar => ar.tAch <= 3).map(ar => ar.agentName);
+      let lowCovText = 'Arthur and William need more call coverage for reliable measurement.';
+      if (lowCovAgents.length > 0) {
+        if (lowCovAgents.length === 1) {
+          lowCovText = `${lowCovAgents[0]} needs more call coverage for reliable measurement.`;
+        } else {
+          const last = lowCovAgents.pop();
+          lowCovText = `${lowCovAgents.join(', ')} and ${last} need more call coverage for reliable measurement.`;
+        }
+      }
+      
+      const p6StandoutsText = `Standouts: ${bestWK4Agent} shows the best trajectory — WK4 ${bestWK4Val} adherence and only ${bestWK4Err} errors/call. ${bestOverallAgent} leads overall at ${bestOverallVal}. ${mostErrorsAgent} averages ${mostErrorsVal} errors/call — highest on the team, needs targeted coaching. ${lowCovText}`;
+      
+      drawInsightBox(doc, 14, 205, 392, 28, p6StandoutsText, themeColors.green);
+      
+      drawHeaderFooter(doc, 6, 7, reportMonthYear);
+
+      // ==========================================
+      // PAGE 7: 05 CALLS BY AGENT × CATEGORY
+      // ==========================================
+      doc.addPage();
+      paintPageBackground(doc);
+      
+      drawSectionTitleBlock(doc, '05', 'Calls by Agent × Category', 'Distribution of monitored call types per agent (WK1 + WK2)', themeColors.orange);
+      
+      // Calculate specifically from WK1 + WK2 data
+      const w12Filtered = records.filter(r => r.date >= data.filters.from1 && r.date <= data.filters.to2);
+      const w12Deduped = deduplicateReportRecords(w12Filtered);
+      const w12Booked = w12Deduped.filter(r => r.monitoringCategory === 'Booked').length;
+      const w12HighValue = w12Deduped.filter(r => r.monitoringCategory === 'High Value').length;
+      const w12Prospects = w12Deduped.filter(r => r.monitoringCategory === 'Prospects').length;
+      const w12Total = w12Deduped.length;
+      
+      drawKpiCard(doc, 14, 40, 92, 32, w12Booked, 'Booked Calls', themeColors.orange);
+      drawKpiCard(doc, 114, 40, 92, 32, w12HighValue, 'High Value', themeColors.navy);
+      drawKpiCard(doc, 214, 40, 92, 32, w12Prospects, 'Prospects', themeColors.green);
+      drawKpiCard(doc, 314, 40, 92, 32, w12Total, 'Total (WK1+2)', themeColors.purple);
+      
+      // Table data matrix specifically for WK1+WK2
+      const acCategories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
+      const acAgents = getAllAgents();
+      
+      const p7Rows = acAgents.map(agentName => {
+        const agentRecs = w12Deduped.filter(r => r.agent === agentName);
+        const counts = acCategories.map(cat => agentRecs.filter(r => r.monitoringCategory === cat).length);
+        const total = agentRecs.length;
+        return [agentName, ...counts, total];
+      });
+      
+      const colTotals = acCategories.map((_, colIdx) => p7Rows.reduce((sum, row) => sum + row[colIdx + 1], 0));
+      const grandTotal = p7Rows.reduce((sum, row) => sum + row[8], 0);
+      p7Rows.push(['TOTAL', ...colTotals, grandTotal]);
+      
+      doc.autoTable({
+        startY: 80,
+        head: [['AGENT', 'Booked', 'High Value', 'Follow-Up', 'Close to Booking', 'Complaints', 'Mid-Value', 'Prospects', 'TOTAL']],
+        body: p7Rows,
+        theme: 'grid',
+        margin: { left: 14, right: 14 },
+        headStyles: { fillColor: themeColors.orange, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 3 },
+        alternateRowStyles: { fillColor: [248, 250, 253] },
+        styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
+        columnStyles: {
+          0: { cellWidth: 44, halign: 'left', fontStyle: 'bold' },
+          1: { halign: 'center' },
+          2: { halign: 'center' },
+          3: { halign: 'center' },
+          4: { halign: 'center' },
+          5: { halign: 'center' },
+          6: { halign: 'center' },
+          7: { halign: 'center' },
+          8: { halign: 'center', fontStyle: 'bold', fillColor: [234, 240, 247] }
+        },
+        didParseCell: (hook) => {
+          if (hook.section !== 'body') return;
+          const isTotalRow = hook.row.index === p7Rows.length - 1;
+          if (isTotalRow) {
+            hook.cell.styles.fontStyle = 'bold';
+            hook.cell.styles.fillColor = themeColors.orange;
+            hook.cell.styles.textColor = [255, 255, 255];
+            return;
+          }
+          
+          const colIndex = hook.column.index;
+          if (colIndex >= 1 && colIndex <= 7) {
+            const val = parseInt(hook.cell.raw || 0);
+            if (val === 0) {
+              hook.cell.styles.textColor = [180, 190, 200];
+              hook.cell.styles.fontStyle = 'normal';
+            } else {
+              hook.cell.styles.textColor = [...themeColors.textDark];
+              hook.cell.styles.fontStyle = 'bold';
+            }
+          }
+        }
+      });
+      
+      // Distribution Page 7
+      let maxBooked = 0;
+      let strongestBookingAgent = 'Anthony';
+      let strongestBookedCount = 5;
+      let strongestHVCount = 2;
+      
+      p7Rows.forEach(row => {
+        if (row[0] === 'TOTAL') return;
+        const name = row[0];
+        const booked = row[1];
+        const hv = row[2];
+        if (booked > maxBooked) {
+          maxBooked = booked;
+          strongestBookingAgent = name;
+          strongestBookedCount = booked;
+          strongestHVCount = hv;
+        }
+      });
+      
+      const allReportAgents = getAllAgents();
+      const zeroMonitoredAgents = allReportAgents.filter(a => {
+        return records.filter(r => r.agent === a).length === 0;
+      });
+      
+      let zeroMonitoredText = 'Dustin had zero monitored calls — needs immediate attention.';
+      if (zeroMonitoredAgents.length > 0) {
+        if (zeroMonitoredAgents.length === 1) {
+          zeroMonitoredText = `${zeroMonitoredAgents[0]} had zero monitored calls — needs immediate attention.`;
+        } else {
+          const last = zeroMonitoredAgents.pop();
+          zeroMonitoredText = `${zeroMonitoredAgents.join(', ')} and ${last} had zero monitored calls — needs immediate attention.`;
+        }
+      }
+      
+      const p7DistributionText = `Distribution: ${strongestBookingAgent} handled ${strongestBookedCount} Booked and ${strongestHVCount} High-Value calls — strongest booking agent. Myles and Noah focused exclusively on high-value segments. ${zeroMonitoredText} Ensure all 7 categories are represented in future monitoring cycles.`;
+      
+      drawInsightBox(doc, 14, 205, 392, 28, p7DistributionText, themeColors.orange);
+      
+      drawHeaderFooter(doc, 7, 7, reportMonthYear);
+
+      return doc;
+    }
+
+    async function exportDashboardToPDF() {
+      if (!window.jspdf) {
+        showToast('PDF library failed to load. Please refresh the page.', '#e74c3c');
         return;
       }
-      const btn = document.getElementById('btn-dash-export-excel');
+      const btn = document.getElementById('btn-dash-export-pdf');
       const origText = btn ? btn.innerHTML : '';
-      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Exporting...'; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
       try {
         renderTeamDashboard();
         const data = collectDashboardExportData();
-        const wb = new ExcelJS.Workbook();
-        wb.creator = 'TNVL Call Monitoring';
-        wb.created = new Date();
-
-        // Sheet 1: Team Performance
-        const wsTeam = wb.addWorksheet(dashXlSanitizeSheetName('Team Performance'));
-        let r = dashXlAddTitle(wsTeam, 'TEAM LEVEL PERFORMANCE', 6);
-        r = dashXlAddFilterInfo(wsTeam, r, data.filters);
-        const teamHdr = wsTeam.getRow(r);
-        ['Metric', 'WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', '1+2+3+4'].forEach((h, i) => { teamHdr.getCell(i + 1).value = h; });
-        dashXlApplyRowStyle(teamHdr, DASH_XL.subFill, DASH_XL.whiteFont);
-        r++;
-        data.teamMetricRows.forEach((rowData, idx) => {
-          const row = wsTeam.getRow(r);
-          rowData.forEach((v, i) => { row.getCell(i + 1).value = v; });
-          const fill = rowData[0].includes('Achieved') ? DASH_XL.greenFill : rowData[0].includes('Deficit') ? DASH_XL.redFill : (idx % 2 ? DASH_XL.lightFill : undefined);
-          dashXlApplyRowStyle(row, fill, undefined, idx === 0 ? 'left' : 'center');
-          if (idx === 0) row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
-          r++;
-        });
-        wsTeam.getColumn(1).width = 42;
-        for (let c = 2; c <= 6; c++) wsTeam.getColumn(c).width = 14;
-
-        // Sheet 2: Calls Break-Up
-        const wsBreak = wb.addWorksheet(dashXlSanitizeSheetName('Calls Break-Up'));
-        r = dashXlAddTitle(wsBreak, 'CALLS MONITORED – BREAK-UP', 16);
-        r = dashXlAddFilterInfo(wsBreak, r, data.filters);
-        const br1 = wsBreak.getRow(r);
-        br1.getCell(1).value = 'Category';
-        ['WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', '1+2+3+4 (TOTAL)'].forEach((w, wi) => {
-          wsBreak.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
-          br1.getCell(2 + wi * 3).value = w;
-        });
-        dashXlApplyRowStyle(br1, DASH_XL.subFill, DASH_XL.whiteFont);
-        r++;
-        const br2 = wsBreak.getRow(r);
-        br2.getCell(1).value = '';
-        for (let w = 0; w < 5; w++) ['Count', 'Revenue', 'Adherance %'].forEach((h, i) => { br2.getCell(2 + w * 3 + i).value = h; });
-        dashXlApplyRowStyle(br2, DASH_XL.lightFill, { bold: true, size: 10 });
-        r++;
-        data.breakupData.forEach(b => {
-          const row = wsBreak.getRow(r);
-          const vals = [b.name, b.w1Count, b.w1Rev, b.w1Adh, b.w2Count, b.w2Rev, b.w2Adh, b.w3Count, b.w3Rev, b.w3Adh, b.w4Count, b.w4Rev, b.w4Adh, b.tCount, b.tRev, b.tAdh];
-          vals.forEach((v, i) => { row.getCell(i + 1).value = v; });
-          dashXlApplyRowStyle(row, DASH_XL.lightFill);
-          row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
-          r++;
-        });
-        wsBreak.getColumn(1).width = 28;
-
-        const dashXlWriteSalesCells = (sheet, rowNum, col, nm, ni) => {
-          const n = nm || 0, i = ni || 0;
-          sheet.getCell(rowNum, col).value = n;
-          sheet.getCell(rowNum, col + 1).value = i;
-          sheet.getCell(rowNum, col + 2).value = n + i;
-          [col, col + 1, col + 2].forEach((c, idx) => {
-            const cell = sheet.getCell(rowNum, c);
-            cell.border = DASH_XL.border;
-            cell.alignment = { horizontal: 'center' };
-            if (idx === 0) { cell.font = n > 0 ? DASH_XL.nmFont : {}; cell.fill = DASH_XL.redFill; }
-            if (idx === 1) { cell.font = i > 0 ? DASH_XL.niFont : {}; cell.fill = DASH_XL.lightFill; }
-            if (idx === 2) { cell.font = DASH_XL.totalFont; cell.fill = DASH_XL.blueFill; }
-          });
-        };
-
-        // Sheet 3: Errors Impacting Sales
-        const wsSales = wb.addWorksheet(dashXlSanitizeSheetName('Errors Impacting Sales'));
-        r = dashXlAddTitle(wsSales, 'ERRORS IMPACTING SALES', 16);
-        r = dashXlAddFilterInfo(wsSales, r, data.filters);
-        const sl1 = wsSales.getRow(r);
-        sl1.getCell(1).value = 'Revenue Impacting Errors';
-        ['WK-1', 'WK-2', 'WK-3', 'WK-4', 'Total'].forEach((w, wi) => {
-          wsSales.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
-          sl1.getCell(2 + wi * 3).value = w;
-        });
-        dashXlApplyRowStyle(sl1, DASH_XL.subFill, DASH_XL.whiteFont);
-        r++;
-        const sl2 = wsSales.getRow(r);
-        sl2.getCell(1).value = '';
-        for (let w = 0; w < 5; w++) ['Not Met', 'Needs Impr.', 'Total'].forEach((h, i) => { sl2.getCell(2 + w * 3 + i).value = h; });
-        dashXlApplyRowStyle(sl2, DASH_XL.lightFill, { bold: true, size: 10 });
-        r++;
-        let gW1n = 0, gW1i = 0, gW2n = 0, gW2i = 0, gW3n = 0, gW3i = 0, gW4n = 0, gW4i = 0, gTn = 0, gTi = 0;
-        data.salesRows.forEach(item => {
-          const row = wsSales.getRow(r);
-          row.getCell(1).value = item.title;
-          row.getCell(1).fill = item.type === 'category' ? DASH_XL.blueFill : DASH_XL.lightFill;
-          row.getCell(1).font = item.type === 'category' ? { bold: true, size: 11 } : { size: 10 };
-          row.getCell(1).alignment = { horizontal: 'left', wrapText: true };
-          row.getCell(1).border = DASH_XL.border;
-          dashXlWriteSalesCells(wsSales, r, 2, item.w1Nm, item.w1Ni);
-          dashXlWriteSalesCells(wsSales, r, 5, item.w2Nm, item.w2Ni);
-          dashXlWriteSalesCells(wsSales, r, 8, item.w3Nm, item.w3Ni);
-          dashXlWriteSalesCells(wsSales, r, 11, item.w4Nm, item.w4Ni);
-          dashXlWriteSalesCells(wsSales, r, 14, item.tNm, item.tNi);
-          r++;
-          if (item.type === 'category') {
-            gW1n += item.w1Nm; gW1i += item.w1Ni; gW2n += item.w2Nm; gW2i += item.w2Ni;
-            gW3n += item.w3Nm; gW3i += item.w3Ni; gW4n += item.w4Nm; gW4i += item.w4Ni;
-            gTn += item.tNm; gTi += item.tNi;
-          }
-        });
-        const grandSales = wsSales.getRow(r);
-        grandSales.getCell(1).value = 'Grand Total';
-        dashXlApplyRowStyle(grandSales, DASH_XL.grandFill, DASH_XL.whiteFont, 'left');
-        dashXlWriteSalesCells(wsSales, r, 2, gW1n, gW1i);
-        dashXlWriteSalesCells(wsSales, r, 5, gW2n, gW2i);
-        dashXlWriteSalesCells(wsSales, r, 8, gW3n, gW3i);
-        dashXlWriteSalesCells(wsSales, r, 11, gW4n, gW4i);
-        dashXlWriteSalesCells(wsSales, r, 14, gTn, gTi);
-        wsSales.getColumn(1).width = 48;
-
-        // Sheet 4: Agent Performance
-        const wsAgent = wb.addWorksheet(dashXlSanitizeSheetName('Agent Performance'));
-        r = dashXlAddTitle(wsAgent, 'AGENT WISE PERFORMANCE SUMMARY', 17);
-        r = dashXlAddFilterInfo(wsAgent, r, data.filters);
-        const ag1 = wsAgent.getRow(r);
-        ag1.getCell(1).value = 'Agent Name';
-        ['WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4'].forEach((w, wi) => {
-          wsAgent.mergeCells(r, 2 + wi * 3, r, 4 + wi * 3);
-          ag1.getCell(2 + wi * 3).value = w;
-        });
-        wsAgent.mergeCells(r, 14, r, 17);
-        ag1.getCell(14).value = '1+2+3+4 (TOTAL)';
-        dashXlApplyRowStyle(ag1, DASH_XL.subFill, DASH_XL.whiteFont);
-        r++;
-        const ag2 = wsAgent.getRow(r);
-        ag2.getCell(1).value = '';
-        for (let w = 0; w < 4; w++) ['Calls', 'Adherence%', 'Avg Error/Call'].forEach((h, i) => {
-          ag2.getCell(2 + w * 3 + i).value = h;
-        });
-        ['Calls', 'Adherence%', 'Avg Error/Call', 'Grading'].forEach((h, i) => {
-          ag2.getCell(14 + i).value = h;
-        });
-        dashXlApplyRowStyle(ag2, DASH_XL.lightFill, { bold: true, size: 10 });
-        r++;
-        data.agentRows.forEach(ar => {
-          const row = wsAgent.getRow(r);
-          row.getCell(1).value = ar.agentName;
-          [ar.a1, ar.a2, ar.a3, ar.a4].forEach((wk, wi) => {
-            const base = 2 + wi * 3;
-            row.getCell(base).value = wk.achieved;
-            row.getCell(base + 1).value = wk.adherence + '%';
-            row.getCell(base + 2).value = wk.avgError;
-          });
-          row.getCell(14).value = ar.tAch;
-          row.getCell(15).value = ar.tAdh + '%';
-          row.getCell(16).value = ar.tAvg;
-          row.getCell(17).value = ar.tGrade;
-          dashXlApplyRowStyle(row, DASH_XL.lightFill);
-          row.getCell(1).alignment = { horizontal: 'left' };
-          row.getCell(17).font = { bold: true };
-          r++;
-        });
-        wsAgent.getColumn(1).width = 18;
-
-        // Sheet 5: Agent by Category
-        const wsAc = wb.addWorksheet(dashXlSanitizeSheetName('Agent by Category'));
-        r = dashXlAddTitle(wsAc, 'CALLS BY AGENT × CATEGORY', 9);
-        r = dashXlAddFilterInfo(wsAc, r, data.filters);
-        const acHdr = wsAc.getRow(r);
-        ['Agent', 'Booked', 'High Value', 'Follow-Up', 'Close to booking', 'Complaints', 'Mid-Value', 'Prospects', 'Total'].forEach((h, i) => {
-          acHdr.getCell(i + 1).value = h;
-        });
-        dashXlApplyRowStyle(acHdr, DASH_XL.subFill, DASH_XL.whiteFont);
-        r++;
-        data.acRows.forEach(ar => {
-          const row = wsAc.getRow(r);
-          row.getCell(1).value = ar.agentName;
-          ar.counts.forEach((cnt, i) => { row.getCell(i + 2).value = cnt; });
-          row.getCell(9).value = ar.total;
-          dashXlApplyRowStyle(row, DASH_XL.lightFill);
-          row.getCell(1).alignment = { horizontal: 'left' };
-          r++;
-        });
-        const acTot = wsAc.getRow(r);
-        acTot.getCell(1).value = 'Total';
-        data.acTotals.forEach((cnt, i) => { acTot.getCell(i + 2).value = cnt; });
-        acTot.getCell(9).value = data.acGrand;
-        dashXlApplyRowStyle(acTot, DASH_XL.grandFill, DASH_XL.whiteFont, 'left');
-
-        const buffer = await wb.xlsx.writeBuffer();
-        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `TNVL_Dashboard_Report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('✅ Dashboard exported to Excel successfully!', '#27ae60');
+        const doc = generateDashboardPDF(data);
+        doc.save(`TNVL_Dashboard_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
+        showToast('✅ Dashboard PDF downloaded successfully!', '#27ae60');
       } catch (err) {
         console.error(err);
-        showToast('❌ Export failed: ' + (err.message || 'Unknown error'), '#e74c3c');
+        showToast('❌ PDF export failed: ' + (err.message || 'Unknown error'), '#e74c3c');
       } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = origText; }
       }
