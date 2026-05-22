@@ -4757,6 +4757,7 @@
       const chartDefaults = {
         responsive: true,
         maintainAspectRatio: false,
+        animation: false,
         layout: { padding: { top: 10, right: 10, left: 10, bottom: 10 } },
         plugins: {
           legend: {
@@ -6997,9 +6998,22 @@
           'dash-sales-subchart': dashSalesSubChart
         };
         const chart = chartInstances[chartId];
-        if (chart && typeof chart.toBase64Image === 'function') {
-          try { return chart.toBase64Image(); } catch (e) { console.warn('Chart image capture from Chart.js instance failed', e); }
+
+        if (chart && chart.canvas) {
+          try {
+            chart.options = chart.options || {};
+            chart.options.animation = false;
+            if (typeof chart.update === 'function') chart.update('none');
+          } catch (e) {
+            console.warn('Chart update before capture failed', e);
+          }
+          try {
+            return chart.canvas.toDataURL('image/png');
+          } catch (e) {
+            console.warn('Chart canvas capture failed', e);
+          }
         }
+
         const canvas = document.getElementById(chartId);
         if (!canvas || !canvas.toDataURL) return null;
         try { return canvas.toDataURL('image/png'); } catch (e) { console.warn('Chart image capture failed', e); return null; }
@@ -7799,6 +7813,7 @@
       if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Generating PDF...'; }
       try {
         renderTeamDashboard();
+        await waitForDashboardChartsReady();
         const data = collectDashboardExportData();
         const doc = generateDashboardPDF(data);
         doc.save(`TNVL_Dashboard_Report_${new Date().toISOString().slice(0, 10)}.pdf`);
@@ -7809,6 +7824,17 @@
       } finally {
         if (btn) { btn.disabled = false; btn.innerHTML = origText; }
       }
+    }
+
+    function waitForDashboardChartsReady() {
+      return new Promise(resolve => {
+        if (!window.requestAnimationFrame) {
+          return setTimeout(resolve, 50);
+        }
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(resolve);
+        });
+      });
     }
 
     function downloadReportCSV() {
