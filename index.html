@@ -5993,20 +5993,21 @@
       const w2Items = aggregateRevenueItemErrors(w2Filtered);
       const w3Items = aggregateRevenueItemErrors(w3Filtered);
       const w4Items = aggregateRevenueItemErrors(w4Filtered);
-      const cell = (val, type, isGrand) => {
+      
+      const cell = (val, type, isGrand, customBg) => {
         const n = val || 0;
         const color = n > 0 ? (type === 'nm' ? '#c0392b' : '#d35400') : (isGrand ? '#cbd5e1' : '#999');
         const weight = n > 0 || isGrand ? 'bold' : 'normal';
-        const bg = isGrand ? 'background:#eaf0f7;' : '';
+        const bg = isGrand ? 'background:#eaf0f7;' : (customBg ? `background:${customBg};` : '');
         return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:${weight}; ${bg}">${n}</td>`;
       };
-      const cellWeekTotal = (nm, ni, isGrand) => {
+      const cellWeekTotal = (nm, ni, isGrand, customBg) => {
         const n = (nm || 0) + (ni || 0);
         const color = n > 0 ? '#1a5276' : (isGrand ? '#cbd5e1' : '#999');
-        const bg = isGrand ? 'background:#eaf0f7;' : 'background:#f8faff;';
+        const bg = isGrand ? 'background:#eaf0f7;' : (customBg ? `background:${customBg};` : 'background:#f8faff;');
         return `<td style="padding:10px; border:1px solid #000; text-align:center; color:${color}; font-weight:bold; ${bg}">${n}</td>`;
       };
-      const weekCells = (nm, ni, isGrand) => `${cell(nm, 'nm', isGrand)}${cell(ni, 'ni', isGrand)}${cellWeekTotal(nm, ni, isGrand)}`;
+      const weekCells = (nm, ni, isGrand, customBg) => `${cell(nm, 'nm', isGrand, customBg)}${cell(ni, 'ni', isGrand, customBg)}${cellWeekTotal(nm, ni, isGrand, customBg)}`;
 
       const tbody = document.getElementById('dash-sales-errors-tbody');
       if (!tbody) return;
@@ -6037,6 +6038,24 @@
         grandTotNm += cat.tNm; grandTotNi += cat.tNi;
       });
 
+      // Gather all sub-category errors globally to find the top 3 overall
+      const allSubItems = [];
+      REVENUE_IMPACTING_ERRORS.forEach(title => {
+        const subItems = getRevenueSectionSubItems(title, w1Items, w2Items, w3Items, w4Items)
+          .filter(sub => sub.sortTotal > 0);
+        subItems.forEach(sub => {
+          allSubItems.push({
+            section: title,
+            label: sub.label,
+            sortTotal: sub.sortTotal
+          });
+        });
+      });
+      // Sort globally in descending order
+      allSubItems.sort((a, b) => b.sortTotal - a.sortTotal);
+      // Take the top 3 unique key identifiers: "section|label"
+      const top3SubKeys = allSubItems.slice(0, 3).map(item => `${item.section}|${item.label}`);
+
       const categoryRows = sortedCategories.map(cat => {
         const { title, w1Nm, w1Ni, w2Nm, w2Ni, w3Nm, w3Ni, w4Nm, w4Ni, tNm, tNi } = cat;
         const sectionId = getSalesErrorsSectionId(title);
@@ -6063,13 +6082,35 @@
           </tr>`;
         } else {
           subItems.forEach(sub => {
+            const key = `${title}|${sub.label}`;
+            const rankIdx = top3SubKeys.indexOf(key);
+            let customBg = '';
+            let labelBorderLeft = '';
+            let rankBadge = '';
+
+            if (rankIdx === 0) {
+              customBg = '#fee2e2'; // Soft red
+              labelBorderLeft = '4px solid #ef4444'; // Red border
+              rankBadge = `<span style="display: inline-block; background-color: #ef4444; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;">🔥 Rank 1 Error</span>`;
+            } else if (rankIdx === 1) {
+              customBg = '#ffedd5'; // Soft orange
+              labelBorderLeft = '4px solid #f97316'; // Orange border
+              rankBadge = `<span style="display: inline-block; background-color: #f97316; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;">⚠️ Rank 2 Error</span>`;
+            } else if (rankIdx === 2) {
+              customBg = '#fef9c3'; // Soft yellow
+              labelBorderLeft = '4px solid #eab308'; // Yellow border
+              rankBadge = `<span style="display: inline-block; background-color: #eab308; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 8px; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle;">⚡ Rank 3 Error</span>`;
+            }
+
+            const labelStyle = `padding:10px; border:1px solid #000;${customBg ? ' background:' + customBg + ';' : ''}${labelBorderLeft ? ' border-left:' + labelBorderLeft + ' !important; font-weight:600;' : ''}`;
+
             html += `<tr class="dash-sales-sub-row" data-parent="${sectionId}" style="display:${subDisplay};">
-              <td style="padding:10px; border:1px solid #000;">${escHtml(sub.label)}</td>
-              ${weekCells(sub.w1Nm, sub.w1Ni)}
-              ${weekCells(sub.w2Nm, sub.w2Ni)}
-              ${weekCells(sub.w3Nm, sub.w3Ni)}
-              ${weekCells(sub.w4Nm, sub.w4Ni)}
-              ${weekCells(sub.tNm, sub.tNi)}
+              <td style="${labelStyle}">${escHtml(sub.label)}${rankBadge}</td>
+              ${weekCells(sub.w1Nm, sub.w1Ni, false, customBg)}
+              ${weekCells(sub.w2Nm, sub.w2Ni, false, customBg)}
+              ${weekCells(sub.w3Nm, sub.w3Ni, false, customBg)}
+              ${weekCells(sub.w4Nm, sub.w4Ni, false, customBg)}
+              ${weekCells(sub.tNm, sub.tNi, false, customBg)}
             </tr>`;
           });
         }
@@ -6723,8 +6764,8 @@
         doc.addImage(DASH_PDF_THEME.logoUrl, 'PNG', DASH_PDF_THEME.margin, 8, 48, 16);
       } catch (e) {
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(14);
-        doc.text('TRUE NORTH VAN LINES', DASH_PDF_THEME.margin, 18);
+        doc.setFontSize(15);
+        doc.text('TRUENORTH VAN LINES', DASH_PDF_THEME.margin, 18);
       }
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(18);
@@ -6859,7 +6900,7 @@
       function drawHeaderFooter(doc, pageNum, totalPages, reportMonthYear) {
         // Top Header
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8.5);
+        doc.setFontSize(9.5);
         doc.setTextColor(80, 100, 120);
         doc.text(`TNVL  |  QA Dashboard  |  ${reportMonthYear}`, 14, 10);
         
@@ -6874,10 +6915,10 @@
         
         // Bottom Footer
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(9);
         doc.setTextColor(120, 140, 160);
         doc.text(`Generated: ${formattedGenDate}`, 14, 288);
-        doc.text(`True North Van Lines — Dashboard Report  |  Page ${pageNum} of ${totalPages}`, 406, 288, { align: 'right' });
+        doc.text(`TrueNorth Van Lines — Dashboard Report  |  Page ${pageNum} of ${totalPages}`, 406, 288, { align: 'right' });
       }
 
       function drawSectionTitleBlock(doc, number, title, subTitle, themeColor) {
@@ -6887,17 +6928,17 @@
         // Number
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(15);
+        doc.setFontSize(16);
         doc.text(number, 20, 28.5);
         
         // Title
-        doc.setFontSize(13);
+        doc.setFontSize(14);
         doc.text(title, 34, 28.5);
         
         // Subtitle
         if (subTitle) {
           doc.setFont('helvetica', 'normal');
-          doc.setFontSize(9.5);
+          doc.setFontSize(10.5);
           doc.setTextColor(235, 245, 251);
           doc.text(subTitle, 400, 27.5, { align: 'right' });
         }
@@ -6946,7 +6987,7 @@
         const prefix = parts[0] + ':';
         const body = parts.slice(1).join(':');
         
-        doc.setFontSize(9.5);
+        doc.setFontSize(10.5);
         const textX = x + 8;
         const textY = y + 8;
         const maxTextWidth = w - 14;
@@ -7048,7 +7089,7 @@
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
-        doc.text('TRUE NORTH VAN LINES', 24, 34);
+        doc.text('TRUENORTH VAN LINES', 24, 34);
       }
       
       // Dashboard Title
@@ -7145,8 +7186,8 @@
         body: p2Rows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.navy, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 3 },
+        headStyles: { fillColor: themeColors.navy, textColor: [255, 255, 255], fontSize: 9.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 9, valign: 'middle', cellPadding: 3 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
@@ -7280,8 +7321,8 @@
         body: p3Rows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.teal, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 7.5, valign: 'middle', cellPadding: 2.5 },
+        headStyles: { fillColor: themeColors.teal, textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8.5, valign: 'middle', cellPadding: 2.5 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
@@ -7352,6 +7393,14 @@
       const inventoryTotal = data.sortedSales.find(s => s.title.includes('Inventory'))?.sortTotal || 137;
       const saleTechniqueTotal = data.sortedSales.find(s => s.title.includes('Sale Technique'))?.sortTotal || 132;
       const totalSalesErrors = data.sortedSales.reduce((sum, s) => sum + s.sortTotal, 0);
+      const topCat = data.sortedSales[0] || {
+        title: 'TNVL Trust Builders',
+        sortTotal: trustBuildersTotal,
+        w4Nm: 0,
+        w4Ni: 0,
+        w2Nm: 0,
+        w2Ni: 0
+      };
       
       drawKpiCard(doc, 14, 40, 92, 32, totalSalesErrors, 'Total Errors', themeColors.purple);
       drawKpiCard(doc, 114, 40, 92, 32, trustBuildersTotal, 'Trust Builders', [192, 57, 43]);
@@ -7381,8 +7430,8 @@
         body: p4CatRows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 9.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 9, valign: 'middle', cellPadding: 2.8 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
@@ -7404,32 +7453,72 @@
         }
       });
       
-      // Top Sub-errors Page 4 (first 5 rows)
-      const topCat = data.sortedSales[0] || { title: 'TNVL Trust Builders', sortTotal: 176 };
-      const subItems = getRevenueSectionSubItems(topCat.title, data.w1Items, data.w2Items, data.w3Items, data.w4Items);
-      subItems.sort((a, b) => b.sortTotal - a.sortTotal);
-      
-      const p4SubRows = subItems.slice(0, 5).map(item => [item.label, item.sortTotal]);
-      
+
+      // Top Sub-errors Page 4 (first 5 rows) — GLOBAL
+      const allSubItemsGlobal = [];
+      REVENUE_IMPACTING_ERRORS.forEach(title => {
+        const itemsOfSection = getRevenueSectionSubItems(title, data.w1Items, data.w2Items, data.w3Items, data.w4Items)
+          .filter(sub => sub.sortTotal > 0);
+        itemsOfSection.forEach(sub => {
+          allSubItemsGlobal.push({
+            section: title,
+            label: sub.label,
+            sortTotal: sub.sortTotal
+          });
+        });
+      });
+      allSubItemsGlobal.sort((a, b) => b.sortTotal - a.sortTotal);
+      const top5SubErrors = allSubItemsGlobal.slice(0, 5);
+      const top3SubKeysGlobal = top5SubErrors.slice(0, 3).map(item => `${item.section}|${item.label}`);
+
+      const p4SubRows = top5SubErrors.map(item => [item.label, item.sortTotal]);
+
+      const firstTableEndY = doc.lastAutoTable.finalY || 150;
+      const textY = firstTableEndY + 12;
+      const secondTableStartY = textY + 4;
+
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10.5);
       doc.setTextColor(...themeColors.textDark);
-      doc.text(`Top Sub-Errors: ${topCat.title.replace(' & Transparency', '')} (${topCat.sortTotal} total)`, 14, 161);
+      doc.text(`Top Sub-Errors (All Categories): ${top5SubErrors.reduce((sum, item) => sum + item.sortTotal, 0)} total`, 14, textY);
       
+      const didParseCellHighlight = (hook) => {
+        if (hook.section !== 'body') return;
+        const labelCell = hook.row.cells[0];
+        if (!labelCell) return;
+        const labelText = labelCell.text[0] || '';
+        // Find the sub-error in the global top 3 by label only (since section is not shown in table)
+        const rankIdx = top5SubErrors.findIndex((item, idx) => idx < 3 && item.label === labelText);
+        if (rankIdx === 0) {
+          hook.cell.styles.fillColor = [254, 226, 226]; // #fee2e2
+          hook.cell.styles.textColor = [153, 27, 27]; // #991b1b
+          hook.cell.styles.fontStyle = 'bold';
+        } else if (rankIdx === 1) {
+          hook.cell.styles.fillColor = [255, 237, 213]; // #ffedd5
+          hook.cell.styles.textColor = [154, 52, 18]; // #9a3412
+          hook.cell.styles.fontStyle = 'bold';
+        } else if (rankIdx === 2) {
+          hook.cell.styles.fillColor = [254, 249, 195]; // #fef9c3
+          hook.cell.styles.textColor = [133, 77, 14]; // #854d0e
+          hook.cell.styles.fontStyle = 'bold';
+        }
+      };
+
       doc.autoTable({
-        startY: 165,
+        startY: secondTableStartY,
         head: [['SUB-ERROR DESCRIPTION', 'TOTAL ERRORS']],
         body: p4SubRows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        headStyles: { fillColor: themeColors.purple, textColor: [255, 255, 255], fontSize: 9.5, fontStyle: 'bold', halign: 'center', cellPadding: 3 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 9, valign: 'middle', cellPadding: 2.8 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
           0: { cellWidth: 320, halign: 'left' },
           1: { cellWidth: 72, halign: 'center', fontStyle: 'bold' }
-        }
+        },
+        didParseCell: didParseCellHighlight
       });
       
       drawHeaderFooter(doc, 4, 9, reportMonthYear);
@@ -7440,22 +7529,23 @@
       doc.addPage();
       paintPageBackground(doc);
       
-      // Page 5 has no title block or KPIs, it goes straight to the remaining sub-errors
-      const p5SubRows = subItems.slice(5).map(item => [item.label, item.sortTotal]);
-      
+      // Page 5 has no title block or KPIs, it goes straight to the remaining sub-errors (global)
+      const p5SubRows = allSubItemsGlobal.slice(5).map(item => [item.label, item.sortTotal]);
+
       doc.autoTable({
         startY: 16,
         head: [], // No header row
         body: p5SubRows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 2.8 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 9, valign: 'middle', cellPadding: 2.8 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
           0: { cellWidth: 320, halign: 'left' },
           1: { cellWidth: 72, halign: 'center', fontStyle: 'bold' }
-        }
+        },
+        didParseCell: didParseCellHighlight
       });
       
       // Focus Area Box
@@ -7572,8 +7662,8 @@
         body: p6Rows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.green, textColor: [255, 255, 255], fontSize: 8, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 7.5, valign: 'middle', cellPadding: 2.5 },
+        headStyles: { fillColor: themeColors.green, textColor: [255, 255, 255], fontSize: 9, fontStyle: 'bold', halign: 'center', cellPadding: 2.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8.5, valign: 'middle', cellPadding: 2.5 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
@@ -7671,8 +7761,8 @@
         body: p7Rows,
         theme: 'grid',
         margin: { left: 14, right: 14 },
-        headStyles: { fillColor: themeColors.orange, textColor: [255, 255, 255], fontSize: 8.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
-        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 8, valign: 'middle', cellPadding: 3 },
+        headStyles: { fillColor: themeColors.orange, textColor: [255, 255, 255], fontSize: 9.5, fontStyle: 'bold', halign: 'center', cellPadding: 3.5 },
+        bodyStyles: { fillColor: [255, 255, 255], textColor: [...themeColors.textDark], fontSize: 9, valign: 'middle', cellPadding: 3 },
         alternateRowStyles: { fillColor: [248, 250, 253] },
         styles: { lineColor: [210, 220, 235], lineWidth: 0.15 },
         columnStyles: {
@@ -7989,7 +8079,7 @@
       } catch (e) {
         doc.setTextColor(...textWhite);
         doc.setFontSize(22);
-        doc.text('TRUE NORTH VAN LINES', 20, 25);
+        doc.text('TRUENORTH VAN LINES', 20, 25);
       }
 
       doc.setTextColor(...textMuted);
