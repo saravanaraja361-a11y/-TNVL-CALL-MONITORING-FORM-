@@ -4671,7 +4671,7 @@
         return true;
       }).sort((a, b) => b.date.localeCompare(a.date)); return isRaw ? res : deduplicateReportRecords(res);
     }
-    const DEFAULT_AGENTS = ['Myles', 'Dustin', 'Thomas', 'Anthony', 'Daniel', 'Noah', 'Jessica', 'Alex', 'Arthur', 'William'];
+    const DEFAULT_AGENTS = ['Myles', 'Dustin', 'Thomas', 'Anthony', 'Daniel', 'Noah', 'Jessica', 'Alex', 'Arthur', 'William', 'Solomon', 'Fabian'];
     const DEFAULT_EVALUATORS = ['Aarti - AI', 'Aarti - Verified', 'Sachin', 'Solomon', 'Daniel', 'Saravana J'];
     function getAllAgents() { const s = new Set(); DEFAULT_AGENTS.forEach(a => s.add(a)); records.filter(r => DEFAULT_AGENTS.includes(r.agent)).forEach(r => s.add(r.agent)); return [...s].sort(); }
     function getSelectedAgents(wrapId) { const wrap = document.getElementById(wrapId); if (!wrap) return []; const checks = wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked'); return [...checks].map(c => c.value); }
