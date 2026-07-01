@@ -1000,52 +1000,52 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'BREVO_API_KEY missing in Render environment' });
+  const host = process.env.EMAIL_HOST;
+  const port = process.env.EMAIL_PORT || '465';
+  const user = process.env.EMAIL_USER;
+  const pass = process.env.EMAIL_PASS;
+
+  if (!host || !user || !pass) {
+    return res.status(500).json({ error: 'SMTP configuration missing in environment' });
   }
 
   const recipientList = (process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER || '')
     .split(',')
     .map(e => e.trim())
-    .filter(Boolean)
-    .map(email => ({ email }));
+    .filter(Boolean);
 
   try {
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: {
-          name: process.env.EMAIL_FROM_NAME || 'TNVL Reports',
-          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@brevo.com'
-        },
-        to: recipientList,
-        subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
-        htmlContent: htmlContent || '<p>Please find the attached performance report PDF.</p>',
-        attachment: [
-          {
-            content: pdfBase64,
-            name: fileName || 'Performance_Report.pdf'
-          }
-        ]
-      })
+    const transporter = nodemailer.createTransport({
+      host: host,
+      port: parseInt(port, 10),
+      secure: parseInt(port, 10) === 465,
+      auth: {
+        user: user,
+        pass: pass
+      }
     });
 
-    const data = await response.json().catch(() => ({}));
+    const mailOptions = {
+      from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || user}>`,
+      to: recipientList,
+      subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
+      html: htmlContent || '<p>Please find the attached performance report PDF.</p>',
+      attachments: [
+        {
+          filename: fileName || 'Performance_Report.pdf',
+          content: pdfBase64,
+          encoding: 'base64'
+        }
+      ]
+    };
 
-    if (!response.ok) {
-      throw new Error(data?.message || `Brevo error ${response.status}`);
-    }
+    const info = await transporter.sendMail(mailOptions);
 
-    console.log('✅ Email sent via Brevo!', data.messageId);
-    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: data.messageId });
+    console.log('✅ Email sent via Nodemailer!', info.messageId);
+    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: info.messageId });
 
   } catch (error) {
-    console.error('❌ Brevo Error:', error.message);
+    console.error('❌ Nodemailer Error:', error.message);
     res.status(500).json({ error: 'Failed to send report', details: error.message });
   }
 });
