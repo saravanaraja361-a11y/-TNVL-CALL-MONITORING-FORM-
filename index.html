@@ -2697,6 +2697,8 @@
               <option>William</option>
               <option>Solomon</option>
               <option>Fabian</option>
+              <option>Brian</option>
+              <option>Ethan</option>
             </select>
           </div>
           <div><label>Customer Name / Number</label>
@@ -2765,6 +2767,7 @@
               <option>Open</option>
               <option>Booked</option>
               <option>Lost</option>
+              <option>Refund request (cancellation)</option>
             </select>
           </div>
           <div><label>Cue Card Usage</label>
@@ -2784,6 +2787,12 @@
               <option value="Close to booking but lost">Close to booking but lost</option>
               <option value="Prospects">Prospects</option>
               <option value="Mid Value">Mid Value</option>
+              <option value="Move on Hold - Crew initiated">Move on Hold - Crew initiated</option>
+              <option value="Move on Hold - Customer Initiated">Move on Hold - Customer Initiated</option>
+              <option value="Move Cancelled - Customer initiated">Move Cancelled - Customer initiated</option>
+              <option value="Move Cancelled - Ops Initiated">Move Cancelled - Ops Initiated</option>
+              <option value="Move Cancelled - Crew Initiated">Move Cancelled - Crew Initiated</option>
+              <option value="Move Cancelled - Crew Unassigned">Move Cancelled - Crew Unassigned</option>
             </select>
           </div>
         </div>
@@ -3555,6 +3564,8 @@
               <option>William</option>
               <option>Solomon</option>
               <option>Fabian</option>
+              <option>Brian</option>
+              <option>Ethan</option>
             </select>
           </div>
           <div><label>Call Type</label>
@@ -3851,6 +3862,8 @@
               <option>William</option>
               <option>Solomon</option>
               <option>Fabian</option>
+              <option>Brian</option>
+              <option>Ethan</option>
             </select>
           </div>
           <div><label>From Date</label><input type="date" id="aoi-from"
@@ -3939,6 +3952,8 @@
             <option>William</option>
             <option>Solomon</option>
             <option>Fabian</option>
+            <option>Brian</option>
+            <option>Ethan</option>
           </select>
         </div>
         <div><label>📅 From Date</label><input type="date" id="sum3-from" onchange="renderSummaries()"></div>
@@ -4679,7 +4694,7 @@
         return true;
       }).sort((a, b) => b.date.localeCompare(a.date)); return isRaw ? res : deduplicateReportRecords(res);
     }
-    const DEFAULT_AGENTS = ['Myles', 'Dustin', 'Thomas', 'Anthony', 'Daniel', 'Noah', 'Jessica', 'Alex', 'Arthur', 'William', 'Solomon', 'Fabian'];
+    const DEFAULT_AGENTS = ['Myles', 'Dustin', 'Thomas', 'Anthony', 'Daniel', 'Noah', 'Jessica', 'Alex', 'Arthur', 'William', 'Solomon', 'Fabian', 'Brian', 'Ethan'];
     const DEFAULT_EVALUATORS = ['Aarti - AI', 'Aarti - Verified', 'Sachin', 'Solomon', 'Daniel', 'Saravana J'];
     function getAllAgents() { const s = new Set(); DEFAULT_AGENTS.forEach(a => s.add(a)); records.filter(r => DEFAULT_AGENTS.includes(r.agent)).forEach(r => s.add(r.agent)); return [...s].sort(); }
     function getSelectedAgents(wrapId) { const wrap = document.getElementById(wrapId); if (!wrap) return []; const checks = wrap.querySelectorAll('.multi-select-dropdown input[type="checkbox"]:checked'); return [...checks].map(c => c.value); }
@@ -5135,6 +5150,8 @@
         <option value="William" ${r.agent === 'William' ? 'selected' : ''}>William</option>
         <option value="Solomon" ${r.agent === 'Solomon' ? 'selected' : ''}>Solomon</option>
         <option value="Fabian" ${r.agent === 'Fabian' ? 'selected' : ''}>Fabian</option>
+        <option value="Brian" ${r.agent === 'Brian' ? 'selected' : ''}>Brian</option>
+        <option value="Ethan" ${r.agent === 'Ethan' ? 'selected' : ''}>Ethan</option>
       </select>
       <label>Customer Name</label><input type="text" id="e-customer" value="${r.customer || ''}">
       <label>Call Type</label>
@@ -5152,6 +5169,7 @@
         <option value="Closed" ${r.leadStatus === 'Closed' ? 'selected' : ''}>Closed</option>
         <option value="Booked" ${r.leadStatus === 'Booked' ? 'selected' : ''}>Booked</option>
         <option value="Lost" ${r.leadStatus === 'Lost' ? 'selected' : ''}>Lost</option>
+        <option value="Refund request (cancellation)" ${r.leadStatus === 'Refund request (cancellation)' ? 'selected' : ''}>Refund request (cancellation)</option>
       </select>
       <label>Sale Value Category</label>
       <select id="e-salevalue">
@@ -5169,6 +5187,12 @@
         <option value="Close to booking but lost" ${r.monitoringCategory === 'Close to booking but lost' ? 'selected' : ''}>Close to booking but lost</option>
         <option value="Prospects" ${r.monitoringCategory === 'Prospects' ? 'selected' : ''}>Prospects</option>
         <option value="Mid Value" ${r.monitoringCategory === 'Mid Value' ? 'selected' : ''}>Mid Value</option>
+        <option value="Move on Hold - Crew initiated" ${r.monitoringCategory === 'Move on Hold - Crew initiated' ? 'selected' : ''}>Move on Hold - Crew initiated</option>
+        <option value="Move on Hold - Customer Initiated" ${r.monitoringCategory === 'Move on Hold - Customer Initiated' ? 'selected' : ''}>Move on Hold - Customer Initiated</option>
+        <option value="Move Cancelled - Customer initiated" ${r.monitoringCategory === 'Move Cancelled - Customer initiated' ? 'selected' : ''}>Move Cancelled - Customer initiated</option>
+        <option value="Move Cancelled - Ops Initiated" ${r.monitoringCategory === 'Move Cancelled - Ops Initiated' ? 'selected' : ''}>Move Cancelled - Ops Initiated</option>
+        <option value="Move Cancelled - Crew Initiated" ${r.monitoringCategory === 'Move Cancelled - Crew Initiated' ? 'selected' : ''}>Move Cancelled - Crew Initiated</option>
+        <option value="Move Cancelled - Crew Unassigned" ${r.monitoringCategory === 'Move Cancelled - Crew Unassigned' ? 'selected' : ''}>Move Cancelled - Crew Unassigned</option>
       </select>
       <label>Evaluator Name</label>
       <select id="e-evaluator">
@@ -8704,7 +8728,7 @@
       const search = (document.getElementById('sum3-search')?.value || '').toLowerCase().trim(), agFilt = document.getElementById('sum3-agent')?.value || '', fromFilt = document.getElementById('sum3-from')?.value || '', toFilt = document.getElementById('sum3-to')?.value || '';
       const filtered = allKeys.filter(orderId => { const s = tskSummaries[orderId], name = (s.fileName || '').toLowerCase(); if (search && !name.includes(search) && !(s.leadId || '').toLowerCase().includes(search)) return false; if (agFilt) { const agLow = agFilt.toLowerCase().split(' ')[0]; if (!name.includes(agLow)) return false; } if (fromFilt && s.fileDate && s.fileDate < fromFilt) return false; if (toFilt && s.fileDate && s.fileDate > toFilt) return false; return true; });
       if (countTag) countTag.textContent = `${filtered.length} shown`; if (!filtered.length) { container.innerHTML = ''; noMatchMsg.style.display = 'block'; return; } noMatchMsg.style.display = 'none';
-      container.innerHTML = filtered.map(orderId => { const s = tskSummaries[orderId], fullText = s.text || ''; let aiSummary = '', fullTranscript = ''; const tM = '🎙️ FULL TRANSCRIPT', sM = '📝 AI SUMMARY', dp = /─{10,}/g; if (fullText.includes(tM)) { const parts = fullText.split(tM); aiSummary = parts[0].replace(sM, '').replace(dp, '').trim(); fullTranscript = parts[1] ? parts[1].replace(dp, '').trim() : ''; } else { fullTranscript = fullText; } const agentName = (s.fileName || '').split(/\s*[-–]\s*/)[0].trim(), agColors = { thomas: '#1a6bb5', daniel: '#6d4c9e', jessica: '#c0392b', alex: '#27ae60', maria: '#e05c2a', david: '#0097a7', priya: '#8e44ad', james: '#7d6608' }, agColor = agColors[agentName.toLowerCase().split(' ')[0]] || '#1a3c5e'; return `<div class="summary-card" id="sumcard-${orderId}"><div class="summary-card-header" style="background:linear-gradient(90deg,${agColor},#1a3c5e);"><div class="summary-card-title">📋 ${escHtml(s.fileName || orderId)}</div><div class="summary-card-meta">${s.fileDate ? `<span>📅 <span class="meta-pill">${escHtml(s.fileDate)}</span></span>` : ''} ${s.leadId ? `<span>🔖 Lead ID: <span class="meta-pill">${escHtml(s.leadId)}</span></span>` : ''} ${agentName ? `<span>👤 <span class="meta-pill">${escHtml(agentName)}</span></span>` : ''}</div></div><div class="summary-card-columns"><div class="summary-col summary-col-left"><div class="summary-col-label">📝 AI Summary</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(aiSummary || (fullTranscript ? '' : fullText))}</div></div></div><div class="summary-col summary-col-right"><div class="summary-col-label">🎙️ Full Transcript</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(fullTranscript || (aiSummary ? '—' : ''))}</div></div></div></div><div class="summary-card-footer"><button class="sum-action-btn sum-btn-copy" onclick="copySummaryById('${orderId}')">📋 Copy All</button><button class="sum-action-btn sum-btn-remove" onclick="removeSummaryById('${orderId}')">🗑 Remove</button></div></div>`; }).join('');
+      container.innerHTML = filtered.map(orderId => { const s = tskSummaries[orderId], fullText = s.text || ''; let aiSummary = '', fullTranscript = ''; const tM = '🎙️ FULL TRANSCRIPT', sM = '📝 AI SUMMARY', dp = /─{10,}/g; if (fullText.includes(tM)) { const parts = fullText.split(tM); aiSummary = parts[0].replace(sM, '').replace(dp, '').trim(); fullTranscript = parts[1] ? parts[1].replace(dp, '').trim() : ''; } else { fullTranscript = fullText; } const agentName = (s.fileName || '').split(/\s*[-–]\s*/)[0].trim(), agColors = { thomas: '#1a6bb5', daniel: '#6d4c9e', jessica: '#c0392b', alex: '#27ae60', maria: '#e05c2a', david: '#0097a7', priya: '#8e44ad', james: '#7d6608', brian: '#3498db', ethan: '#16a085' }, agColor = agColors[agentName.toLowerCase().split(' ')[0]] || '#1a3c5e'; return `<div class="summary-card" id="sumcard-${orderId}"><div class="summary-card-header" style="background:linear-gradient(90deg,${agColor},#1a3c5e);"><div class="summary-card-title">📋 ${escHtml(s.fileName || orderId)}</div><div class="summary-card-meta">${s.fileDate ? `<span>📅 <span class="meta-pill">${escHtml(s.fileDate)}</span></span>` : ''} ${s.leadId ? `<span>🔖 Lead ID: <span class="meta-pill">${escHtml(s.leadId)}</span></span>` : ''} ${agentName ? `<span>👤 <span class="meta-pill">${escHtml(agentName)}</span></span>` : ''}</div></div><div class="summary-card-columns"><div class="summary-col summary-col-left"><div class="summary-col-label">📝 AI Summary</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(aiSummary || (fullTranscript ? '' : fullText))}</div></div></div><div class="summary-col summary-col-right"><div class="summary-col-label">🎙️ Full Transcript</div><div class="summary-col-scroll"><div class="summary-col-content">${escHtml(fullTranscript || (aiSummary ? '—' : ''))}</div></div></div></div><div class="summary-card-footer"><button class="sum-action-btn sum-btn-copy" onclick="copySummaryById('${orderId}')">📋 Copy All</button><button class="sum-action-btn sum-btn-remove" onclick="removeSummaryById('${orderId}')">🗑 Remove</button></div></div>`; }).join('');
     }
     function copySummaryById(orderId) { const s = tskSummaries[orderId]; if (!s) return; navigator.clipboard.writeText(s.text).then(() => showToast('✅ Summary copied!', '#27ae60')).catch(() => showToast('❌ Copy failed', '#e05c2a')); }
     function removeSummaryById(orderId) { if (!confirm('Remove this summary?')) return; delete tskSummaries[orderId]; try { localStorage.removeItem('tnvl_tsum_' + orderId); } catch (e) { } saveTskSummaries(); renderSummaries(); refreshTskFormFiles(); showToast('🗑 Summary removed', '#888'); }
