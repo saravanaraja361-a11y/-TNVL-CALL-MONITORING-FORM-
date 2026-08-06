@@ -1006,37 +1006,38 @@ app.post('/api/send-report-email', async (req, res) => {
   }
 
   try {
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-      method: 'POST',
-      headers: {
-        'api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        sender: {
-          name: process.env.EMAIL_FROM_NAME || 'TNVL Reports',
-          email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@brevo.com'
+    const sendPromises = recipientList.map(recipient => 
+      fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': apiKey,
+          'Content-Type': 'application/json'
         },
-        to: recipientList,
-        subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
-        htmlContent: htmlContent || '<p>Please find the attached performance report PDF.</p>',
-        attachment: [
-          {
-            content: pdfBase64,
-            name: fileName || 'Performance_Report.pdf'
-          }
-        ]
+        body: JSON.stringify({
+          sender: {
+            name: process.env.EMAIL_FROM_NAME || 'TNVL Reports',
+            email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@brevo.com'
+          },
+          to: [recipient],
+          subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
+          htmlContent: htmlContent || '<p>Please find the attached performance report PDF.</p>',
+          attachment: [
+            {
+              content: pdfBase64,
+              name: fileName || 'Performance_Report.pdf'
+            }
+          ]
+        })
+      }).then(async r => {
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(data?.message || `Brevo error ${r.status} for ${recipient.email}`);
+        return data;
       })
-    });
+    );
 
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data?.message || `Brevo error ${response.status}`);
-    }
-
-    console.log('✅ Email sent via Brevo!', data.messageId);
-    res.json({ success: true, message: 'PDF Report sent successfully!', messageId: data.messageId });
+    const results = await Promise.all(sendPromises);
+    console.log(`✅ Sent ${results.length} emails via Brevo!`);
+    res.json({ success: true, message: `PDF Report sent successfully to ${results.length} recipients!` });
 
   } catch (error) {
     console.error('❌ Brevo Error:', error.message);
