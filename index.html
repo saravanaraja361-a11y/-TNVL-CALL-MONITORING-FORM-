@@ -1086,8 +1086,8 @@
       inset: 0;
       pointer-events: none;
       background: radial-gradient(circle at 16% 22%, rgba(56, 189, 248, .18), transparent 22%),
-                  radial-gradient(circle at 84% 16%, rgba(248, 113, 113, .14), transparent 18%),
-                  radial-gradient(circle at 64% 84%, rgba(255, 255, 255, .08), transparent 24%);
+        radial-gradient(circle at 84% 16%, rgba(248, 113, 113, .14), transparent 18%),
+        radial-gradient(circle at 64% 84%, rgba(255, 255, 255, .08), transparent 24%);
     }
 
     .viz-card-header {
@@ -2669,6 +2669,7 @@
     <button class="tab-btn active" onclick="switchTab('form')">📋 Call Monitoring Form</button>
     <button class="tab-btn" onclick="switchTab('dashboard')">📊 Agent Scoreboard</button>
     <button class="tab-btn" onclick="switchTab('summaries')">📄 Overall Summary</button>
+    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
   </div>
 
   <!-- ═══════════ FORM TAB ═══════════ -->
@@ -2683,59 +2684,23 @@
           <div><label>Date</label><input type="date" id="f-date"></div>
           <div><label>Lead ID</label><input type="text" id="f-lead" placeholder="Enter Lead ID"></div>
           <div><label>Agent Name</label>
-            <select id="f-agent">
-              <option value="">— Select Agent —</option>
-              <option>Myles</option>
-              <option>Dustin</option>
-              <option>Thomas</option>
-              <option>Anthony</option>
-              <option>Daniel</option>
-              <option>Noah</option>
-              <option>Jessica</option>
-              <option>Alex</option>
-              <option>Arthur</option>
-              <option>William</option>
-              <option>Solomon</option>
-              <option>Fabian</option>
-              <option>Brian</option>
-              <option>Ethan</option>
-            </select>
+            <select id="f-agent"></select>
           </div>
           <div><label>Customer Name / Number</label>
             <input type="text" id="f-customer" placeholder="Customer name or number">
           </div>
           <div><label>Call Type</label>
-            <select id="f-calltype" onchange="onCallTypeChange(this.value)">
-              <option value="">— Select —</option>
-              <option>Inbound quote request</option>
-              <option>Inbound follow up</option>
-              <option>Outbound - Initial call</option>
-              <option>Outbound - follow up</option>
-              <option>Pre Move Confirmation call</option>
-              <option>Short calls less than 3 Mins</option>
-            </select>
+            <select id="f-calltype" onchange="onCallTypeChange(this.value)"></select>
           </div>
           <div><label>Call Duration (hh:mm:ss)</label>
             <input type="text" id="f-duration" placeholder="00:00:00">
           </div>
           <div><label>Call Date / Time</label><input type="datetime-local" id="f-datetime"></div>
           <div><label>Evaluator Name</label>
-            <select id="f-evaluator">
-              <option value="">— Select —</option>
-              <option>Aarti - AI</option>
-              <option>Aarti - Verified</option>
-              <option>Sachin</option>
-              <option>Solomon</option>
-              <option>Daniel</option>
-              <option>Saravana J</option>
-            </select>
+            <select id="f-evaluator"></select>
           </div>
           <div><label>Move Type</label>
-            <select id="f-movetype">
-              <option value="">— Select —</option>
-              <option>Local Move</option>
-              <option>Long Distance Move</option>
-            </select>
+            <select id="f-movetype"></select>
           </div>
           <div><label>Move Value ($)</label>
             <div style="position:relative; display:flex; align-items:center;">
@@ -2745,12 +2710,7 @@
             </div>
           </div>
           <div><label>Move Value Category</label>
-            <select id="f-movevalue">
-              <option value="">— Auto —</option>
-              <option>Low Value</option>
-              <option>Mid Value</option>
-              <option>High Value</option>
-            </select>
+            <select id="f-movevalue"></select>
           </div>
           <div><label>Conversion Probability</label>
             <select id="f-conversion">
@@ -2761,14 +2721,7 @@
             </select>
           </div>
           <div><label>Lead Status</label>
-            <select id="f-leadstatus">
-              <option value="">— Select —</option>
-              <option>Closed</option>
-              <option>Open</option>
-              <option>Booked</option>
-              <option>Lost</option>
-              <option>Refund request (cancellation)</option>
-            </select>
+            <select id="f-leadstatus"></select>
           </div>
           <div><label>Cue Card Usage</label>
             <select id="f-cuecard">
@@ -2778,22 +2731,7 @@
             </select>
           </div>
           <div style="grid-column: span 2;"><label>Priority Based Monitoring Category</label>
-            <select id="f-monitoring-category">
-              <option value="">— Select —</option>
-              <option value="Booked">Booked</option>
-              <option value="Complaint/Escalation Call">Complaint/Escalation Call</option>
-              <option value="High Value">High Value</option>
-              <option value="Follow-up call">Follow-up call</option>
-              <option value="Close to booking but lost">Close to booking but lost</option>
-              <option value="Prospects">Prospects</option>
-              <option value="Mid Value">Mid Value</option>
-              <option value="Move on Hold - Crew initiated">Move on Hold - Crew initiated</option>
-              <option value="Move on Hold - Customer Initiated">Move on Hold - Customer Initiated</option>
-              <option value="Move Cancelled - Customer initiated">Move Cancelled - Customer initiated</option>
-              <option value="Move Cancelled - Ops Initiated">Move Cancelled - Ops Initiated</option>
-              <option value="Move Cancelled - Crew Initiated">Move Cancelled - Crew Initiated</option>
-              <option value="Move Cancelled - Crew Unassigned">Move Cancelled - Crew Unassigned</option>
-            </select>
+            <select id="f-monitoring-category"></select>
           </div>
         </div>
       </div>
@@ -2862,7 +2800,8 @@
               <div style="font-size:28px;margin-bottom:6px;">📭</div>
               <div style="font-size:13px;font-weight:700;color:#8ab4d4;margin-bottom:4px;">No files loaded yet</div>
               <div style="font-size:12px;color:#4a7a9b;">Click <strong style="color:#8ab4d4">📂 Browse Files</strong> or
-                <strong style="color:#8ab4d4">🎭 Demo Files</strong> above.</div>
+                <strong style="color:#8ab4d4">🎭 Demo Files</strong> above.
+              </div>
             </div>
             <div id="tsk-file-count-label"
               style="display:none;font-size:12px;font-weight:700;color:#4a7a9b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">
@@ -3049,31 +2988,62 @@
 
       <!-- Dashboard sub-panel -->
       <div class="sub-panel" id="subpanel-dashboard">
-        <div style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
-          
+        <div
+          style="background:#fff;border:1.5px solid #dce8f5;border-radius:12px;padding:20px 24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(26,82,118,.06);">
+
           <div class="filter-bar" style="margin-bottom:20px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;">
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W1]</label><input type="date" id="dash-call-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W1]</label><input type="date" id="dash-call-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W2]</label><input type="date" id="dash-call-from-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W2]</label><input type="date" id="dash-call-to-w2" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W3]</label><input type="date" id="dash-call-from-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W3]</label><input type="date" id="dash-call-to-w3" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (From) [W4]</label><input type="date" id="dash-call-from-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates (To) [W4]</label><input type="date" id="dash-call-to-w4" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
-            <div style="min-width:180px;"><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be monitored/Agent</label><input type="number" id="dash-target" value="3" style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;" min="1"></div>
-            <button class="btn-filter" onclick="renderTeamDashboard()" style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄 Load Dashboard</button>
-            <button class="btn-filter" onclick="clearDashboardFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
-            <button class="btn-filter" onclick="openDashboardCommentsModal()" style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💬 Comments</button>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (From) [W1]</label><input type="date" id="dash-call-from"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (To) [W1]</label><input type="date" id="dash-call-to"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (From) [W2]</label><input type="date" id="dash-call-from-w2"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (To) [W2]</label><input type="date" id="dash-call-to-w2"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (From) [W3]</label><input type="date" id="dash-call-from-w3"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (To) [W3]</label><input type="date" id="dash-call-to-w3"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (From) [W4]</label><input type="date" id="dash-call-from-w4"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Call Dates
+                (To) [W4]</label><input type="date" id="dash-call-to-w4"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;"></div>
+            <div style="min-width:180px;"><label
+                style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">Calls to be
+                monitored/Agent</label><input type="number" id="dash-target" value="3"
+                style="width:100%;padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#f8faff;font-size:13px;font-weight:600;color:#1a5276;outline:none;"
+                min="1"></div>
+            <button class="btn-filter" onclick="renderTeamDashboard()"
+              style="background:linear-gradient(135deg,#1a5276,#1a3c5e);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">🔄
+              Load Dashboard</button>
+            <button class="btn-filter" onclick="clearDashboardFilters()"
+              style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
+            <button class="btn-filter" onclick="openDashboardCommentsModal()"
+              style="background:linear-gradient(135deg,#e67e22,#d35400);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">💬
+              Comments</button>
           </div>
 
-          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000;">
+          <table
+            style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000;">
             <tr style="background:#1a5276; color:#fff;">
               <th style="padding:10px; border:1px solid #000; width:30%;">AGENTS LIST (PRESENT)</th>
               <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w2">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w3">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w4">-</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-total">-</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w2">-
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w3">-
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-w4">-
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; width:14%;" id="dash-val-agents-total">-
+              </td>
             </tr>
             <tr style="background:#1a5276; color:#fff;">
               <th style="padding:10px; border:1px solid #000;">TEAM LEVEL PERFORMANCE</th>
@@ -3085,124 +3055,212 @@
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">No. of Agents</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-no-agents-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-no-agents">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-no-agents-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-no-agents-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-no-agents-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-no-agents-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Calls to be monitored/Agent</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-agent-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-agent">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-agent-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-agent-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-agent-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-agent-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total calls to be monitored (Target)</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-target-total-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-total-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-total-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-total-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-target-total-total">0</td>
             </tr>
             <tr style="background:#eafaf1;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Calls Monitored (Achieved)</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;" id="dash-val-achieved-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;"
+                id="dash-val-achieved">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;"
+                id="dash-val-achieved-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;"
+                id="dash-val-achieved-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;"
+                id="dash-val-achieved-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1e8449; text-align:center;"
+                id="dash-val-achieved-total">0</td>
             </tr>
             <tr style="background:#fdf2f2;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Deficit #s</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-deficit-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-deficit">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-deficit-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-deficit-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-deficit-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-deficit-total">0</td>
             </tr>
             <tr>
-              <td style="padding:10px; border:1px solid #000;">Total Applicable Parameters (Met+NotMet+Needs Improvement)</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-applicable-total">0</td>
+              <td style="padding:10px; border:1px solid #000;">Total Applicable Parameters (Met+NotMet+Needs
+                Improvement)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-applicable">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-applicable-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-applicable-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-applicable-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-applicable-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Total Met</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-met">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-met-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-met-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-met-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-met-total">0</td>
             </tr>
             <tr style="background:#eaf0f7;">
-              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Adherance % (Met/Total Applicable Parameters)</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w2">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w3">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-w4">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;" id="dash-val-adherence-total">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold;">Adherance % (Met/Total Applicable
+                Parameters)</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;"
+                id="dash-val-adherence">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;"
+                id="dash-val-adherence-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;"
+                id="dash-val-adherence-w3">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;"
+                id="dash-val-adherence-w4">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#1a5276; text-align:center;"
+                id="dash-val-adherence-total">0%</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Errors - Not Met - A</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w2">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w3">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-nm-w4">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-nm-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Errors - Needs Improvement (Partially Met) - B</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w2">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w3">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-ni-w4">
+                0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-ni-total">0</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Total Errors (A + B)</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-errors-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-errors">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-errors-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-errors-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-errors-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-errors-total">0</td>
             </tr>
             <tr style="background:#fdf2f2;">
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Defect Rate</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w2">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w3">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-w4">0%</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;" id="dash-val-defect-rate-total">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-defect-rate">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-defect-rate-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-defect-rate-w3">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-defect-rate-w4">0%</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; color:#c0392b; text-align:center;"
+                id="dash-val-defect-rate-total">0%</td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000;">Average Error/Call - Target</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w2" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w3" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-w4" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number" id="dash-avg-error-target-total" value="25" style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;"></td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number"
+                  id="dash-avg-error-target" value="25"
+                  style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;">
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number"
+                  id="dash-avg-error-target-w2" value="25"
+                  style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;">
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number"
+                  id="dash-avg-error-target-w3" value="25"
+                  style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;">
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number"
+                  id="dash-avg-error-target-w4" value="25"
+                  style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;">
+              </td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"><input type="number"
+                  id="dash-avg-error-target-total" value="25"
+                  style="width:60px;text-align:center;border:none;background:transparent;font-weight:bold;outline:none;color:#000;">
+              </td>
             </tr>
             <tr>
               <td style="padding:10px; border:1px solid #000; font-weight:bold;">Average Error/Call - Achieved</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;" id="dash-val-avg-error-total">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-avg-error">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-avg-error-w2">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-avg-error-w3">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-avg-error-w4">0</td>
+              <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;"
+                id="dash-val-avg-error-total">0</td>
             </tr>
           </table>
-          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
+          <table
+            style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="18" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise Performance Summary</th>
+              <th colspan="18" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Agent Wise
+                Performance Summary</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No</td>
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent Name</td>
+              <td rowspan="2"
+                style="padding:10px; border:1px solid #000; width:3%; vertical-align:middle; text-align:center;">S. No
+              </td>
+              <td rowspan="2"
+                style="padding:10px; border:1px solid #000; width:12%; vertical-align:middle; text-align:left;">Agent
+                Name</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 1</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 2</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 3</td>
@@ -3236,12 +3294,16 @@
               <!-- Rows will be injected here -->
             </tbody>
           </table>
-          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
+          <table
+            style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls Monitored – Break-Up</th>
+              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls
+                Monitored – Break-Up</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:20%; vertical-align:middle; text-align:left;">Priority Based Monitoring Category</td>
+              <td rowspan="2"
+                style="padding:10px; border:1px solid #000; width:20%; vertical-align:middle; text-align:left;">Priority
+                Based Monitoring Category</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 1</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 2</td>
               <td colspan="3" style="padding:10px; border:1px solid #000; width:16%;">WEEK 3</td>
@@ -3276,33 +3338,52 @@
             <tr style="background:#1a5276; color:#fff; font-weight:bold;">
               <td style="padding:10px; border:1px solid #000; text-align:left;">Total</td>
               <!-- Week 1 -->
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w1">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w1">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w1">0%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w1">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w1">
+                $0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-breakup-total-adherence-w1">0%</td>
               <!-- Week 2 -->
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w2">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w2">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w2">0%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w2">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w2">
+                $0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-breakup-total-adherence-w2">0%</td>
               <!-- Week 3 -->
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w3">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w3">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w3">0%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w3">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w3">
+                $0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-breakup-total-adherence-w3">0%</td>
               <!-- Week 4 -->
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w4">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w4">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-w4">0%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-w4">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-w4">
+                $0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-breakup-total-adherence-w4">0%</td>
               <!-- Total -->
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-total">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-total">$0.00</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-breakup-total-adherence-total">0%</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-count-total">0
+              </td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-breakup-total-revenue-total">
+                $0.00</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-breakup-total-adherence-total">0%</td>
             </tr>
           </table>
-          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
+          <table
+            style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:20px;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">ERRORS IMPACTING SALES</th>
+              <th colspan="16" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">ERRORS
+                IMPACTING SALES</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
-              <td rowspan="2" style="padding:10px; border:1px solid #000; width:22%; vertical-align:middle; text-align:left;">Revenue Impacting Errors</td>
+              <td rowspan="2"
+                style="padding:10px; border:1px solid #000; width:22%; vertical-align:middle; text-align:left;">Revenue
+                Impacting Errors</td>
               <td colspan="3" style="padding:10px; border:1px solid #000;">WK-1</td>
               <td colspan="3" style="padding:10px; border:1px solid #000;">WK-2</td>
               <td colspan="3" style="padding:10px; border:1px solid #000;">WK-3</td>
@@ -3330,15 +3411,24 @@
               <!-- Rows injected by renderTeamDashboard -->
             </tbody>
           </table>
-          <div class="filter-bar dash-ac-filter-bar" style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
-            <div style="font-weight:700;font-size:13px;color:#1a5276;width:100%;">Filter — Calls by Agent × Category</div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">From Date</label><input type="date" id="dash-ac-from" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
-            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">To Date</label><input type="date" id="dash-ac-to" style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
-            <button type="button" class="btn-filter" onclick="clearDashboardAcFilters()" style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
+          <div class="filter-bar dash-ac-filter-bar"
+            style="margin-top:20px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:15px;align-items:flex-end;padding:14px 18px;background:#f8faff;border:1.5px solid #dce8f5;border-radius:10px;">
+            <div style="font-weight:700;font-size:13px;color:#1a5276;width:100%;">Filter — Calls by Agent × Category
+            </div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">From
+                Date</label><input type="date" id="dash-ac-from"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
+            <div><label style="display:block;margin-bottom:5px;font-size:12px;font-weight:600;color:#555;">To
+                Date</label><input type="date" id="dash-ac-to"
+                style="padding:9px;border-radius:6px;border:1px solid #dce8f5;background:#fff;"></div>
+            <button type="button" class="btn-filter" onclick="clearDashboardAcFilters()"
+              style="background:#e74c3c;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">Reset</button>
           </div>
-          <table style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:0;">
+          <table
+            style="width:100%; border-collapse: collapse; font-size:14px; text-align:left; border: 1px solid #000; margin-top:0;">
             <tr style="background:#1a5276; color:#fff;">
-              <th colspan="9" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls by Agent × Category</th>
+              <th colspan="9" style="padding:10px; border:1px solid #000; font-size:16px; text-align:left;">Calls by
+                Agent × Category</th>
             </tr>
             <tr style="background:#154360; color:#fff; font-weight:bold; text-align:center;">
               <td style="padding:10px; border:1px solid #000; text-align:left; width:15%;">Agent</td>
@@ -3359,11 +3449,13 @@
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-booked">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-highvalue">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-followup">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-closetobooking">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-closetobooking">0
+              </td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-complaint">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-midvalue">0</td>
               <td style="padding:10px; border:1px solid #000; text-align:center;" id="dash-ac-total-prospects">0</td>
-              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;" id="dash-ac-total-all">0</td>
+              <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold;"
+                id="dash-ac-total-all">0</td>
             </tr>
           </table>
 
@@ -3438,7 +3530,8 @@
           <div class="dash-export-bar">
             <div style="flex:1;min-width:220px;">
               <div style="font-weight:800;font-size:16px;color:#1a5276;">Export Dashboard Reports</div>
-              <div style="font-size:13px;color:#4a7a9b;margin-top:4px;">Download one PDF with all reports stacked in order (like a printable report pack). Set filters and click Load Dashboard first.</div>
+              <div style="font-size:13px;color:#4a7a9b;margin-top:4px;">Download one PDF with all reports stacked in
+                order (like a printable report pack). Set filters and click Load Dashboard first.</div>
             </div>
             <button type="button" id="btn-dash-export-pdf" class="btn-filter" onclick="exportDashboardToPDF()"
               style="background:linear-gradient(135deg,#c0392b,#922b21);color:#fff;border:none;padding:12px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 2px 6px rgba(192,57,43,.35);">
@@ -3534,12 +3627,16 @@
                 </div>
               </div>
             </div>
+            <button class="btn-filter" onclick="renderAreasOfImprovement()"
+              style="background:linear-gradient(135deg,#3498db,#2980b9);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;margin-right:8px;">🔍
+              View Report</button>
             <button class="btn-filter" onclick="downloadTeamSummaryCSV()"
               style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;">📥
               Download Team CSV</button>
           </div>
           <div style="margin-top:12px;color:#4a7a9b;font-size:13px;">Downloads the <strong>Top Not Met items</strong>
             ranked by frequency, with a breakdown of which agents contributed most to each failure.</div>
+          <div id="areas-of-improvement-results" style="margin-top:20px;display:none;"></div>
         </div>
 
       </div>
@@ -3550,34 +3647,10 @@
           <div><label>From Date</label><input type="date" id="d-from"></div>
           <div><label>To Date</label><input type="date" id="d-to"></div>
           <div><label>Agent</label>
-            <select id="d-agent">
-              <option value="">All Agents</option>
-              <option>Myles</option>
-              <option>Dustin</option>
-              <option>Thomas</option>
-              <option>Anthony</option>
-              <option>Daniel</option>
-              <option>Noah</option>
-              <option>Jessica</option>
-              <option>Alex</option>
-              <option>Arthur</option>
-              <option>William</option>
-              <option>Solomon</option>
-              <option>Fabian</option>
-              <option>Brian</option>
-              <option>Ethan</option>
-            </select>
+            <select id="d-agent"></select>
           </div>
           <div><label>Call Type</label>
-            <select id="d-calltype">
-              <option value="">All Types</option>
-              <option>Inbound quote request</option>
-              <option>Inbound follow up</option>
-              <option>Outbound - Initial call</option>
-              <option>Outbound - follow up</option>
-              <option>Pre Move Confirmation call</option>
-              <option>Short calls less than 3 Mins</option>
-            </select>
+            <select id="d-calltype"></select>
           </div>
           <button class="btn-filter" onclick="renderDashboard()">🔍 Filter</button>
           <button class="btn-clear-f" onclick="clearFilters()">✕ Clear</button>
@@ -3848,23 +3921,7 @@
 
         <div class="aoi-filter-bar">
           <div><label>Filter by Agent</label>
-            <select id="aoi-agent">
-              <option value="">All Agents</option>
-              <option>Myles</option>
-              <option>Dustin</option>
-              <option>Thomas</option>
-              <option>Anthony</option>
-              <option>Daniel</option>
-              <option>Noah</option>
-              <option>Jessica</option>
-              <option>Alex</option>
-              <option>Arthur</option>
-              <option>William</option>
-              <option>Solomon</option>
-              <option>Fabian</option>
-              <option>Brian</option>
-              <option>Ethan</option>
-            </select>
+            <select id="aoi-agent"></select>
           </div>
           <div><label>From Date</label><input type="date" id="aoi-from"
               style="padding:8px 12px;border:1.5px solid #d0dae5;border-radius:6px;font-size:13px;"></div>
@@ -3938,23 +3995,7 @@
         <div><label>🔍 Search by name / lead</label><input type="text" id="sum3-search" placeholder="e.g. Daniel, 994…"
             oninput="renderSummaries()"></div>
         <div><label>👤 Agent</label>
-          <select id="sum3-agent" onchange="renderSummaries()">
-            <option value="">All Agents</option>
-            <option>Myles</option>
-            <option>Dustin</option>
-            <option>Thomas</option>
-            <option>Anthony</option>
-            <option>Daniel</option>
-            <option>Noah</option>
-            <option>Jessica</option>
-            <option>Alex</option>
-            <option>Arthur</option>
-            <option>William</option>
-            <option>Solomon</option>
-            <option>Fabian</option>
-            <option>Brian</option>
-            <option>Ethan</option>
-          </select>
+          <select id="sum3-agent" onchange="renderSummaries()"></select>
         </div>
         <div><label>📅 From Date</label><input type="date" id="sum3-from" onchange="renderSummaries()"></div>
         <div><label>📅 To Date</label><input type="date" id="sum3-to" onchange="renderSummaries()"></div>
@@ -3983,6 +4024,262 @@
       </div>
     </div>
   </div>
+
+  <!-- ═══════════ SETTINGS TAB ═══════════ -->
+  <div id="panel-settings" class="panel">
+    <div class="form-header">
+      <h1>⚙️ Configuration Settings</h1>
+      <p>Manage dropdown options — click <strong>×</strong> to remove, type and press <strong>Enter</strong> to add</p>
+    </div>
+    <div class="form-wrap">
+      <div class="meta-card" style="max-width:900px; margin:0 auto;">
+
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; flex-wrap:wrap; gap:12px;">
+          <h3 style="margin:0; color:#1a3c5e; font-size:18px;">📋 Dropdown Options</h3>
+          <button id="cfg-save-btn" onclick="saveConfig()"
+            style="background:linear-gradient(135deg,#27ae60,#1e8449); color:white; padding:11px 28px; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:14px; box-shadow:0 2px 8px rgba(39,174,96,.3); transition:all .2s;">💾
+            Save Configuration</button>
+        </div>
+
+        <style>
+          .chip-field {
+            margin-bottom: 22px;
+          }
+
+          .chip-field label {
+            font-weight: 700;
+            font-size: 13px;
+            color: #1a3c5e;
+            display: block;
+            margin-bottom: 8px;
+            letter-spacing: .3px;
+          }
+
+          .chip-box {
+            border: 1.5px solid #c8d8ea;
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: #f8fbff;
+            min-height: 52px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            align-items: center;
+            transition: border-color .2s;
+          }
+
+          .chip-box:focus-within {
+            border-color: #2980b9;
+            background: #fff;
+          }
+
+          .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #1a5276, #2471a3);
+            color: #fff;
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 12.5px;
+            font-weight: 600;
+            white-space: nowrap;
+          }
+
+          .chip button {
+            background: rgba(255, 255, 255, .25);
+            border: none;
+            color: #fff;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 14px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            transition: background .15s;
+          }
+
+          .chip button:hover {
+            background: rgba(231, 76, 60, .8);
+          }
+
+          .chip-input {
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 13px;
+            color: #333;
+            min-width: 140px;
+            padding: 3px 5px;
+            flex: 1;
+          }
+
+          .chip-input::placeholder {
+            color: #aab;
+          }
+
+          .cfg-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+          }
+
+          @media(max-width:600px) {
+            .cfg-grid {
+              grid-template-columns: 1fr;
+            }
+          }
+        </style>
+
+        <div class="cfg-grid">
+          <div class="chip-field">
+            <label>👤 Agent Names</label>
+            <div class="chip-box" id="cfg-agentNames">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type name, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-agentNames')">
+            </div>
+            <button onclick="addChipFromInput('cfg-agentNames')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field">
+            <label>📞 Call Types</label>
+            <div class="chip-box" id="cfg-callTypes">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type option, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-callTypes')">
+            </div>
+            <button onclick="addChipFromInput('cfg-callTypes')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field">
+            <label>🎯 Evaluator Names</label>
+            <div class="chip-box" id="cfg-evaluatorNames">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type name, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-evaluatorNames')">
+            </div>
+            <button onclick="addChipFromInput('cfg-evaluatorNames')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field">
+            <label>🚚 Move Types</label>
+            <div class="chip-box" id="cfg-moveTypes">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type option, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-moveTypes')">
+            </div>
+            <button onclick="addChipFromInput('cfg-moveTypes')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field">
+            <label>💰 Move Value Categories</label>
+            <div class="chip-box" id="cfg-moveValueCategories">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type category, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-moveValueCategories')">
+            </div>
+            <button onclick="addChipFromInput('cfg-moveValueCategories')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field">
+            <label>📊 Lead Statuses</label>
+            <div class="chip-box" id="cfg-leadStatuses">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type status, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-leadStatuses')">
+            </div>
+            <button onclick="addChipFromInput('cfg-leadStatuses')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+          <div class="chip-field" style="grid-column: span 2;">
+            <label>🎯 Priority Based Monitoring Categories</label>
+            <div class="chip-box" id="cfg-monitoringCategories">
+              <div class="chips-area" style="display:contents;"></div>
+              <input class="chip-input" placeholder="Type category, press Enter…"
+                onkeydown="handleChipEnter(event,'cfg-monitoringCategories')">
+            </div>
+            <button onclick="addChipFromInput('cfg-monitoringCategories')"
+              style="margin-top:5px;padding:4px 14px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:12px;cursor:pointer;font-weight:600;">+
+              Add</button>
+          </div>
+
+          <!-- EMAIL SECTION: Two boxes -->
+          <div class="chip-field"
+            style="grid-column: span 2; border: 2px solid #d4a017; border-radius: 12px; padding: 18px; background: #fffdf0;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:4px;">
+              <span style="font-size:18px;">📧</span>
+              <strong style="font-size:14px; color:#7a5a00;">Send Email — Email Management</strong>
+            </div>
+            <p style="margin:0 0 16px; font-size:12px; color:#5a7a9b;">Box 1: Add all your email contacts. Box 2: Tick
+              who should receive the report when you click <strong>Send Email</strong>.</p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px;">
+
+              <!-- BOX 1: Address Book -->
+              <div>
+                <div
+                  style="font-weight:700; font-size:12px; color:#7a5a00; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
+                  📋 Box 1 — Email Address Book</div>
+                <p style="font-size:11px; color:#888; margin:0 0 8px;">Add as many emails as you need.</p>
+                <div class="chip-box" id="cfg-emailRecipients"
+                  style="border-color:#d4a017; background:#fff; min-height:70px;">
+                  <div class="chips-area" style="display:contents;"></div>
+                  <input class="chip-input" placeholder="Type email, press Enter…" type="email"
+                    onkeydown="handleEmailChipEnter(event)">
+                </div>
+                <button onclick="addEmailAndSyncRecipients()"
+                  style="margin-top:7px;padding:5px 16px;border:1px solid #d4a017;border-radius:5px;background:#fffbe6;color:#7a5a00;font-size:12px;cursor:pointer;font-weight:600;">+
+                  Add Email</button>
+              </div>
+
+              <!-- BOX 2: Active Recipients -->
+              <div>
+                <div
+                  style="font-weight:700; font-size:12px; color:#1a5276; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
+                  📨 Box 2 — Active Send Recipients</div>
+                <p style="font-size:11px; color:#888; margin:0 0 8px;">Tick emails that should receive the report.</p>
+                <div id="email-recipients-panel"
+                  style="border:1.5px solid #2471a3; border-radius:8px; background:#f0f8ff; padding:10px; min-height:70px; max-height:180px; overflow-y:auto;">
+                  <div id="email-recipients-list" style="display:flex; flex-direction:column; gap:6px;">
+                    <span style="color:#aaa; font-size:12px; font-style:italic;">Add emails in Box 1 first…</span>
+                  </div>
+                </div>
+                <div style="margin-top:7px; display:flex; gap:8px;">
+                  <button onclick="selectAllRecipients(true)"
+                    style="padding:4px 12px;border:1px solid #2471a3;border-radius:5px;background:#eaf4ff;color:#1a5276;font-size:11px;cursor:pointer;font-weight:600;">✓
+                    Select All</button>
+                  <button onclick="selectAllRecipients(false)"
+                    style="padding:4px 12px;border:1px solid #c0c0c0;border-radius:5px;background:#f9f9f9;color:#555;font-size:11px;cursor:pointer;font-weight:600;">✗
+                    Clear All</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-top:28px;">
+          <button id="cfg-save-btn2" onclick="saveConfig()"
+            style="background:linear-gradient(135deg,#27ae60,#1e8449); color:white; padding:13px 48px; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:15px; box-shadow:0 2px 12px rgba(39,174,96,.35);">💾
+            Save Configuration</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- Modal -->
   <div class="modal-bg" id="modal" onclick="if(event.target===this)closeModal()">
@@ -4372,7 +4669,7 @@
           row.className = 'cl-row'; row.id = `row_${si}_${ii}`;
           row.innerHTML = `
         <span class="cl-num">${ii + 1}</span>
-        <span class="cl-text">${item}</span>
+        <span class="cl-text" style="display:flex;align-items:flex-start;gap:6px;">${item}<span class="edit-q-btn" style="cursor:pointer;opacity:0.55;font-size:13px;flex-shrink:0;margin-top:1px;" onclick="editChecklistQuestion(${si}, ${ii})" title="Edit Question">✏️</span></span>
         <span><select class="rating-select blank" id="r_${si}_${ii}" onchange="onRatingChange(this,${si},${ii})">
           <option value="">— Not Assessed —</option>
           <option value="met">✅ Met</option>
@@ -4760,6 +5057,8 @@
     function buildDashboardChart(canvasId, config) {
       const canvas = document.getElementById(canvasId);
       if (!canvas) return null;
+      if (!config.plugins) config.plugins = [];
+      if (typeof ChartDataLabels !== 'undefined') config.plugins.push(ChartDataLabels);
       try { return new Chart(canvas, config); } catch (e) { console.error('Dashboard chart render failed', e); return null; }
     }
 
@@ -4806,6 +5105,24 @@
             boxPadding: 6,
             bodySpacing: 6,
             titleFont: { weight: '600' }
+          },
+          datalabels: {
+            display: true,
+            color: '#fff',
+            align: 'top',
+            anchor: 'end',
+            offset: 4,
+            font: { size: 11, weight: 'bold' },
+            formatter: function (value, context) {
+              if (value === 0 || value === null || value === undefined) return '';
+              // Try to format nicely (e.g. percentages if it's Adherence)
+              if (context.dataset.label && context.dataset.label.includes('%')) {
+                return value + '%';
+              }
+              return value;
+            },
+            textShadowBlur: 4,
+            textShadowColor: 'rgba(0,0,0,0.8)'
           }
         },
         elements: {
@@ -5135,69 +5452,53 @@
       body.innerHTML = `
     <div class="edit-form">
       <label>Lead ID</label><input type="text" id="e-lead" value="${r.leadId || ''}">
+      <label>Date</label><input type="date" id="e-date" value="${r.date || ''}">
       <label>Agent Name</label>
       <select id="e-agent">
-        <option value="">— Select Agent —</option>
-        <option value="Myles" ${r.agent === 'Myles' ? 'selected' : ''}>Myles</option>
-        <option value="Dustin" ${r.agent === 'Dustin' ? 'selected' : ''}>Dustin</option>
-        <option value="Thomas" ${r.agent === 'Thomas' ? 'selected' : ''}>Thomas</option>
-        <option value="Anthony" ${r.agent === 'Anthony' ? 'selected' : ''}>Anthony</option>
-        <option value="Daniel" ${r.agent === 'Daniel' ? 'selected' : ''}>Daniel</option>
-        <option value="Noah" ${r.agent === 'Noah' ? 'selected' : ''}>Noah</option>
-        <option value="Jessica" ${r.agent === 'Jessica' ? 'selected' : ''}>Jessica</option>
-        <option value="Alex" ${r.agent === 'Alex' ? 'selected' : ''}>Alex</option>
-        <option value="Arthur" ${r.agent === 'Arthur' ? 'selected' : ''}>Arthur</option>
-        <option value="William" ${r.agent === 'William' ? 'selected' : ''}>William</option>
-        <option value="Solomon" ${r.agent === 'Solomon' ? 'selected' : ''}>Solomon</option>
-        <option value="Fabian" ${r.agent === 'Fabian' ? 'selected' : ''}>Fabian</option>
-        <option value="Brian" ${r.agent === 'Brian' ? 'selected' : ''}>Brian</option>
-        <option value="Ethan" ${r.agent === 'Ethan' ? 'selected' : ''}>Ethan</option>
+        ${getOpts(appConfig?.agentNames, r.agent)}
       </select>
       <label>Customer Name</label><input type="text" id="e-customer" value="${r.customer || ''}">
       <label>Call Type</label>
       <select id="e-calltype">
-        <option ${r.callType === 'Inbound quote request' ? 'selected' : ''}>Inbound quote request</option>
-        <option ${r.callType === 'Inbound follow up' ? 'selected' : ''}>Inbound follow up</option>
-        <option ${r.callType === 'Outbound - Initial call' ? 'selected' : ''}>Outbound - Initial call</option>
-        <option ${r.callType === 'Outbound - follow up' ? 'selected' : ''}>Outbound - follow up</option>
-        <option ${r.callType === 'Pre Move Confirmation call' ? 'selected' : ''}>Pre Move Confirmation call</option>
-        <option ${r.callType === 'Short calls less than 3 Mins' ? 'selected' : ''}>Short calls less than 3 Mins</option>
+        ${getOpts(appConfig?.callTypes, r.callType)}
+      </select>
+      <label>Call Duration (hh:mm:ss)</label><input type="text" id="e-duration" placeholder="00:00:00" value="${r.duration || ''}">
+      <label>Call Date / Time</label><input type="datetime-local" id="e-datetime" value="${r.datetime || ''}">
+      <label>Evaluator Name</label>
+      <select id="e-evaluator">
+        ${getOpts(appConfig?.evaluatorNames, r.evaluator)}
+      </select>
+      <label>Move Type</label>
+      <select id="e-movetype">
+        ${getOpts(appConfig?.moveTypes, r.moveType)}
+      </select>
+      <label>Move Value ($)</label><input type="number" id="e-movevalue-amount" placeholder="Enter amount" value="${r.moveValueAmount || ''}" style="padding-left:8px;">
+      <label>Move Value Category</label>
+      <select id="e-salevalue">
+        ${getOpts(appConfig?.moveValueCategories, r.moveValueCategory)}
+      </select>
+      <label>Conversion Probability</label>
+      <select id="e-conversion">
+        <option value="">— Select —</option>
+        <option ${r.conversionProbability === 'Low' ? 'selected' : ''}>Low</option>
+        <option ${r.conversionProbability === 'High' ? 'selected' : ''}>High</option>
+        <option ${r.conversionProbability === 'MayBe (50-50)' ? 'selected' : ''}>MayBe (50-50)</option>
       </select>
       <label>Lead Status</label>
       <select id="e-status">
-        <option value="Open" ${r.leadStatus === 'Open' ? 'selected' : ''}>Open</option>
-        <option value="Closed" ${r.leadStatus === 'Closed' ? 'selected' : ''}>Closed</option>
-        <option value="Booked" ${r.leadStatus === 'Booked' ? 'selected' : ''}>Booked</option>
-        <option value="Lost" ${r.leadStatus === 'Lost' ? 'selected' : ''}>Lost</option>
-        <option value="Refund request (cancellation)" ${r.leadStatus === 'Refund request (cancellation)' ? 'selected' : ''}>Refund request (cancellation)</option>
+        ${getOpts(appConfig?.leadStatuses, r.leadStatus)}
       </select>
-      <label>Sale Value Category</label>
-      <select id="e-salevalue">
-        <option value="Low Value" ${r.moveValueCategory === 'Low Value' ? 'selected' : ''}>Low Value</option>
-        <option value="Mid Value" ${r.moveValueCategory === 'Mid Value' ? 'selected' : ''}>Mid Value</option>
-        <option value="High Value" ${r.moveValueCategory === 'High Value' ? 'selected' : ''}>High Value</option>
+      <label>Cue Card Usage</label>
+      <select id="e-cuecard">
+        <option value="">— Select —</option>
+        <option ${r.cueCardUsage === 'Yes' ? 'selected' : ''}>Yes</option>
+        <option ${r.cueCardUsage === 'No' ? 'selected' : ''}>No</option>
       </select>
       <label>Priority Based Call Monitoring Category</label>
       <select id="e-monitoring-category">
-        <option value="">— Select Priority —</option>
-        <option value="Booked" ${r.monitoringCategory === 'Booked' ? 'selected' : ''}>Booked</option>
-        <option value="Complaint/Escalation Call" ${r.monitoringCategory === 'Complaint/Escalation Call' ? 'selected' : ''}>Complaint/Escalation Call</option>
-        <option value="High Value" ${r.monitoringCategory === 'High Value' ? 'selected' : ''}>High Value</option>
-        <option value="Follow-up call" ${r.monitoringCategory === 'Follow-up call' ? 'selected' : ''}>Follow-up call</option>
-        <option value="Close to booking but lost" ${r.monitoringCategory === 'Close to booking but lost' ? 'selected' : ''}>Close to booking but lost</option>
-        <option value="Prospects" ${r.monitoringCategory === 'Prospects' ? 'selected' : ''}>Prospects</option>
-        <option value="Mid Value" ${r.monitoringCategory === 'Mid Value' ? 'selected' : ''}>Mid Value</option>
-        <option value="Move on Hold - Crew initiated" ${r.monitoringCategory === 'Move on Hold - Crew initiated' ? 'selected' : ''}>Move on Hold - Crew initiated</option>
-        <option value="Move on Hold - Customer Initiated" ${r.monitoringCategory === 'Move on Hold - Customer Initiated' ? 'selected' : ''}>Move on Hold - Customer Initiated</option>
-        <option value="Move Cancelled - Customer initiated" ${r.monitoringCategory === 'Move Cancelled - Customer initiated' ? 'selected' : ''}>Move Cancelled - Customer initiated</option>
-        <option value="Move Cancelled - Ops Initiated" ${r.monitoringCategory === 'Move Cancelled - Ops Initiated' ? 'selected' : ''}>Move Cancelled - Ops Initiated</option>
-        <option value="Move Cancelled - Crew Initiated" ${r.monitoringCategory === 'Move Cancelled - Crew Initiated' ? 'selected' : ''}>Move Cancelled - Crew Initiated</option>
-        <option value="Move Cancelled - Crew Unassigned" ${r.monitoringCategory === 'Move Cancelled - Crew Unassigned' ? 'selected' : ''}>Move Cancelled - Crew Unassigned</option>
+        ${getOpts(appConfig?.monitoringCategories, r.monitoringCategory)}
       </select>
-      <label>Evaluator Name</label>
-      <select id="e-evaluator">
-        ${DEFAULT_EVALUATORS.map(e => `<option value="${e}" ${r.evaluator === e ? 'selected' : ''}>${e}</option>`).join('')}
-      </select>
+      <label>Recording Link</label><input type="text" id="e-recording" placeholder="Recording URL" value="${r.recordingLink || ''}">
       <div class="edit-btns" style="justify-content:space-between;flex-wrap:wrap;gap:8px;">
         <button class="btn btn-reset" onclick="closeModal()">Cancel</button>
         <button style="background:linear-gradient(135deg,#8e44ad,#6c3483);color:#fff;border:none;padding:9px 18px;border-radius:7px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="showChecklistRatingEditor('${id}')">📋 Edit Checklist Ratings</button>
@@ -5212,13 +5513,21 @@
       const r = records.find(rec => String(rec.id) === String(id));
       if (!r) return;
       r.leadId = document.getElementById('e-lead').value;
+      r.date = document.getElementById('e-date').value;
       r.agent = document.getElementById('e-agent').value;
       r.customer = document.getElementById('e-customer').value;
       r.callType = document.getElementById('e-calltype').value;
-      r.leadStatus = document.getElementById('e-status').value;
-      r.moveValueCategory = document.getElementById('e-salevalue').value;
-      r.monitoringCategory = document.getElementById('e-monitoring-category').value;
+      r.duration = document.getElementById('e-duration').value;
+      r.datetime = document.getElementById('e-datetime').value;
       r.evaluator = document.getElementById('e-evaluator').value;
+      r.moveType = document.getElementById('e-movetype').value;
+      r.moveValueAmount = document.getElementById('e-movevalue-amount').value;
+      r.moveValueCategory = document.getElementById('e-salevalue').value;
+      r.conversionProbability = document.getElementById('e-conversion').value;
+      r.leadStatus = document.getElementById('e-status').value;
+      r.cueCardUsage = document.getElementById('e-cuecard').value;
+      r.monitoringCategory = document.getElementById('e-monitoring-category').value;
+      r.recordingLink = document.getElementById('e-recording').value;
 
       // Save to localStorage
       localStorage.setItem('tnvl_calls', JSON.stringify(records));
@@ -6027,7 +6336,7 @@
       const w2Items = aggregateRevenueItemErrors(w2Filtered);
       const w3Items = aggregateRevenueItemErrors(w3Filtered);
       const w4Items = aggregateRevenueItemErrors(w4Filtered);
-      
+
       const cell = (val, type, isGrand, customBg) => {
         const n = val || 0;
         const color = n > 0 ? (type === 'nm' ? '#c0392b' : '#d35400') : (isGrand ? '#cbd5e1' : '#999');
@@ -6201,12 +6510,12 @@
     function calculateDashboardStats(callFrom, callTo) {
       if (!isDashWeekFiltered(callFrom, callTo)) return emptyDashboardStats();
       const filtered = filterDashboardWeekRecords(callFrom, callTo);
-      
+
       const agentsPresent = [...new Set(filtered.map(r => r.agent).filter(a => a))].sort();
       const noOfAgents = agentsPresent.length;
       const targetAgent = parseInt(document.getElementById('dash-target').value) || 3;
       const totalTarget = noOfAgents * targetAgent;
-      
+
       const achieved = filtered.length;
       const deficit = achieved - totalTarget;
 
@@ -6235,12 +6544,12 @@
       const to3 = document.getElementById('dash-call-to-w3').value;
       const from4 = document.getElementById('dash-call-from-w4').value;
       const to4 = document.getElementById('dash-call-to-w4').value;
-      
+
       const w1 = calculateDashboardStats(from1, to1);
       const w2 = calculateDashboardStats(from2, to2);
       const w3 = calculateDashboardStats(from3, to3);
       const w4 = calculateDashboardStats(from4, to4);
-      
+
       const targetAgent = parseInt(document.getElementById('dash-target').value) || 3;
       const tStats = {
         agentsPresent: [...new Set([...w1.agentsPresent, ...w2.agentsPresent, ...w3.agentsPresent, ...w4.agentsPresent])].sort(),
@@ -6255,7 +6564,7 @@
         totalApplicable: w1.totalApplicable + w2.totalApplicable + w3.totalApplicable + w4.totalApplicable,
         totalErrors: w1.totalErrors + w2.totalErrors + w3.totalErrors + w4.totalErrors
       };
-      
+
       tStats.adherence = tStats.totalApplicable > 0 ? ((tStats.totalMet / tStats.totalApplicable) * 100).toFixed(1) : 0;
       tStats.defectRate = tStats.totalApplicable > 0 ? ((tStats.totalErrors / tStats.totalApplicable) * 100).toFixed(1) : 0;
       tStats.avgErrorAchieved = tStats.achieved > 0 ? (tStats.totalErrors / tStats.achieved).toFixed(1) : 0;
@@ -6266,26 +6575,26 @@
         document.getElementById('dash-val-target-agent' + suffix).textContent = stats.targetAgent;
         document.getElementById('dash-val-target-total' + suffix).textContent = stats.totalTarget;
         document.getElementById('dash-val-achieved' + suffix).textContent = stats.achieved;
-        
+
         const deficitEl = document.getElementById('dash-val-deficit' + suffix);
         deficitEl.textContent = stats.deficit;
         deficitEl.style.color = stats.deficit < 0 ? '#c0392b' : '#1e8449';
-        
+
         document.getElementById('dash-val-applicable' + suffix).textContent = stats.totalApplicable;
         document.getElementById('dash-val-met' + suffix).textContent = stats.totalMet;
-        
+
         const adherenceEl = document.getElementById('dash-val-adherence' + suffix);
         adherenceEl.textContent = `${stats.adherence}%`;
         applyAdherenceStyle(adherenceEl, stats.adherence);
-        
+
         document.getElementById('dash-val-nm' + suffix).textContent = stats.totalNm;
         document.getElementById('dash-val-ni' + suffix).textContent = stats.totalNi;
         document.getElementById('dash-val-errors' + suffix).textContent = stats.totalErrors;
-        
+
         const defectRateEl = document.getElementById('dash-val-defect-rate' + suffix);
         defectRateEl.textContent = `${stats.defectRate}%`;
         applyDefectRateStyle(defectRateEl, stats.defectRate);
-        
+
         const avgErrorEl = document.getElementById('dash-val-avg-error' + suffix);
         avgErrorEl.textContent = stats.avgErrorAchieved;
         const targetVal = parseFloat(document.getElementById('dash-avg-error-target' + suffix).value) || 25;
@@ -6304,7 +6613,7 @@
       const w4Filtered = filterDashboardWeekRecords(from4, to4);
 
       const categories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
-      
+
       const emptyBreakupCat = () => ({
         w1Count: 0, w1Revenue: 0, w1Met: 0, w1Applicable: 0,
         w2Count: 0, w2Revenue: 0, w2Met: 0, w2Applicable: 0,
@@ -6400,46 +6709,46 @@
             <td style="padding:10px; border:1px solid #000; font-weight:bold;">${dispName}</td>
             <!-- Week 1 -->
             <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w1Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w1Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w1Revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w1Adherence)}">${b.w1Adherence}%</td>
             <!-- Week 2 -->
             <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w2Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w2Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w2Revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w2Adherence)}">${b.w2Adherence}%</td>
             <!-- Week 3 -->
             <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w3Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w3Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w3Revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w3Adherence)}">${b.w3Adherence}%</td>
             <!-- Week 4 -->
             <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.w4Count}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w4Revenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.w4Revenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.w4Adherence)}">${b.w4Adherence}%</td>
             <!-- Total -->
             <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center;">${b.totalCount}</td>
-            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.totalRevenue.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}</td>
+            <td style="padding:10px; border:1px solid #000; font-weight:bold; text-align:center; color:#1a5276;">$${b.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
             <td style="padding:10px; border:1px solid #000; text-align:center; font-weight:bold; ${getAdherenceStyleStr(b.totalAdherence)}">${b.totalAdherence}%</td>
           </tr>
         `;
       });
 
       document.getElementById('dash-breakup-total-count-w1').textContent = w1TotalCount;
-      document.getElementById('dash-breakup-total-revenue-w1').textContent = `$${w1TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dash-breakup-total-revenue-w1').textContent = `$${w1TotalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       setBreakupTotalAdherence('dash-breakup-total-adherence-w1', w1TotalAdherence);
-      
+
       document.getElementById('dash-breakup-total-count-w2').textContent = w2TotalCount;
-      document.getElementById('dash-breakup-total-revenue-w2').textContent = `$${w2TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dash-breakup-total-revenue-w2').textContent = `$${w2TotalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       setBreakupTotalAdherence('dash-breakup-total-adherence-w2', w2TotalAdherence);
 
       document.getElementById('dash-breakup-total-count-w3').textContent = w3TotalCount;
-      document.getElementById('dash-breakup-total-revenue-w3').textContent = `$${w3TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dash-breakup-total-revenue-w3').textContent = `$${w3TotalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       setBreakupTotalAdherence('dash-breakup-total-adherence-w3', w3TotalAdherence);
 
       document.getElementById('dash-breakup-total-count-w4').textContent = w4TotalCount;
-      document.getElementById('dash-breakup-total-revenue-w4').textContent = `$${w4TotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dash-breakup-total-revenue-w4').textContent = `$${w4TotalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       setBreakupTotalAdherence('dash-breakup-total-adherence-w4', w4TotalAdherence);
-      
+
       document.getElementById('dash-breakup-total-count-total').textContent = grandTotalCount;
-      document.getElementById('dash-breakup-total-revenue-total').textContent = `$${grandTotalRev.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('dash-breakup-total-revenue-total').textContent = `$${grandTotalRev.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
       setBreakupTotalAdherence('dash-breakup-total-adherence-total', grandTotalAdherence);
 
       renderSalesErrorsReport(w1Filtered, w2Filtered, w3Filtered, w4Filtered);
@@ -6869,7 +7178,7 @@
     function generateDashboardPDF(data) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('l', 'mm', 'a3');
-      
+
       // Theme and Colors
       const themeColors = {
         navy: [21, 67, 96],
@@ -6892,11 +7201,11 @@
         const fMonth = months[f.getMonth()];
         const fDay = f.getDate();
         const fYear = f.getFullYear();
-        
+
         const tMonth = months[t.getMonth()];
         const tDay = t.getDate();
         const tYear = t.getFullYear();
-        
+
         if (fYear === tYear) {
           if (fMonth === tMonth) {
             return `${fMonth} ${fDay}–${tDay}, ${fYear}`;
@@ -6937,16 +7246,16 @@
         doc.setFontSize(9.5);
         doc.setTextColor(80, 100, 120);
         doc.text(`TNVL  |  QA Dashboard  |  ${reportMonthYear}`, 14, 10);
-        
+
         doc.setTextColor(192, 57, 43); // red
         doc.setFont('helvetica', 'bold');
         doc.text('CONFIDENTIAL  |  Internal Use Only', 406, 10, { align: 'right' });
-        
+
         // Thin line below header
         doc.setDrawColor(220, 230, 240);
         doc.setLineWidth(0.3);
         doc.line(14, 12, 406, 12);
-        
+
         // Bottom Footer
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
@@ -6958,17 +7267,17 @@
       function drawSectionTitleBlock(doc, number, title, subTitle, themeColor) {
         doc.setFillColor(...themeColor);
         doc.rect(14, 16, 392, 18, 'F');
-        
+
         // Number
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
         doc.text(number, 20, 28.5);
-        
+
         // Title
         doc.setFontSize(14);
         doc.text(title, 34, 28.5);
-        
+
         // Subtitle
         if (subTitle) {
           doc.setFont('helvetica', 'normal');
@@ -6983,17 +7292,17 @@
         doc.setDrawColor(...themeColors.cardBorder);
         doc.setLineWidth(0.3);
         doc.roundedRect(x, y, w, h, 2, 2, 'FD');
-        
+
         // Top accent line
         doc.setFillColor(...accentColor);
         doc.rect(x + 0.15, y + 0.15, w - 0.3, 3.5, 'F');
-        
+
         // Value
         doc.setTextColor(...themeColors.textDark);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(18);
         doc.text(String(value), x + w / 2, y + 18, { align: 'center' });
-        
+
         // Label
         doc.setTextColor(...themeColors.textMuted);
         doc.setFont('helvetica', 'normal');
@@ -7001,7 +7310,62 @@
         doc.text(String(label), x + w / 2, y + 26, { align: 'center' });
       }
 
-      function drawInsightBox(doc, x, y, w, h, text, themeColor) {
+      function drawInsightBox(doc, x, y, w, h_original, text, themeColor) {
+        let prefix = '';
+        let points = [];
+        let isArray = Array.isArray(text);
+        if (isArray) {
+          prefix = text[0] + ':';
+          points = text.slice(1);
+        } else {
+          const parts = text.split(':');
+          prefix = parts[0] + ':';
+          points = [parts.slice(1).join(':').trim()];
+        }
+
+        doc.setFontSize(10.5);
+        const maxTextWidth = w - 14;
+
+        let linesToDraw = [];
+        doc.setFont('helvetica', 'bold');
+        const prefixWidth = doc.getTextWidth(prefix) + 1.5;
+
+        if (isArray) {
+          linesToDraw.push({ text: prefix, isBold: true, offsetX: 0 });
+          doc.setFont('helvetica', 'normal');
+          points.forEach(pt => {
+            const ptLines = doc.splitTextToSize("• " + pt, maxTextWidth - 4);
+            ptLines.forEach((l) => {
+              linesToDraw.push({ text: l, isBold: false, offsetX: 4 });
+            });
+          });
+        } else {
+          doc.setFont('helvetica', 'normal');
+          const bodyLines = doc.splitTextToSize(points[0], maxTextWidth);
+          if (bodyLines.length > 0) {
+            const words = points[0].split(' ');
+            let firstLineText = '';
+            let wordIdx = 0;
+            while (wordIdx < words.length) {
+              const testText = firstLineText ? (firstLineText + ' ' + words[wordIdx]) : words[wordIdx];
+              if (doc.getTextWidth(testText) <= (maxTextWidth - prefixWidth)) {
+                firstLineText = testText;
+                wordIdx++;
+              } else {
+                break;
+              }
+            }
+            linesToDraw.push({ text: prefix, isBold: true, offsetX: 0, inlineText: firstLineText, inlineOffsetX: prefixWidth });
+            if (wordIdx < words.length) {
+              const remLines = doc.splitTextToSize(words.slice(wordIdx).join(' '), maxTextWidth);
+              remLines.forEach(l => linesToDraw.push({ text: l, isBold: false, offsetX: 0 }));
+            }
+          }
+        }
+
+        const calculatedHeight = Math.max(h_original, linesToDraw.length * 6.0 + 8);
+        const h = isArray ? calculatedHeight : h_original;
+
         const lightColor = [
           Math.floor(themeColor[0] + (255 - themeColor[0]) * 0.94),
           Math.floor(themeColor[1] + (255 - themeColor[1]) * 0.94),
@@ -7011,57 +7375,30 @@
         doc.setDrawColor(...themeColor);
         doc.setLineWidth(0.4);
         doc.roundedRect(x, y, w, h, 2, 2, 'FD');
-        
-        // Left decorative bar
+
         doc.setFillColor(...themeColor);
         doc.rect(x + 0.15, y + 0.15, 3.5, h - 0.3, 'F');
-        
-        // Split bold label and normal body
-        const parts = text.split(':');
-        const prefix = parts[0] + ':';
-        const body = parts.slice(1).join(':');
-        
-        doc.setFontSize(10.5);
+
         const textX = x + 8;
-        const textY = y + 8;
-        const maxTextWidth = w - 14;
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...themeColor);
-        doc.text(prefix, textX, textY);
-        
-        const prefixWidth = doc.getTextWidth(prefix) + 1.5;
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...themeColors.textDark);
-        
-        const lines = doc.splitTextToSize(body.trim(), maxTextWidth);
-        if (lines.length > 0) {
-          const firstLineMaxW = maxTextWidth - prefixWidth;
-          const words = body.trim().split(' ');
-          let firstLineText = '';
-          let wordIdx = 0;
-          
-          while (wordIdx < words.length) {
-            const testText = firstLineText ? (firstLineText + ' ' + words[wordIdx]) : words[wordIdx];
-            if (doc.getTextWidth(testText) <= firstLineMaxW) {
-              firstLineText = testText;
-              wordIdx++;
-            } else {
-              break;
+        let textY = y + 8;
+
+        linesToDraw.forEach((item) => {
+          if (item.isBold) {
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...themeColor);
+            doc.text(item.text, textX + item.offsetX, textY);
+            if (item.inlineText) {
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(...themeColors.textDark);
+              doc.text(item.inlineText, textX + item.offsetX + item.inlineOffsetX, textY);
             }
+          } else {
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...themeColors.textDark);
+            doc.text(item.text, textX + item.offsetX, textY);
           }
-          
-          doc.text(firstLineText, textX + prefixWidth, textY);
-          
-          if (wordIdx < words.length) {
-            const remainingText = words.slice(wordIdx).join(' ');
-            const remLines = doc.splitTextToSize(remainingText, maxTextWidth);
-            remLines.forEach((line, lIdx) => {
-              doc.text(line, textX, textY + 6.0 + lIdx * 6.0);
-            });
-          }
-        }
+          textY += 6.0;
+        });
       }
 
       function getDashboardChartImage(chartId) {
@@ -7102,7 +7439,7 @@
           reportMonthYear = startD.toLocaleString('en-US', { month: 'long', year: 'numeric' });
         }
       }
-      
+
       const periodText = formatPeriod(data.filters.from1, data.filters.to4);
       const agentCount = data.agentRows.length;
       const formattedGenDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -7111,11 +7448,11 @@
       // PAGE 1: COVER PAGE
       // ==========================================
       paintPageBackground(doc);
-      
+
       // Large dark blue banner
       doc.setFillColor(...themeColors.navy);
       doc.rect(14, 16, 392, 75, 'F');
-      
+
       // Company Logo / Text
       try {
         doc.addImage(DASH_PDF_THEME.logoUrl, 'PNG', 24, 24, 48, 16);
@@ -7125,53 +7462,53 @@
         doc.setFontSize(16);
         doc.text('TRUENORTH VAN LINES', 24, 34);
       }
-      
+
       // Dashboard Title
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(28);
       doc.text('QUALITY ASSURANCE DASHBOARD', 24, 62);
-      
+
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(16);
       doc.setTextColor(174, 214, 241); // Light blue
       doc.text(`Monthly Performance Report  |  ${reportMonthYear}`, 24, 80);
-      
+
       // Metadata
       doc.setTextColor(...themeColors.textDark);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(10.5);
       doc.text(`Period: ${periodText}  |  Agents: ${agentCount}  |  Generated: ${formattedGenDate}`, 14, 104);
-      
+
       // Cover KPIs
       const callsMonitoredVal = data.teamMetricRows[4][5];
       const adherenceVal = data.teamMetricRows[8][5];
       const defectRateVal = data.teamMetricRows[12][5];
       const activeAgentsVal = data.agentRows.length;
-      const totalSalesErrorsVal = data.sortedSales.reduce((sum, s) => sum + s.sortTotal, 0);
-      
+      const totalOverallErrorsVal = data.teamMetricRows[11][5];
+
       drawKpiCard(doc, 14, 114, 72, 32, callsMonitoredVal, 'Calls Monitored', themeColors.teal);
       drawKpiCard(doc, 94, 114, 72, 32, adherenceVal, 'Team Adherence', themeColors.green);
       drawKpiCard(doc, 174, 114, 72, 32, defectRateVal, 'Defect Rate', [192, 57, 43]);
       drawKpiCard(doc, 254, 114, 72, 32, activeAgentsVal, 'Active Agents', themeColors.orange);
-      drawKpiCard(doc, 334, 114, 72, 32, totalSalesErrorsVal, 'Total Errors', themeColors.purple);
-      
+      drawKpiCard(doc, 334, 114, 72, 32, totalOverallErrorsVal, 'Total Errors', themeColors.purple);
+
       // Index Box
       doc.setFillColor(242, 244, 245);
       doc.setDrawColor(189, 195, 199);
       doc.setLineWidth(0.3);
       doc.roundedRect(14, 165, 392, 35, 2, 2, 'FD');
-      
+
       doc.setTextColor(...themeColors.navy);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10.5);
       doc.text('REPORT INDEX', 22, 175);
-      
+
       doc.setTextColor(...themeColors.textDark);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(11.5);
       doc.text('01 Team Performance   •   02 Calls Break-Up   •   03 Errors Impacting Sales   •   04 Agent Performance   •   05 Agent × Category', 22, 190);
-      
+
       drawHeaderFooter(doc, 1, 9, reportMonthYear);
 
       // ==========================================
@@ -7179,21 +7516,21 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       const weeksRangeText = `WK1: ${formatWeekPeriod(data.filters.from1, data.filters.to1)}  |  WK2: ${formatWeekPeriod(data.filters.from2, data.filters.to2)}  |  WK3: ${formatWeekPeriod(data.filters.from3, data.filters.to3)}  |  WK4: ${formatWeekPeriod(data.filters.from4, data.filters.to4)}`;
       drawSectionTitleBlock(doc, '01', 'Team Level Performance', weeksRangeText, themeColors.navy);
-      
+
       // KPIs
       const callsvsTargetVal = data.teamMetricRows[4][5] + '/' + data.teamMetricRows[3][5];
       const adherenceP2Val = data.teamMetricRows[8][5];
       const deficitP2Val = data.teamMetricRows[5][5];
       const totalErrorsP2Val = data.teamMetricRows[11][5];
-      
+
       drawKpiCard(doc, 14, 40, 92, 32, callsvsTargetVal, 'Calls vs Target', themeColors.navy);
       drawKpiCard(doc, 114, 40, 92, 32, adherenceP2Val, 'Adherence', themeColors.green);
       drawKpiCard(doc, 214, 40, 92, 32, deficitP2Val, 'Deficit', [192, 57, 43]);
       drawKpiCard(doc, 314, 40, 92, 32, totalErrorsP2Val, 'Total Errors', themeColors.orange);
-      
+
       // Table 1
       const p2Rows = [];
       data.teamMetricRows.forEach((row, rIdx) => {
@@ -7213,7 +7550,7 @@
         if (rIdx === 13) mappedRow[0] = 'Avg Error / Call';
         p2Rows.push(mappedRow);
       });
-      
+
       doc.autoTable({
         startY: 80,
         head: [['METRIC', 'WEEK 1', 'WEEK 2', 'WEEK 3', 'WEEK 4', 'TOTAL']],
@@ -7236,7 +7573,7 @@
           if (hook.section !== 'body') return;
           const label = String(hook.row.raw[0] || '');
           const val = String(hook.cell.raw || '');
-          
+
           if (label === 'Deficit') {
             if (val.startsWith('-') || val.startsWith('–')) {
               hook.cell.styles.textColor = [192, 57, 43];
@@ -7255,7 +7592,7 @@
           }
         }
       });
-      
+
       // Insight Page 2
       let bestWeekNum = 4;
       let bestWeekAdhStr = '66.9%';
@@ -7271,10 +7608,15 @@
         }
       }
       const deficitTextVal = data.teamMetricRows[5][5];
-      const p2InsightText = `Insight: WK${bestWeekNum} is the strongest week with ${bestWeekAdhStr} adherence and only ${bestWeekDefectStr} defect rate — a clear positive trend. The ${deficitTextVal} call deficit across all weeks suggests monitoring capacity needs scaling.`;
-      
-      drawInsightBox(doc, 14, 205, 392, 28, p2InsightText, themeColors.navy);
-      
+      const p2Insights = [
+        "Insights",
+        `WK${bestWeekNum} is the strongest week with ${bestWeekAdhStr} adherence and only ${bestWeekDefectStr} defect rate — a clear positive trend.`,
+        `The ${deficitTextVal} call deficit across all weeks suggests monitoring capacity needs scaling.`,
+        `Overall defect rate stabilized around the 35% mark, indicating steady process adherence.`
+      ];
+
+      drawInsightBox(doc, 14, 205, 392, 28, p2Insights, themeColors.navy);
+
       drawHeaderFooter(doc, 2, 9, reportMonthYear);
 
       // ==========================================
@@ -7282,19 +7624,19 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       drawSectionTitleBlock(doc, '02', 'Calls Monitored – Break-Up', 'Revenue & Adherence by Call Category per Week', themeColors.teal);
-      
+
       // Page 3 KPIs
       const bookedCat = data.breakupData.find(b => b.name === 'Booked') || { tCount: 0, tRev: 0 };
       const prospectsCat = data.breakupData.find(b => b.name === 'Prospects') || { tCount: 0 };
       const highValCat = data.breakupData.find(b => b.name === 'High Value') || { tRev: 0 };
-      
+
       drawKpiCard(doc, 14, 40, 92, 32, bookedCat.tCount, 'Booked Calls', themeColors.teal);
       drawKpiCard(doc, 114, 40, 92, 32, '$' + Number(bookedCat.tRev).toLocaleString(), 'Booking Revenue', themeColors.green);
       drawKpiCard(doc, 214, 40, 92, 32, prospectsCat.tCount, 'Prospects', themeColors.orange);
       drawKpiCard(doc, 314, 40, 92, 32, '$' + Number(highValCat.tRev).toLocaleString(), 'High-Value Rev', themeColors.purple);
-      
+
       // Table Page 3
       const p3Rows = data.breakupData.map(b => {
         let displayName = b.name;
@@ -7302,7 +7644,7 @@
         if (displayName === 'Close to booking but lost') displayName = 'Close to Booking (Lost)';
         if (displayName === 'Complaints/Escalation Call' || displayName === 'Complaint/Escalation Call') displayName = 'Complaints / Escalation';
         if (displayName === 'Mid - Value' || displayName === 'Mid Value') displayName = 'Mid-Value';
-        
+
         const formatRev = (val) => '$' + Number(val).toLocaleString();
         return [
           displayName,
@@ -7313,7 +7655,7 @@
           b.tCount, formatRev(b.tRev), b.tCount > 0 ? b.tAdh : '—'
         ];
       });
-      
+
       const bt = { w1c: 0, w1r: 0, w2c: 0, w2r: 0, w3c: 0, w3r: 0, w4c: 0, w4r: 0, tc: 0, tr: 0 };
       data.breakupData.forEach(b => {
         bt.w1c += b.w1Count; bt.w1r += b.w1Rev;
@@ -7322,7 +7664,7 @@
         bt.w4c += b.w4Count; bt.w4r += b.w4Rev;
         bt.tc += b.tCount; bt.tr += b.tRev;
       });
-      
+
       const formatRev = (val) => '$' + Number(val).toLocaleString();
       p3Rows.push([
         'Total',
@@ -7332,7 +7674,7 @@
         bt.w4c, formatRev(bt.w4r), '—',
         bt.tc, formatRev(bt.tr), '—'
       ]);
-      
+
       doc.autoTable({
         startY: 80,
         head: [
@@ -7365,14 +7707,14 @@
         didParseCell: (hook) => {
           if (hook.section !== 'body') return;
           const isTotalRow = hook.row.index === p3Rows.length - 1;
-          
+
           if (isTotalRow) {
             hook.cell.styles.fontStyle = 'bold';
             hook.cell.styles.fillColor = [0, 100, 100];
             hook.cell.styles.textColor = [255, 255, 255];
             return;
           }
-          
+
           const colIndex = hook.column.index;
           if (colIndex > 0) {
             const groupOffset = (colIndex - 1) % 3;
@@ -7393,7 +7735,7 @@
           }
         }
       });
-      
+
       // Insight Page 3
       const followUpCat = data.breakupData.find(b => b.name.includes('Follow')) || { w4Adh: '83.0%' };
       const followUpAdhStr = followUpCat.w4Adh;
@@ -7402,16 +7744,21 @@
         if (name.includes('Complaint')) name = 'Complaint';
         return name;
       });
-      
+
       let zeroCatsText = 'All call categories were monitored this cycle.';
       if (zeroCats.length > 0) {
         zeroCatsText = `Zero ${zeroCats.join(' and ')} calls monitored; ensure this category is sampled in future cycles.`;
       }
-      
-      const p3InsightText = `Insight: Booked calls drive the most revenue ($${Number(bookedCat.tRev).toLocaleString()}). WK4 Follow-Up calls hit ${followUpAdhStr} adherence — the highest single reading this month. ${zeroCatsText}`;
-      
-      drawInsightBox(doc, 14, 205, 392, 28, p3InsightText, themeColors.teal);
-      
+
+      const p3Insights = [
+        "Insights",
+        `Booked calls drive the most revenue ($${Number(bookedCat.tRev).toLocaleString()}).`,
+        `WK4 Follow-Up calls hit ${followUpAdhStr} adherence — the highest single reading this month.`,
+        zeroCatsText
+      ];
+
+      drawInsightBox(doc, 14, 205, 392, 28, p3Insights, themeColors.teal);
+
       drawHeaderFooter(doc, 3, 9, reportMonthYear);
 
       // ==========================================
@@ -7419,9 +7766,9 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       drawSectionTitleBlock(doc, '03', 'Errors Impacting Sales', 'Category-wise error analysis — 4 weeks combined', themeColors.purple);
-      
+
       // KPIs Page 4
       const trustBuildersTotal = data.sortedSales.find(s => s.title.includes('Trust Builders'))?.sortTotal || 176;
       const inventoryTotal = data.sortedSales.find(s => s.title.includes('Inventory'))?.sortTotal || 137;
@@ -7435,12 +7782,12 @@
         w2Nm: 0,
         w2Ni: 0
       };
-      
+
       drawKpiCard(doc, 14, 40, 92, 32, totalSalesErrors, 'Total Errors', themeColors.purple);
       drawKpiCard(doc, 114, 40, 92, 32, trustBuildersTotal, 'Trust Builders', [192, 57, 43]);
       drawKpiCard(doc, 214, 40, 92, 32, inventoryTotal, 'Inventory Capture', themeColors.orange);
       drawKpiCard(doc, 314, 40, 92, 32, saleTechniqueTotal, 'Sale Technique', themeColors.navy);
-      
+
       // Category errors table
       const p4CatRows = data.sortedSales.map(cat => {
         const w1Tot = cat.w1Nm + cat.w1Ni;
@@ -7450,14 +7797,14 @@
         const total = cat.tNm + cat.tNi;
         return [cat.title, w1Tot, w2Tot, w3Tot, w4Tot, total];
       });
-      
+
       const gW1 = data.sortedSales.reduce((s, c) => s + c.w1Nm + c.w1Ni, 0);
       const gW2 = data.sortedSales.reduce((s, c) => s + c.w2Nm + c.w2Ni, 0);
       const gW3 = data.sortedSales.reduce((s, c) => s + c.w3Nm + c.w3Ni, 0);
       const gW4 = data.sortedSales.reduce((s, c) => s + c.w4Nm + c.w4Ni, 0);
       const gTot = data.sortedSales.reduce((s, c) => s + c.tNm + c.tNi, 0);
       p4CatRows.push(['GRAND TOTAL', gW1, gW2, gW3, gW4, gTot]);
-      
+
       doc.autoTable({
         startY: 80,
         head: [['ERROR CATEGORY', 'WK1', 'WK2', 'WK3', 'WK4', 'TOTAL']],
@@ -7486,7 +7833,7 @@
           }
         }
       });
-      
+
 
       // Top Sub-errors Page 4 (first 5 rows) — GLOBAL
       const allSubItemsGlobal = [];
@@ -7515,7 +7862,7 @@
       doc.setFontSize(10.5);
       doc.setTextColor(...themeColors.textDark);
       doc.text(`Top Sub-Errors (All Categories): ${top5SubErrors.reduce((sum, item) => sum + item.sortTotal, 0)} total`, 14, textY);
-      
+
       const didParseCellHighlight = (hook) => {
         if (hook.section !== 'body') return;
         const labelCell = hook.row.cells[0];
@@ -7554,7 +7901,7 @@
         },
         didParseCell: didParseCellHighlight
       });
-      
+
       drawHeaderFooter(doc, 4, 9, reportMonthYear);
 
       // ==========================================
@@ -7562,7 +7909,7 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       // Page 5 has no title block or KPIs, it goes straight to the remaining sub-errors (global)
       const p5SubRows = allSubItemsGlobal.slice(5).map(item => [item.label, item.sortTotal]);
 
@@ -7581,18 +7928,28 @@
         },
         didParseCell: didParseCellHighlight
       });
-      
+
       // Focus Area Box
-      let p5FocusAreaText = `Focus Area: Trust Builders = 26% of all errors. Priority coaching: billing start explanation, break-time policy, and natural trust delivery. WK4 shows declining trend (28 errors vs WK2 high of 79) — coaching is working.`;
+      let p5Insights = [
+        "Focus Areas",
+        `Trust Builders = 26% of all errors.`,
+        `Priority coaching: billing start explanation, break-time policy, and natural trust delivery.`,
+        `WK4 shows declining trend (28 errors vs WK2 high of 79) — coaching is working.`
+      ];
       if (topCat.title && topCat.title.includes('Trust Builders')) {
         const topCatPct = totalSalesErrors > 0 ? Math.round((topCat.sortTotal / totalSalesErrors) * 100) : 26;
         const w4E = topCat.w4Nm + topCat.w4Ni;
         const w2E = topCat.w2Nm + topCat.w2Ni;
-        p5FocusAreaText = `Focus Area: Trust Builders = ${topCatPct}% of all errors. Priority coaching: billing start explanation, break-time policy, and natural trust delivery. WK4 shows declining trend (${w4E} errors vs WK2 high of ${w2E}) — coaching is working.`;
+        p5Insights = [
+          "Focus Areas",
+          `Trust Builders = ${topCatPct}% of all errors.`,
+          `Priority coaching: billing start explanation, break-time policy, and natural trust delivery.`,
+          `WK4 shows declining trend (${w4E} errors vs WK2 high of ${w2E}) — coaching is working.`
+        ];
       }
-      
-      drawInsightBox(doc, 14, doc.lastAutoTable.finalY + 12, 392, 28, p5FocusAreaText, themeColors.purple);
-      
+
+      drawInsightBox(doc, 14, doc.lastAutoTable.finalY + 12, 392, 28, p5Insights, themeColors.purple);
+
       drawHeaderFooter(doc, 5, 9, reportMonthYear);
 
       // ==========================================
@@ -7600,9 +7957,9 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       drawSectionTitleBlock(doc, '04', 'Agent Performance Summary', 'Individual weekly adherence, errors & call counts', themeColors.green);
-      
+
       // Calculate dynamic values for Page 6 KPIs
       let bestWK4Agent = 'Thomas';
       let bestWK4Val = '83%';
@@ -7619,7 +7976,7 @@
           }
         }
       });
-      
+
       let bestOverallAgent = 'Daniel';
       let bestOverallVal = '68.7%';
       let maxOverallAdh = 0;
@@ -7633,7 +7990,7 @@
           }
         }
       });
-      
+
       let mostCallsAgent = 'Anthony';
       let mostCallsVal = 11;
       let maxCalls = 0;
@@ -7644,7 +8001,7 @@
           mostCallsVal = ar.tAch;
         }
       });
-      
+
       let mostErrorsAgent = 'Myles';
       let mostErrorsVal = '29.2';
       let maxErrors = 0;
@@ -7658,12 +8015,12 @@
           }
         }
       });
-      
+
       drawKpiCard(doc, 14, 40, 92, 32, bestWK4Agent, `Best WK4 Adh ${bestWK4Val}`, themeColors.green);
       drawKpiCard(doc, 114, 40, 92, 32, bestOverallAgent, `Best Overall ${bestOverallVal}`, themeColors.navy);
       drawKpiCard(doc, 214, 40, 92, 32, mostCallsAgent, `Most Calls – ${mostCallsVal}`, themeColors.orange);
       drawKpiCard(doc, 314, 40, 92, 32, mostErrorsAgent, `Most Errors/Call ${mostErrorsVal}`, [192, 57, 43]);
-      
+
       // Page 6 Table
       const p6Rows = data.agentRows.map(ar => [
         ar.agentName,
@@ -7673,7 +8030,7 @@
         ar.a4.achieved, ar.a4.achieved > 0 ? ar.a4.adherence + '%' : '—', ar.a4.achieved > 0 ? ar.a4.avgError : '—',
         ar.tAch, ar.tAdh + '%', ar.tAvg, ar.tGrade
       ]);
-      
+
       doc.autoTable({
         startY: 80,
         head: [
@@ -7706,7 +8063,7 @@
         didParseCell: (hook) => {
           if (hook.section !== 'body') return;
           const colIndex = hook.column.index;
-          
+
           if (colIndex > 0) {
             if (colIndex >= 13) {
               hook.cell.styles.fillColor = [234, 240, 247];
@@ -7714,7 +8071,7 @@
                 hook.cell.styles.fontStyle = 'bold';
               }
             }
-            
+
             if (colIndex === 16) {
               const grade = String(hook.cell.raw || '');
               hook.cell.styles.fontStyle = 'bold';
@@ -7734,7 +8091,7 @@
           }
         }
       });
-      
+
       // Standouts Page 6
       const lowCovAgents = data.agentRows.filter(ar => ar.tAch <= 3).map(ar => ar.agentName);
       let lowCovText = 'Arthur and William need more call coverage for reliable measurement.';
@@ -7746,11 +8103,19 @@
           lowCovText = `${lowCovAgents.join(', ')} and ${last} need more call coverage for reliable measurement.`;
         }
       }
-      
-      const p6StandoutsText = `Standouts: ${bestWK4Agent} shows the best trajectory — WK4 ${bestWK4Val} adherence and only ${bestWK4Err} errors/call. ${bestOverallAgent} leads overall at ${bestOverallVal}. ${mostErrorsAgent} averages ${mostErrorsVal} errors/call — highest on the team, needs targeted coaching. ${lowCovText}`;
-      
-      drawInsightBox(doc, 14, 205, 392, 28, p6StandoutsText, themeColors.green);
-      
+
+      const p6Insights = [
+        "Standouts",
+        `${bestWK4Agent} shows the best trajectory — WK4 ${bestWK4Val} adherence and only ${bestWK4Err} errors/call.`,
+        `${bestOverallAgent} leads overall at ${bestOverallVal}.`,
+        `${mostErrorsAgent} averages ${mostErrorsVal} errors/call — highest on the team, needs targeted coaching.`
+      ];
+      if (lowCovAgents.length > 0) {
+        p6Insights.push(lowCovText);
+      }
+
+      drawInsightBox(doc, 14, 205, 392, 28, p6Insights, themeColors.green);
+
       drawHeaderFooter(doc, 6, 9, reportMonthYear);
 
       // ==========================================
@@ -7758,9 +8123,9 @@
       // ==========================================
       doc.addPage();
       paintPageBackground(doc);
-      
+
       drawSectionTitleBlock(doc, '05', 'Calls by Agent × Category', 'Distribution of monitored call types per agent (WK1 + WK2)', themeColors.orange);
-      
+
       // Calculate specifically from WK1 + WK2 data
       const w12Filtered = records.filter(r => r.date >= data.filters.from1 && r.date <= data.filters.to2);
       const w12Deduped = deduplicateReportRecords(w12Filtered);
@@ -7768,27 +8133,27 @@
       const w12HighValue = w12Deduped.filter(r => r.monitoringCategory === 'High Value').length;
       const w12Prospects = w12Deduped.filter(r => r.monitoringCategory === 'Prospects').length;
       const w12Total = w12Deduped.length;
-      
+
       drawKpiCard(doc, 14, 40, 92, 32, w12Booked, 'Booked Calls', themeColors.orange);
       drawKpiCard(doc, 114, 40, 92, 32, w12HighValue, 'High Value', themeColors.navy);
       drawKpiCard(doc, 214, 40, 92, 32, w12Prospects, 'Prospects', themeColors.green);
       drawKpiCard(doc, 314, 40, 92, 32, w12Total, 'Total (WK1+2)', themeColors.purple);
-      
+
       // Table data matrix specifically for WK1+WK2
       const acCategories = ['Booked', 'High Value', 'Follow-up call', 'Close to booking but lost', 'Complaint/Escalation Call', 'Mid Value', 'Prospects'];
       const acAgents = getAllAgents();
-      
+
       const p7Rows = acAgents.map(agentName => {
         const agentRecs = w12Deduped.filter(r => r.agent === agentName);
         const counts = acCategories.map(cat => agentRecs.filter(r => r.monitoringCategory === cat).length);
         const total = agentRecs.length;
         return [agentName, ...counts, total];
       });
-      
+
       const colTotals = acCategories.map((_, colIdx) => p7Rows.reduce((sum, row) => sum + row[colIdx + 1], 0));
       const grandTotal = p7Rows.reduce((sum, row) => sum + row[8], 0);
       p7Rows.push(['TOTAL', ...colTotals, grandTotal]);
-      
+
       doc.autoTable({
         startY: 80,
         head: [['AGENT', 'Booked', 'High Value', 'Follow-Up', 'Close to Booking', 'Complaints', 'Mid-Value', 'Prospects', 'TOTAL']],
@@ -7819,7 +8184,7 @@
             hook.cell.styles.textColor = [255, 255, 255];
             return;
           }
-          
+
           const colIndex = hook.column.index;
           if (colIndex >= 1 && colIndex <= 7) {
             const val = parseInt(hook.cell.raw || 0);
@@ -7833,13 +8198,13 @@
           }
         }
       });
-      
+
       // Distribution Page 7
       let maxBooked = 0;
       let strongestBookingAgent = 'Anthony';
       let strongestBookedCount = 5;
       let strongestHVCount = 2;
-      
+
       p7Rows.forEach(row => {
         if (row[0] === 'TOTAL') return;
         const name = row[0];
@@ -7852,12 +8217,12 @@
           strongestHVCount = hv;
         }
       });
-      
+
       const allReportAgents = getAllAgents();
       const zeroMonitoredAgents = allReportAgents.filter(a => {
         return records.filter(r => r.agent === a).length === 0;
       });
-      
+
       let zeroMonitoredText = 'Dustin had zero monitored calls — needs immediate attention.';
       if (zeroMonitoredAgents.length > 0) {
         if (zeroMonitoredAgents.length === 1) {
@@ -7867,11 +8232,16 @@
           zeroMonitoredText = `${zeroMonitoredAgents.join(', ')} and ${last} had zero monitored calls — needs immediate attention.`;
         }
       }
-      
-      const p7DistributionText = `Distribution: ${strongestBookingAgent} handled ${strongestBookedCount} Booked and ${strongestHVCount} High-Value calls — strongest booking agent. Myles and Noah focused exclusively on high-value segments. ${zeroMonitoredText} Ensure all 7 categories are represented in future monitoring cycles.`;
-      
-      drawInsightBox(doc, 14, 205, 392, 28, p7DistributionText, themeColors.orange);
-      
+
+      const p7Insights = [
+        "Distribution",
+        `${strongestBookingAgent} handled ${strongestBookedCount} Booked and ${strongestHVCount} High-Value calls — strongest booking agent.`,
+        `Myles and Noah focused exclusively on high-value segments.`,
+        `${zeroMonitoredText} Ensure all 7 categories are represented in future monitoring cycles.`
+      ];
+
+      drawInsightBox(doc, 14, 205, 392, 28, p7Insights, themeColors.orange);
+
       drawHeaderFooter(doc, 7, 9, reportMonthYear);
 
       // ==========================================
@@ -8544,14 +8914,24 @@
         html += `</tbody></table><br><p style="color: #64748b; font-size: 12px; font-style: italic;">This is a confidential automated report from True North Van Lines Call Monitoring System.</p></div></div>`;
 
         const apiBase = getApiBase();
+
+        // Use activeRecipients (Box 2 selections), fallback to all emailRecipients
+        const emailRecips = (appConfig && appConfig.activeRecipients && appConfig.activeRecipients.length > 0)
+          ? appConfig.activeRecipients
+          : (appConfig && appConfig.emailRecipients && appConfig.emailRecipients.length > 0)
+            ? appConfig.emailRecipients
+            : [];
+
         const response = await fetch(`${apiBase}/api/send-report-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             pdfBase64: pdfBase64,
             fileName: `TNVL_Performance_Report_${new Date().toISOString().slice(0, 10)}.pdf`,
-            htmlContent: html
+            htmlContent: html,
+            recipients: emailRecips
           })
+
         });
 
         if (!response.ok) {
@@ -8668,6 +9048,99 @@
       showToast(`✅ Team Summary downloaded`, '#3498db');
     }
 
+    function renderAreasOfImprovement() {
+      const from = document.getElementById('tsm-from')?.value || '';
+      const to = document.getElementById('tsm-to')?.value || '';
+      const selAgents = getSelectedAgents('tsm-ms-wrap');
+      const rawFiltered = records.filter(r => {
+        if (from && r.date < from) return false;
+        if (to && r.date > to) return false;
+        if (selAgents.length && !selAgents.includes(r.agent)) return false;
+        return true;
+      });
+      const filtered = deduplicateReportRecords(rawFiltered);
+      const container = document.getElementById('areas-of-improvement-results');
+      if (!filtered.length) {
+        container.innerHTML = '<div style="padding:15px;color:#e74c3c;">No records match the selected filters.</div>';
+        container.style.display = 'block';
+        return;
+      }
+
+      const agentMap = {};
+      filtered.forEach(r => {
+        if (!r.breakdown) return;
+        const ag = r.agent;
+        if (!agentMap[ag]) agentMap[ag] = { notmet: 0, ni: 0, total: 0, items: {} };
+        r.breakdown.forEach(sec => {
+          sec.items.forEach(item => {
+            if (item.rating === 'met') return;
+            const k = item.label;
+            if (!agentMap[ag].items[k]) agentMap[ag].items[k] = { label: k, section: sec.title, notmet: 0, ni: 0, total: 0 };
+            if (item.rating === 'notmet') { agentMap[ag].items[k].notmet++; agentMap[ag].notmet++; }
+            if (item.rating === 'ni') { agentMap[ag].items[k].ni++; agentMap[ag].ni++; }
+            agentMap[ag].items[k].total++;
+            agentMap[ag].total++;
+          });
+        });
+      });
+
+      let html = '<style>details > summary { list-style: none; } details > summary::-webkit-details-marker { display: none; }</style>';
+      html += '<div style="display:flex;flex-direction:column;gap:10px;">';
+
+      let hasData = false;
+      Object.keys(agentMap).sort().forEach(ag => {
+        const agData = agentMap[ag];
+        if (agData.total === 0) return;
+        hasData = true;
+
+        const sortedItems = Object.values(agData.items).filter(x => x.total > 0).sort((a, b) => b.total - a.total);
+        let itemsHtml = `<table class="styled-table" style="margin-top:10px;">
+          <thead>
+            <tr><th style="text-align:left;">Not Met Item</th><th style="text-align:left;">Section</th><th>Not Met</th><th>Needs Impr.</th><th>Total</th></tr>
+          </thead>
+          <tbody>`;
+        sortedItems.forEach(item => {
+          itemsHtml += `<tr>
+            <td style="text-align:left;">${item.label}</td>
+            <td style="text-align:left;">${item.section}</td>
+            <td style="text-align:center;">${item.notmet}</td>
+            <td style="text-align:center;">${item.ni}</td>
+            <td style="text-align:center;font-weight:bold;">${item.total}</td>
+          </tr>`;
+        });
+        itemsHtml += '</tbody></table>';
+
+        html += `
+          <details style="background:#fff;border:1px solid #dce8f5;border-radius:8px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+            <summary style="cursor:pointer;font-weight:700;color:#1a5276;font-size:15px;position:relative;padding-left:24px;user-select:none;display:flex;align-items:center;">
+              <span class="details-icon" style="position:absolute;left:0;font-size:14px;color:#3498db;top:2px;">➕</span>
+              ${ag} <span style="font-weight:normal;color:#666;font-size:13px;margin-left:8px;">— Total Failures: <strong style="color:#e74c3c;">${agData.total}</strong> (Not Met: ${agData.notmet} | Needs Impr.: ${agData.ni})</span>
+            </summary>
+            <div style="padding-top:14px;animation: fadeIn 0.3s ease;">
+              ${itemsHtml}
+            </div>
+          </details>
+        `;
+      });
+
+      html += '</div>';
+
+      if (!hasData) {
+        container.innerHTML = '<div style="padding:15px;color:#2ecc71;">No "Not Met" or "Needs Improvement" items for these agents! 🎉</div>';
+      } else {
+        container.innerHTML = html;
+        const detailsEls = container.querySelectorAll('details');
+        detailsEls.forEach(d => {
+          d.addEventListener('toggle', (e) => {
+            const span = d.querySelector('.details-icon');
+            if (d.open) span.textContent = '➖';
+            else span.textContent = '➕';
+          });
+        });
+      }
+      container.style.display = 'block';
+    }
+
 
     function downloadTeamSummaryCSV() {
       const from = document.getElementById('tsm-from')?.value || '';
@@ -8707,6 +9180,37 @@
       });
       const grandCombined = sorted.reduce((s, x) => s + x.total, 0);
       rows.push([esc('Overall output (Total sum)'), esc(''), esc(''), esc(''), esc(''), esc(grandCombined), esc('')].join(','));
+
+      // --- Agent-wise Breakdown (Pseudo-sheet) ---
+      rows.push('');
+      rows.push('');
+      rows.push([esc('--- AGENT-WISE BREAKDOWN ---')].join(','));
+      rows.push(['Agent', 'Not Met Item', 'Section', 'Total Not Met', 'Total Needs Improvement', 'Total (Not Met + NI)'].join(','));
+
+      const agentMap = {};
+      filtered.forEach(r => {
+        if (!r.breakdown) return;
+        const ag = r.agent;
+        if (!agentMap[ag]) agentMap[ag] = {};
+        r.breakdown.forEach(sec => {
+          sec.items.forEach(item => {
+            if (item.rating === 'met') return;
+            const k = item.label;
+            if (!agentMap[ag][k]) agentMap[ag][k] = { label: k, section: sec.title, notmet: 0, ni: 0, total: 0 };
+            if (item.rating === 'notmet') agentMap[ag][k].notmet++;
+            if (item.rating === 'ni') agentMap[ag][k].ni++;
+            agentMap[ag][k].total++;
+          });
+        });
+      });
+
+      Object.keys(agentMap).sort().forEach(ag => {
+        const agItems = Object.values(agentMap[ag]).sort((a, b) => b.total - a.total);
+        agItems.forEach(item => {
+          rows.push([esc(ag), esc(item.label), esc(item.section), esc(item.notmet), esc(item.ni), esc(item.total)].join(','));
+        });
+      });
+
       const csv = [headers.join(','), ...rows].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -8837,15 +9341,66 @@
     function tskCopySummary(recordId) { const r = records.find(x => String(x.id) === String(recordId)); if (!r?.tskSummary?.text) return; navigator.clipboard.writeText(r.tskSummary.text).then(() => showToast('✅ Summary copied!', '#27ae60')).catch(() => showToast('❌ Copy failed', '#e05c2a')); }
 
     function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', (i === 0 && tab === 'form') || (i === 1 && tab === 'dashboard') || (i === 2 && tab === 'summaries')));
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => btn.classList.toggle('active', (i === 0 && tab === 'form') || (i === 1 && tab === 'dashboard') || (i === 2 && tab === 'summaries') || (i === 3 && tab === 'settings')));
       document.getElementById('panel-form').classList.toggle('active', tab === 'form'); document.getElementById('panel-dashboard').classList.toggle('active', tab === 'dashboard'); document.getElementById('panel-summaries').classList.toggle('active', tab === 'summaries');
-      if (tab === 'dashboard') renderDashboard(); if (tab === 'summaries') renderSummaries(); if (tab === 'form') refreshTskFormFiles();
+      if (document.getElementById('panel-settings')) document.getElementById('panel-settings').classList.toggle('active', tab === 'settings');
+      if (tab === 'dashboard') renderDashboard(); if (tab === 'summaries') renderSummaries(); if (tab === 'form') refreshTskFormFiles(); if (tab === 'settings') loadConfigIntoForm();
     }
 
     function showToast(msg, color = '#27ae60') { const t = document.getElementById('toast'); t.textContent = msg; t.style.background = color; t.classList.remove('show'); void t.offsetWidth; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 4500); }
     function escHtml(str = '') { return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
     function setStep(n, status) { const el = document.getElementById(`step-${n}`); if (!el) return; const icons = { active: '<span class="spinner"></span>', done: '✅', pending: '⏳', error: '❌' }; el.className = `ai-step ${status === 'done' ? 'done' : status === 'active' ? 'active' : ''}`; el.querySelector('.ai-step-icon').innerHTML = icons[status] || '⏳'; }
     function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ── Edit a checklist question inline ──────────────────────────────────────
+    async function editChecklistQuestion(si, ii) {
+      const isPreMove = (typeof currentChecklistMode !== 'undefined' && currentChecklistMode === 'premove');
+      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const currentText = sections[si].items[ii];
+
+      // Build a small modal-style dialog inside the existing #modal
+      const escapedText = currentText.replace(/"/g, '&quot;');
+      const body = `
+        <div style="padding:8px 0 16px;">
+          <textarea id="edit-q-input" style="width:100%;min-height:90px;font-size:14px;padding:10px;border:2px solid #c5d5e8;border-radius:8px;resize:vertical;font-family:inherit;line-height:1.5;">${currentText}</textarea>
+          <div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end;">
+            <button onclick="closeModal()" style="padding:8px 20px;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;">Cancel</button>
+            <button onclick="saveEditedQuestion(${si},${ii},${isPreMove})" style="padding:8px 22px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Save</button>
+          </div>
+        </div>`;
+      openModal(`✏️ Edit Question #${ii + 1}`, body);
+      setTimeout(() => { const ta = document.getElementById('edit-q-input'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }, 100);
+    }
+
+    async function saveEditedQuestion(si, ii, isPreMove) {
+      const ta = document.getElementById('edit-q-input');
+      if (!ta) return;
+      const newText = ta.value.trim();
+      if (!newText) { showToast('❌ Question cannot be empty', '#e74c3c'); return; }
+
+      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      sections[si].items[ii] = newText;
+
+      closeModal();
+
+      // Persist to server if appConfig is available
+      if (typeof appConfig !== 'undefined' && appConfig) {
+        if (isPreMove) { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        else { appConfig.checklistSections = SECTIONS; }
+        try {
+          const r = await fetch(getApiBase() + '/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appConfig)
+          });
+          if (r.ok) { showToast('✅ Question saved', '#27ae60'); }
+          else { showToast('⚠️ Saved locally (server error)', '#e67e22'); }
+        } catch (e) { showToast('⚠️ Saved locally (offline)', '#e67e22'); }
+      }
+
+      // Re-render checklist (keeps ratings intact)
+      if (typeof buildChecklist === 'function') buildChecklist();
+    }
 
     // ═══ DEMO DATA ═══
     let tskSummaries = {};
@@ -8857,6 +9412,216 @@
     window.addEventListener('beforeunload', () => { try { saveTskSummaries(); } catch (e) { } });
 
     // ═══ INIT ═══
+    let appConfig = null;
+    const getOpts = (opts, sel) => '<option value="">— Select —</option>' + (opts || []).map(o => '<option value="' + o + '" ' + (sel === o ? 'selected' : '') + '>' + o + '</option>').join('');
+    async function loadAppConfig() {
+      try {
+        const res = await fetch(getApiBase() + '/api/config');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        console.log('✅ Config loaded from server');
+        appConfig = await res.json();
+        populateAllDropdowns();
+
+        // Load sections from appConfig if present
+        if (appConfig.checklistSections && Array.isArray(appConfig.checklistSections)) {
+          SECTIONS.length = 0;
+          appConfig.checklistSections.forEach(s => SECTIONS.push(s));
+        }
+        if (appConfig.preMoveChecklistSections && Array.isArray(appConfig.preMoveChecklistSections)) {
+          PRE_MOVE_SECTIONS.length = 0;
+          appConfig.preMoveChecklistSections.forEach(s => PRE_MOVE_SECTIONS.push(s));
+        }
+
+        // Re-build checklist with potentially loaded sections
+        if (typeof buildChecklist === 'function') buildChecklist();
+      } catch (e) { console.error(e); }
+    }
+    function populateSelect(id, options, defaultText) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const currentVal = el.value;
+      let h = defaultText ? '<option value="">' + defaultText + '</option>' : '';
+      (options || []).forEach(o => { h += '<option value="' + o + '">' + o + '</option>'; });
+      el.innerHTML = h;
+      if (options && options.includes(currentVal)) el.value = currentVal;
+    }
+    function populateAllDropdowns() {
+      if (!appConfig) return;
+      populateSelect("f-agent", appConfig.agentNames, "— Select Agent —");
+      populateSelect("f-calltype", appConfig.callTypes, "— Select —");
+      populateSelect("f-evaluator", appConfig.evaluatorNames, "— Select —");
+      populateSelect("f-movetype", appConfig.moveTypes, "— Select —");
+      populateSelect("f-movevalue", appConfig.moveValueCategories, "— Auto —");
+      populateSelect("f-leadstatus", appConfig.leadStatuses, "— Select —");
+      populateSelect("f-monitoring-category", appConfig.monitoringCategories, "— Select —");
+
+      populateSelect("d-agent", appConfig.agentNames, "All Agents");
+      populateSelect("d-calltype", appConfig.callTypes, "All Call Types");
+
+      populateSelect("rpt-evaluator", appConfig.evaluatorNames, "Select Evaluator (Optional)");
+      populateSelect("aoi-agent", appConfig.agentNames, "All Agents");
+      populateSelect("sum3-agent", appConfig.agentNames, "All Agents");
+      if (typeof loadConfigIntoForm === "function") loadConfigIntoForm(); // update chips
+    }
+    function loadConfigIntoForm() {
+      if (!appConfig) return;
+      renderChips('cfg-agentNames', appConfig.agentNames);
+      renderChips('cfg-callTypes', appConfig.callTypes);
+      renderChips('cfg-evaluatorNames', appConfig.evaluatorNames);
+      renderChips('cfg-moveTypes', appConfig.moveTypes);
+      renderChips('cfg-moveValueCategories', appConfig.moveValueCategories);
+      renderChips('cfg-leadStatuses', appConfig.leadStatuses);
+      renderChips('cfg-monitoringCategories', appConfig.monitoringCategories);
+      renderChips('cfg-emailRecipients', appConfig.emailRecipients);
+      buildRecipientCheckboxes(appConfig.emailRecipients || [], appConfig.activeRecipients || []);
+    }
+    function renderChips(containerId, items) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const chipsArea = container.querySelector('.chips-area');
+      if (!chipsArea) return;
+      chipsArea.innerHTML = (items || []).map(name =>
+        `<span class="chip" data-value="${name.replace(/"/g, '&quot;')}">${name}<button type="button" title="Remove" onclick="removeChip('${containerId}',this.parentElement.dataset.value)">×</button></span>`
+      ).join('');
+    }
+    function getChipValues(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return [];
+      return [...container.querySelectorAll('.chip')].map(c => c.dataset.value).filter(Boolean);
+    }
+    function removeChip(containerId, name) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const chips = getChipValues(containerId).filter(n => n !== name);
+      const key = getConfigKey(containerId);
+      if (appConfig && key) {
+        appConfig[key] = chips;
+        if (containerId === 'cfg-emailRecipients' && appConfig.activeRecipients) {
+          appConfig.activeRecipients = appConfig.activeRecipients.filter(n => n !== name);
+          buildRecipientCheckboxes(chips, appConfig.activeRecipients);
+        }
+      }
+      renderChips(containerId, chips);
+    }
+    function addChipFromInput(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const input = container.querySelector('.chip-input');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+      const chips = getChipValues(containerId);
+      if (chips.includes(val)) { input.value = ''; showToast('Already exists!', '#e0a01a'); return; }
+      chips.push(val);
+      const key = getConfigKey(containerId);
+      if (appConfig && key) appConfig[key] = chips;
+      renderChips(containerId, chips);
+      input.value = '';
+    }
+    function handleChipEnter(e, containerId) {
+      if (e.key === 'Enter') { e.preventDefault(); addChipFromInput(containerId); }
+    }
+    function addEmailChip(containerId) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      const input = container.querySelector('.chip-input');
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val) return;
+      // Basic email validation
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val)) {
+        showToast('❌ Please enter a valid email address', '#e74c3c');
+        return;
+      }
+      const chips = getChipValues(containerId);
+      if (chips.includes(val)) { input.value = ''; showToast('Already in list!', '#e0a01a'); return; }
+      chips.push(val);
+      const key = getConfigKey(containerId);
+      if (appConfig && key) appConfig[key] = chips;
+      renderChips(containerId, chips);
+      input.value = '';
+    }
+    function getConfigKey(containerId) {
+      const map = {
+        'cfg-agentNames': 'agentNames',
+        'cfg-callTypes': 'callTypes',
+        'cfg-evaluatorNames': 'evaluatorNames',
+        'cfg-moveTypes': 'moveTypes',
+        'cfg-moveValueCategories': 'moveValueCategories',
+        'cfg-leadStatuses': 'leadStatuses',
+        'cfg-monitoringCategories': 'monitoringCategories',
+        'cfg-emailRecipients': 'emailRecipients'
+      };
+      return map[containerId];
+    }
+
+    // ── Box 2 helpers ──
+    function buildRecipientCheckboxes(allEmails, activeEmails) {
+      const list = document.getElementById('email-recipients-list');
+      if (!list) return;
+      if (!allEmails || !allEmails.length) {
+        list.innerHTML = '<span style="color:#aaa;font-size:12px;font-style:italic;">Add emails in Box 1 first…</span>';
+        return;
+      }
+      list.innerHTML = allEmails.map(email => {
+        const checked = (activeEmails || []).includes(email) ? 'checked' : '';
+        return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1a3a5c;cursor:pointer;padding:3px 0;">
+          <input type="checkbox" value="${email}" ${checked} onchange="syncActiveRecipients()"
+            style="width:15px;height:15px;accent-color:#2471a3;cursor:pointer;">
+          <span>${email}</span>
+        </label>`;
+      }).join('');
+    }
+    function syncActiveRecipients() {
+      const checks = document.querySelectorAll('#email-recipients-list input[type=checkbox]');
+      const active = [...checks].filter(c => c.checked).map(c => c.value);
+      if (appConfig) appConfig.activeRecipients = active;
+    }
+    function selectAllRecipients(state) {
+      const checks = document.querySelectorAll('#email-recipients-list input[type=checkbox]');
+      checks.forEach(c => c.checked = state);
+      syncActiveRecipients();
+    }
+    function handleEmailChipEnter(e) {
+      if (e.key === 'Enter') { e.preventDefault(); addEmailAndSyncRecipients(); }
+    }
+    function addEmailAndSyncRecipients() {
+      addEmailChip('cfg-emailRecipients');
+      const allEmails = getChipValues('cfg-emailRecipients');
+      const currentActive = appConfig?.activeRecipients || [];
+      buildRecipientCheckboxes(allEmails, currentActive);
+    }
+    async function saveConfig() {
+      const btns = [document.getElementById('cfg-save-btn'), document.getElementById('cfg-save-btn2')].filter(Boolean);
+      btns.forEach(b => { b.textContent = '⏳ Saving...'; b.disabled = true; });
+      const nc = {
+        agentNames: getChipValues('cfg-agentNames'),
+        callTypes: getChipValues('cfg-callTypes'),
+        evaluatorNames: getChipValues('cfg-evaluatorNames'),
+        moveTypes: getChipValues('cfg-moveTypes'),
+        moveValueCategories: getChipValues('cfg-moveValueCategories'),
+        leadStatuses: getChipValues('cfg-leadStatuses'),
+        monitoringCategories: getChipValues('cfg-monitoringCategories'),
+        emailRecipients: getChipValues('cfg-emailRecipients'),
+        activeRecipients: appConfig?.activeRecipients || []
+      };
+      try {
+        const r = await fetch(getApiBase() + '/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(nc) });
+        if (r.ok) {
+          const data = await r.json();
+          appConfig = data.config;
+          showToast('✅ Configuration saved! All dropdowns updated.', '#27ae60');
+          populateAllDropdowns();
+        } else {
+          const err = await r.json().catch(() => ({}));
+          showToast('❌ Save failed: ' + (err.error || r.status), '#e05c2a');
+        }
+      } catch (e) {
+        showToast('❌ Network error: ' + e.message, '#e05c2a');
+      }
+      btns.forEach(b => { b.textContent = '💾 Save Configuration'; b.disabled = false; });
+    }
+
     (function init() {
       // Initialize feedback loading listeners
       addFeedbackLoadListeners();
@@ -8866,6 +9631,7 @@
         const dot = document.getElementById('sync-status');
         const text = document.getElementById('sync-text');
         try {
+          await loadAppConfig();
           const apiStatus = await fetch(`${getApiBase()}/api/health`).then(r => r.json());
           if (dot && text) {
             dot.className = 'sync-status ok';
@@ -9009,7 +9775,7 @@
           row.className = 'cl-row'; row.id = `row_${si}_${ii}`;
           row.innerHTML = `
         <span class="cl-num">${ii + 1}</span>
-        <span class="cl-text">${item}</span>
+        <span class="cl-text" style="display:flex;align-items:flex-start;gap:6px;">${item}<span class="edit-q-btn" style="cursor:pointer;opacity:0.55;font-size:13px;flex-shrink:0;margin-top:1px;" onclick="editChecklistQuestion(${si}, ${ii})" title="Edit Question">✏️</span></span>
         <span><select class="rating-select blank" id="r_${si}_${ii}" onchange="onRatingChange(this,${si},${ii})">
           <option value="">— Not Assessed —</option>
           <option value="met">✅ Met</option>
