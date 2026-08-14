@@ -8496,13 +8496,13 @@
         'Conversion Probability', 'Total Parameters (Met+Not Met+Needs Improvement+NA)',
         'Total Applicable Parameters (Excludes NA)', 'Total - Met', 'Total - Not Met',
         'Total - Needs Improvement', 'Defect Rate (Not Met + Needs Improvement)',
-        'Adherence %', 'Grading', 'Feedback Given', 'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
+        'Adherence %', 'Grading', 'Feedback Given', 'Feedback Given Date', 'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
       ];
 
       const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s; };
 
       const rows = filtered.map((r, i) => {
-        const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
+        const totalParams = (getSectionsForCallType(r.callType)).reduce((s, sec) => s + sec.items.length, 0);
         const defectRate = r.assessed > 0 ? (((r.nmCount + r.niCount) / r.assessed) * 100).toFixed(1) + '%' : '0%';
         const grading = getGrading(r.pct);
 
@@ -8519,6 +8519,8 @@
           const localFeedback = reportFeedbackMap.get(callId) || { summary: '', positive: '', ni: '' };
           Object.assign(feedback, localFeedback);
         }
+
+        const fbDate = r.feedbackGiven ? (r.feedbackGivenDate ? fmtDate(r.feedbackGivenDate) : fmtDate(new Date())) : '';
 
         return [
           esc(i + 1),
@@ -8541,6 +8543,7 @@
           esc(r.pct + '%'),
           esc(grading),
           esc(r.feedbackGiven || ''),
+          esc(fbDate),
           esc(feedback.summary),
           esc(feedback.positive),
           esc(feedback.ni)
@@ -8548,7 +8551,7 @@
       });
 
       // TOTAL Row
-      const totParams = filtered.reduce((s, r) => (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((ss, sec) => ss + sec.items.length, s), 0);
+      const totParams = filtered.reduce((s, r) => (getSectionsForCallType(r.callType)).reduce((ss, sec) => ss + sec.items.length, s), 0);
       const totAssessed = filtered.reduce((s, r) => s + r.assessed, 0);
       const totMoveVal = filtered.reduce((s, r) => s + (parseFloat(r.moveValueAmount) || 0), 0);
       const totMet = filtered.reduce((s, r) => s + r.metCount, 0);
@@ -8649,7 +8652,7 @@
       ]];
 
       const agentBody = filtered.map((r, i) => {
-        const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
+        const totalParams = (getSectionsForCallType(r.callType)).reduce((s, sec) => s + sec.items.length, 0);
         const defectRate = r.assessed > 0 ? (((r.nmCount + r.niCount) / r.assessed) * 100).toFixed(1) + '%' : '0%';
         const grading = getGrading(r.pct);
 
@@ -8677,7 +8680,7 @@
 
       // Calculate Agent Summary Totals
       const totCalls = filtered.length;
-      const totParams = filtered.reduce((acc, r) => acc + (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0), 0);
+      const totParams = filtered.reduce((acc, r) => acc + (getSectionsForCallType(r.callType)).reduce((s, sec) => s + sec.items.length, 0), 0);
       const totApp = filtered.reduce((acc, r) => acc + r.assessed, 0);
       const totMet = filtered.reduce((acc, r) => acc + r.metCount, 0);
       const totNm = filtered.reduce((acc, r) => acc + r.nmCount, 0);
@@ -8892,15 +8895,17 @@
                   <th style="border: 1px solid #1d4ed8;">Adherence %</th>
                   <th style="border: 1px solid #1d4ed8;">Grading</th>
                   <th style="border: 1px solid #1d4ed8;">Feedback Given</th>
+                  <th style="border: 1px solid #1d4ed8;">Feedback Given Date</th>
                 </tr>
               </thead>
               <tbody>`;
 
         filtered.forEach((r, i) => {
           const g = r.pct >= 90 ? 'Excellent' : r.pct >= 80 ? 'Good' : r.pct >= 70 ? 'Average' : 'Poor';
-          const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0);
+          const totalParams = (getSectionsForCallType(r.callType)).reduce((s, sec) => s + sec.items.length, 0);
           const defectRate = r.assessed > 0 ? (((r.nmCount + r.niCount) / r.assessed) * 100).toFixed(1) + '%' : '0%';
           const rowBg = i % 2 === 0 ? '#ffffff' : '#f1f5f9';
+          const fbDate = r.feedbackGiven ? (r.feedbackGivenDate ? fmtDate(r.feedbackGivenDate) : fmtDate(new Date())) : '—';
 
           html += `
         <tr style="background-color: ${rowBg}; color: #334155;">
@@ -8922,12 +8927,13 @@
           <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 800; color: #1e3a8a;">${r.pct}%</td>
           <td style="border: 1px solid #e2e8f0; text-align: center;"><span style="${getGradingStyle(r.pct, g)}">${g}</span></td>
           <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${r.feedbackGiven === 'Yes' ? '#16a34a' : r.feedbackGiven === 'No' ? '#dc2626' : '#94a3b8'};">${r.feedbackGiven || '—'}</td>
+          <td style="border: 1px solid #e2e8f0; text-align: center;">${fbDate}</td>
         </tr>`;
         });
 
         // ─── Agent Summary Total Row ───
         const totCalls = filtered.length;
-        const totParams = filtered.reduce((acc, r) => acc + (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((s, sec) => s + sec.items.length, 0), 0);
+        const totParams = filtered.reduce((acc, r) => acc + (getSectionsForCallType(r.callType)).reduce((s, sec) => s + sec.items.length, 0), 0);
         const totApp = filtered.reduce((acc, r) => acc + r.assessed, 0);
         const totMet = filtered.reduce((acc, r) => acc + r.metCount, 0);
         const totNm = filtered.reduce((acc, r) => acc + r.nmCount, 0);
@@ -8948,6 +8954,8 @@
         <td style="border: 1px solid #94a3b8; text-align: center;">${totDef}</td>
         <td style="border: 1px solid #94a3b8; text-align: center; color: #1e3a8a;">${totAdh}%</td>
         <td style="border: 1px solid #94a3b8; text-align: center;"><span style="${getGradingStyle(totAdh, totGrading)}">${totGrading}</span></td>
+        <td style="border: 1px solid #94a3b8;"></td>
+        <td style="border: 1px solid #94a3b8;"></td>
       </tr>`;
 
         html += `</tbody></table></div><br><br>`;
@@ -9102,7 +9110,7 @@
         if (!agMap[r.agent]) agMap[r.agent] = { name: r.agent, calls: 0, totalParams: 0, appParams: 0, met: 0, nm: 0, ni: 0, moveValueCategories: {}, totalMoveValue: 0 };
         const s = agMap[r.agent];
         s.calls++;
-        const totalParams = (r.callType === 'Pre Move Confirmation call' ? PRE_MOVE_SECTIONS : SECTIONS).reduce((ss, sec) => ss + sec.items.length, 0);
+        const totalParams = (getSectionsForCallType(r.callType)).reduce((ss, sec) => ss + sec.items.length, 0);
         s.totalParams += totalParams;
         s.appParams += r.assessed;
         s.met += r.metCount;
@@ -9534,8 +9542,7 @@
 
     // ── Edit a checklist question inline ──────────────────────────────────────
     async function editChecklistQuestion(si, ii) {
-      const isPreMove = (typeof currentChecklistMode !== 'undefined' && currentChecklistMode === 'premove');
-      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       const currentText = sections[si].items[ii];
 
       // Build a small modal-style dialog inside the existing #modal
@@ -9558,14 +9565,15 @@
       const newText = ta.value.trim();
       if (!newText) { showToast('❌ Question cannot be empty', '#e74c3c'); return; }
 
-      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       sections[si].items[ii] = newText;
 
       closeModal();
 
       // Persist to server if appConfig is available
       if (typeof appConfig !== 'undefined' && appConfig) {
-        if (isPreMove) { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        if (currentChecklistMode === 'premove') { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        else if (currentChecklistMode === 'escalations') { appConfig.escalationsChecklistSections = ESCALATIONS_SECTIONS; }
         else { appConfig.checklistSections = SECTIONS; }
         try {
           const r = await fetch(getApiBase() + '/api/config', {
@@ -9583,8 +9591,7 @@
     }
 
     async function editChecklistHeader(si) {
-      const isPreMove = (typeof currentChecklistMode !== 'undefined' && currentChecklistMode === 'premove');
-      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       const currentText = sections[si].title;
       const escapedText = currentText.replace(/"/g, '&quot;');
       const body = `
@@ -9605,14 +9612,15 @@
       const newText = ta.value.trim();
       if (!newText) { showToast('❌ Header cannot be empty', '#e74c3c'); return; }
 
-      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       sections[si].title = newText;
 
       closeModal();
       if (typeof buildChecklist === 'function') buildChecklist();
 
       if (typeof appConfig !== 'undefined' && appConfig) {
-        if (isPreMove) { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        if (currentChecklistMode === 'premove') { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        else if (currentChecklistMode === 'escalations') { appConfig.escalationsChecklistSections = ESCALATIONS_SECTIONS; }
         else { appConfig.checklistSections = SECTIONS; }
         try {
           const r = await fetch(getApiBase() + '/api/config', {
@@ -9654,6 +9662,10 @@
         if (appConfig.preMoveChecklistSections && Array.isArray(appConfig.preMoveChecklistSections)) {
           PRE_MOVE_SECTIONS.length = 0;
           appConfig.preMoveChecklistSections.forEach(s => PRE_MOVE_SECTIONS.push(s));
+        }
+        if (appConfig.escalationsChecklistSections && Array.isArray(appConfig.escalationsChecklistSections)) {
+          ESCALATIONS_SECTIONS.length = 0;
+          appConfig.escalationsChecklistSections.forEach(s => ESCALATIONS_SECTIONS.push(s));
         }
 
         // Re-build checklist with potentially loaded sections
@@ -9943,23 +9955,71 @@
       }
     ];
 
+    // ── ESCALATIONS & DISPUTE CALL CHECKLIST (14 items) ──────────────
+    const ESCALATIONS_SECTIONS = [
+      {
+        title: "Acknowledgement & Empathy", items: [
+          "Acknowledged the escalation, complaint, or cancellation request with empathy, per the C.A.R.E. framework",
+          "Applied the vulnerable customer protocol where applicable"
+        ]
+      },
+      {
+        title: "Issue Understanding", items: [
+          "Asked for the reason before processing the request",
+          "Confirmed the reason back to the customer",
+          "Attempted an objection-related save where the issue was resolvable"
+        ]
+      },
+      {
+        title: "Resolution & Policy Application", items: [
+          "Explained cancellation charges accurately per policy",
+          "Offered reschedule where appropriate",
+          "Offered an alternative resolution where appropriate",
+          "Did not pressure the customer after a final decision was made"
+        ]
+      },
+      {
+        title: "Process & Escalation Path", items: [
+          "Followed the Escalation & Dispute Handling Process as per stipulated timelines",
+          "Logged the escalation/cancellation accurately in the tracker with correct category",
+          "Logged the escalation/cancellation with correct status",
+          "Confirmed next steps clearly with the customer before ending the call",
+          "Confirmed the follow-up timeline clearly with the customer"
+        ]
+      }
+    ];
+
+    function getSectionsForCallType(callType) {
+      if (callType === 'Pre Move Confirmation call') return PRE_MOVE_SECTIONS;
+      if (callType === 'Escalations & dispute') return ESCALATIONS_SECTIONS;
+      return SECTIONS;
+    }
+    
+    function getActiveSections() {
+      if (currentChecklistMode === 'premove') return PRE_MOVE_SECTIONS;
+      if (currentChecklistMode === 'escalations') return ESCALATIONS_SECTIONS;
+      return SECTIONS;
+    }
+
     let currentChecklistMode = 'standard'; // 'standard' | 'premove'
     let activeRatings = {}; // stores ratings for current mode
 
     function onCallTypeChange(val) {
-      const isPreMove = val === 'Pre Move Confirmation call';
+      const mode = val === 'Pre Move Confirmation call' ? 'premove' : val === 'Escalations & dispute' ? 'escalations' : 'standard';
       const banner = document.getElementById('checklist-mode-banner');
-      if (banner) banner.style.display = isPreMove ? 'flex' : 'none';
+      if (banner) {
+        banner.style.display = (mode !== 'standard') ? 'flex' : 'none';
+        if (mode === 'escalations') {
+          banner.innerHTML = '⚠️ Using Escalations & Dispute Checklist';
+          banner.style.background = '#e74c3c';
+        } else if (mode === 'premove') {
+          banner.innerHTML = '✨ Using Pre-Move Confirmation Checklist';
+          banner.style.background = '#8e44ad';
+        }
+      }
 
-      if (isPreMove && currentChecklistMode !== 'premove') {
-        // Save standard ratings, switch to pre-move
-        currentChecklistMode = 'premove';
-        initRatings();
-        buildChecklist();
-        updateLiveScore();
-      } else if (!isPreMove && currentChecklistMode !== 'standard') {
-        // Switch back to standard
-        currentChecklistMode = 'standard';
+      if (currentChecklistMode !== mode) {
+        currentChecklistMode = mode;
         initRatings();
         buildChecklist();
         updateLiveScore();
@@ -9979,13 +10039,15 @@
     buildChecklist = function () {
       const container = document.getElementById('checklist-container');
       container.innerHTML = '';
-      const sections = currentChecklistMode === 'premove' ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       sections.forEach((sec, si) => {
         const hdr = document.createElement('div');
         hdr.className = 'section-header';
-        // purple accent for pre-move
+        // highlight active mode
         if (currentChecklistMode === 'premove') {
           hdr.style.background = 'linear-gradient(90deg,#6c3483,#8e44ad)';
+        } else if (currentChecklistMode === 'escalations') {
+          hdr.style.background = 'linear-gradient(90deg,#922b21,#c0392b)';
         }
         hdr.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${sec.title}<span class="edit-q-btn" style="cursor:pointer;opacity:0.55;font-size:13px;flex-shrink:0;" onclick="editChecklistHeader(${si})" title="Edit Category Header">✏️</span></span><span class="sec-count">${sec.items.length} items</span>`;
         const card = document.createElement('div');
@@ -10017,7 +10079,7 @@
     const _origCalcScore = calcScore;
     calcScore = function () {
       let assessed = 0, metCount = 0, nmCount = 0, niCount = 0; const breakdown = [];
-      const sections = currentChecklistMode === 'premove' ? PRE_MOVE_SECTIONS : SECTIONS;
+      const sections = getActiveSections();
       sections.forEach((sec, si) => {
         let sA = 0, sM = 0, sN = 0, sI = 0; const items = [];
         sec.items.forEach((item, ii) => {
@@ -10049,6 +10111,7 @@
       // Run original
       SECTIONS.forEach((sec, si) => sec.items.forEach((_, ii) => { const sel = document.getElementById(`r_${si}_${ii}`); if (sel) { sel.value = ''; sel.className = 'rating-select blank'; } }));
       PRE_MOVE_SECTIONS.forEach((sec, si) => sec.items.forEach((_, ii) => { const sel = document.getElementById(`r_${si}_${ii}`); if (sel) { sel.value = ''; sel.className = 'rating-select blank'; } }));
+      ESCALATIONS_SECTIONS.forEach((sec, si) => sec.items.forEach((_, ii) => { const sel = document.getElementById(`r_${si}_${ii}`); if (sel) { sel.value = ''; sel.className = 'rating-select blank'; } }));
       initRatings();
       ['f-lead', 'f-customer', 'f-duration', 'f-evaluator', 'f-summary', 'f-positive', 'f-ni'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       ['f-agent', 'f-calltype', 'f-movetype', 'f-movevalue-amount', 'f-movevalue', 'f-conversion', 'f-leadstatus', 'f-cuecard'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
