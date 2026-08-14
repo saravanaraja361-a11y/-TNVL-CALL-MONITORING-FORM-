@@ -44,6 +44,7 @@ const recordSchema = new mongoose.Schema({
   callSummary: String,
   feedbackPositive: String,
   feedbackNeedsImprovement: String,
+  feedbackGiven: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -69,7 +70,8 @@ const configSchema = new mongoose.Schema({
   preMoveChecklistSections: { type: Array, default: [] },
   monitoringCategories: { type: [String], default: ["Booked", "Complaint/Escalation Call", "High Value", "Follow-up call", "Close to booking but lost", "Prospects", "Mid Value", "Move on Hold - Crew initiated", "Move on Hold - Customer Initiated", "Move Cancelled - Customer initiated", "Move Cancelled - Ops Initiated", "Move Cancelled - Crew Initiated", "Move Cancelled - Crew Unassigned"] },
   emailRecipients: { type: [String], default: [] },
-  activeRecipients: { type: [String], default: [] }
+  activeRecipients: { type: [String], default: [] },
+  archivedTskFiles: { type: [String], default: [] }
 });
 const Config = mongoose.model('Config', configSchema);
 
