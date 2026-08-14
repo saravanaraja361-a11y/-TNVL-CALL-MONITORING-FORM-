@@ -1016,7 +1016,10 @@ app.post('/api/send-report-email', async (req, res) => {
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
-        }
+        },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 15000
       });
 
       const mailOptions = {
@@ -1432,13 +1435,17 @@ app.get('/api/config', async (_req, res) => {
       merged.callTypes.push("Escalations & dispute");
       await Config.updateOne({ id: 'main' }, { $addToSet: { callTypes: "Escalations & dispute" } });
     }
-    if (merged.emailRecipients && !merged.emailRecipients.includes("aarti.s@zentiq.ca")) {
-      merged.emailRecipients.push("aarti.s@zentiq.ca");
-      if (!merged.activeRecipients.includes("aarti.s@zentiq.ca")) {
-        merged.activeRecipients.push("aarti.s@zentiq.ca");
-      }
-      await Config.updateOne({ id: 'main' }, { $addToSet: { emailRecipients: "aarti.s@zentiq.ca", activeRecipients: "aarti.s@zentiq.ca" } });
-    }
+    const requiredRecips = ["saravanaraja@tnvl.ca", "aarti.s@tnvl.ca", "aarti.s@zentiq.ca"];
+    requiredRecips.forEach(rEmail => {
+      if (merged.emailRecipients && !merged.emailRecipients.includes(rEmail)) merged.emailRecipients.push(rEmail);
+      if (merged.activeRecipients && !merged.activeRecipients.includes(rEmail)) merged.activeRecipients.push(rEmail);
+    });
+    await Config.updateOne({ id: 'main' }, { 
+      $addToSet: { 
+        emailRecipients: { $each: requiredRecips }, 
+        activeRecipients: { $each: requiredRecips } 
+      } 
+    });
     console.log('[CLOUD] ⚙️ Config loaded, agents:', merged.agentNames.length);
     res.json(merged);
   } catch (e) {
