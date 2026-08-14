@@ -8609,17 +8609,38 @@
       doc.setFillColor(...darkBg);
       doc.rect(0, 0, 420, 297, 'F');
 
-      // Add Logo
-      try {
-        doc.addImage(logoUrl, 'PNG', 20, 15, 50, 15);
-      } catch (e) {
-        doc.setTextColor(...textWhite);
-        doc.setFontSize(22);
-        doc.text('TRUENORTH VAN LINES', 20, 25);
+      // Safe async logo preloader with 1.5s timeout fallback
+      const loadLogo = (url) => new Promise(resolve => {
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width; canvas.height = img.height;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            resolve(canvas.toDataURL('image/png'));
+          } catch (e) { resolve(null); }
+        };
+        img.onerror = () => resolve(null);
+        setTimeout(() => resolve(null), 1500);
+        img.src = url;
+      });
+
+      const logoData = await loadLogo(logoUrl);
+      if (logoData) {
+        try { doc.addImage(logoData, 'PNG', 20, 15, 50, 15); }
+        catch (e) {
+          doc.setTextColor(...textWhite); doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+          doc.text('TRUENORTH VAN LINES', 20, 26);
+        }
+      } else {
+        doc.setTextColor(...textWhite); doc.setFontSize(22); doc.setFont('helvetica', 'bold');
+        doc.text('TRUENORTH VAN LINES', 20, 26);
       }
 
       doc.setTextColor(...textMuted);
       doc.setFontSize(14);
+      doc.setFont('helvetica', 'normal');
       doc.text(`TNVL Performance Reports Bundle — ${new Date().toLocaleDateString('en-CA')}`, 20, 42);
 
       let yPos = 55;
