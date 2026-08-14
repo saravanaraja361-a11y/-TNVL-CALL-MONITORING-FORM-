@@ -45,6 +45,7 @@ const recordSchema = new mongoose.Schema({
   feedbackPositive: String,
   feedbackNeedsImprovement: String,
   feedbackGiven: String,
+  feedbackGivenDate: String,
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -61,13 +62,14 @@ const DashboardComment = mongoose.model('DashboardComment', dashboardCommentSche
 const configSchema = new mongoose.Schema({
   id: { type: String, default: 'main', unique: true },
   agentNames: { type: [String], default: ["Myles", "Dustin", "Thomas", "Anthony", "Daniel", "Noah", "Jessica", "Alex", "Arthur", "William", "Solomon", "Fabian", "Brian", "Ethan"] },
-  callTypes: { type: [String], default: ["Inbound quote request", "Inbound follow up", "Outbound - Initial call", "Outbound - follow up", "Pre Move Confirmation call", "Short calls less than 3 Mins"] },
+  callTypes: { type: [String], default: ["Inbound quote request", "Inbound follow up", "Outbound - Initial call", "Outbound - follow up", "Pre Move Confirmation call", "Escalations & dispute", "Short calls less than 3 Mins"] },
   evaluatorNames: { type: [String], default: ["Aarti - AI", "Aarti - Verified", "Sachin", "Solomon", "Daniel", "Saravana J"] },
   moveTypes: { type: [String], default: ["Local Move", "Long Distance Move"] },
   moveValueCategories: { type: [String], default: ["Low Value", "Mid Value", "High Value"] },
   leadStatuses: { type: [String], default: ["Open", "Closed", "Booked", "Lost", "Refund request (cancellation)"] },
   checklistSections: { type: Array, default: [] },
   preMoveChecklistSections: { type: Array, default: [] },
+  escalationsChecklistSections: { type: Array, default: [] },
   monitoringCategories: { type: [String], default: ["Booked", "Complaint/Escalation Call", "High Value", "Follow-up call", "Close to booking but lost", "Prospects", "Mid Value", "Move on Hold - Crew initiated", "Move on Hold - Customer Initiated", "Move Cancelled - Customer initiated", "Move Cancelled - Ops Initiated", "Move Cancelled - Crew Initiated", "Move Cancelled - Crew Unassigned"] },
   emailRecipients: { type: [String], default: [] },
   activeRecipients: { type: [String], default: [] },
@@ -986,29 +988,71 @@ app.post('/api/send-report-email', async (req, res) => {
     return res.status(400).json({ error: 'PDF content is required' });
   }
 
-  const apiKey = process.env.BREVO_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'BREVO_API_KEY missing in Render environment' });
-  }
-
-  // Use config-managed recipients if provided, else fall back to env var
+  // Determine recipient list
   let recipientList = [];
   if (Array.isArray(recipients) && recipients.length > 0) {
-    recipientList = recipients.filter(Boolean).map(email => ({ email: email.trim() }));
+    recipientList = recipients.filter(Boolean).map(e => e.trim());
   } else {
     recipientList = (process.env.EMAIL_RECIPIENTS || process.env.EMAIL_USER || '')
       .split(',')
       .map(e => e.trim())
-      .filter(Boolean)
-      .map(email => ({ email }));
+      .filter(Boolean);
   }
 
+  // Guarantee aarti.s@zentiq.ca is in default list if fallback used
   if (recipientList.length === 0) {
-    return res.status(400).json({ error: 'No email recipients configured. Please add recipients in Settings tab.' });
+    recipientList = ['saravanaraja@tnvl.ca', 'aarti.s@tnvl.ca', 'aarti.s@zentiq.ca'];
+  }
+
+  const subject = `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`;
+
+  // 1. Try Nodemailer / SMTP (Zoho SMTP) first if configured
+  if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.EMAIL_HOST || 'smtppro.zoho.com',
+        port: parseInt(process.env.EMAIL_PORT || '465'),
+        secure: parseInt(process.env.EMAIL_PORT || '465') === 465,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        }
+      });
+
+      const mailOptions = {
+        from: `"${process.env.EMAIL_FROM_NAME || 'TNVL Reports'}" <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
+        to: recipientList.join(', '),
+        subject: subject,
+        html: htmlContent || '<p>Please find the attached performance report PDF.</p>',
+        attachments: [
+          {
+            filename: fileName || 'Performance_Report.pdf',
+            content: Buffer.from(pdfBase64, 'base64')
+          }
+        ]
+      };
+
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ Sent email via SMTP (${process.env.EMAIL_HOST || 'Zoho'}) to ${recipientList.join(', ')}:`, info.messageId);
+      return res.json({ success: true, message: `PDF Report sent successfully to ${recipientList.length} recipients!` });
+    } catch (smtpErr) {
+      console.error('⚠️ SMTP Error, falling back to Brevo if available:', smtpErr.message);
+      // If Brevo isn't available, return error directly
+      if (!process.env.BREVO_API_KEY) {
+        return res.status(500).json({ error: 'Failed to send email via SMTP', details: smtpErr.message });
+      }
+    }
+  }
+
+  // 2. Brevo API Fallback
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'No email service credentials found (EMAIL_USER/EMAIL_PASS or BREVO_API_KEY missing)' });
   }
 
   try {
-    const sendPromises = recipientList.map(recipient => 
+    const brevoRecipients = recipientList.map(email => ({ email }));
+    const sendPromises = brevoRecipients.map(recipient => 
       fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
@@ -1021,7 +1065,7 @@ app.post('/api/send-report-email', async (req, res) => {
             email: process.env.EMAIL_FROM || process.env.EMAIL_USER || 'noreply@brevo.com'
           },
           to: [recipient],
-          subject: `TNVL Performance Reports Bundle - ${new Date().toLocaleDateString('en-CA')}`,
+          subject: subject,
           htmlContent: htmlContent || '<p>Please find the attached performance report PDF.</p>',
           attachment: [
             {
@@ -1050,14 +1094,14 @@ app.post('/api/send-report-email', async (req, res) => {
 // ── Dynamic Configuration (Dropdowns) ─────────────────────────────────────────
 const CONFIG_DEFAULTS = {
   agentNames: ["Myles", "Dustin", "Thomas", "Anthony", "Daniel", "Noah", "Jessica", "Alex", "Arthur", "William", "Solomon", "Fabian", "Brian", "Ethan"],
-  callTypes: ["Inbound quote request", "Inbound follow up", "Outbound - Initial call", "Outbound - follow up", "Pre Move Confirmation call", "Short calls less than 3 Mins"],
+  callTypes: ["Inbound quote request", "Inbound follow up", "Outbound - Initial call", "Outbound - follow up", "Pre Move Confirmation call", "Escalations & dispute", "Short calls less than 3 Mins"],
   evaluatorNames: ["Aarti - AI", "Aarti - Verified", "Sachin", "Solomon", "Daniel", "Saravana J"],
   moveTypes: ["Local Move", "Long Distance Move"],
   moveValueCategories: ["Low Value", "Mid Value", "High Value"],
   leadStatuses: ["Open", "Closed", "Booked", "Lost", "Refund request (cancellation)"],
   monitoringCategories: ["Booked", "Complaint/Escalation Call", "High Value", "Follow-up call", "Close to booking but lost", "Prospects", "Mid Value", "Move on Hold - Crew initiated", "Move on Hold - Customer Initiated", "Move Cancelled - Customer initiated", "Move Cancelled - Ops Initiated", "Move Cancelled - Crew Initiated", "Move Cancelled - Crew Unassigned"],
-  emailRecipients: []
-  ,
+  emailRecipients: ["saravanaraja@tnvl.ca", "aarti.s@tnvl.ca", "aarti.s@zentiq.ca"],
+  activeRecipients: ["saravanaraja@tnvl.ca", "aarti.s@tnvl.ca", "aarti.s@zentiq.ca"],
   checklistSections: [
     {
       title: "Call Opening & Contact Verification", items: [
@@ -1335,6 +1379,38 @@ const CONFIG_DEFAULTS = {
         "Informed the lead and crew of the details discussed on the call"
       ]
     }
+  ],
+  escalationsChecklistSections: [
+    {
+      title: "Acknowledgement & Empathy", items: [
+        "Acknowledged the escalation, complaint, or cancellation request with empathy, per the C.A.R.E. framework",
+        "Applied the vulnerable customer protocol where applicable"
+      ]
+    },
+    {
+      title: "Issue Understanding", items: [
+        "Asked for the reason before processing the request",
+        "Confirmed the reason back to the customer",
+        "Attempted an objection-related save where the issue was resolvable"
+      ]
+    },
+    {
+      title: "Resolution & Policy Application", items: [
+        "Explained cancellation charges accurately per policy",
+        "Offered reschedule where appropriate",
+        "Offered an alternative resolution where appropriate",
+        "Did not pressure the customer after a final decision was made"
+      ]
+    },
+    {
+      title: "Process & Escalation Path", items: [
+        "Followed the Escalation & Dispute Handling Process as per stipulated timelines",
+        "Logged the escalation/cancellation accurately in the tracker with correct category",
+        "Logged the escalation/cancellation with correct status",
+        "Confirmed next steps clearly with the customer before ending the call",
+        "Confirmed the follow-up timeline clearly with the customer"
+      ]
+    }
   ]
 };
 
@@ -1350,6 +1426,18 @@ app.get('/api/config', async (_req, res) => {
     for (const key of Object.keys(CONFIG_DEFAULTS)) {
       const val = config[key];
       merged[key] = (Array.isArray(val) && val.length > 0) ? val : CONFIG_DEFAULTS[key];
+    }
+    // Auto-patch the new call type and recipients for existing databases
+    if (merged.callTypes && !merged.callTypes.includes("Escalations & dispute")) {
+      merged.callTypes.push("Escalations & dispute");
+      await Config.updateOne({ id: 'main' }, { $addToSet: { callTypes: "Escalations & dispute" } });
+    }
+    if (merged.emailRecipients && !merged.emailRecipients.includes("aarti.s@zentiq.ca")) {
+      merged.emailRecipients.push("aarti.s@zentiq.ca");
+      if (!merged.activeRecipients.includes("aarti.s@zentiq.ca")) {
+        merged.activeRecipients.push("aarti.s@zentiq.ca");
+      }
+      await Config.updateOne({ id: 'main' }, { $addToSet: { emailRecipients: "aarti.s@zentiq.ca", activeRecipients: "aarti.s@zentiq.ca" } });
     }
     console.log('[CLOUD] ⚙️ Config loaded, agents:', merged.agentNames.length);
     res.json(merged);
