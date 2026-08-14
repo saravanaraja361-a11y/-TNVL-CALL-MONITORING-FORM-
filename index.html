@@ -3780,14 +3780,15 @@
                   <th>❌ Not Met</th>
                   <th>🔶 Needs Impr.</th>
                   <th>Score %</th>
-                  <th onclick="toggleEvaluatorSort()" style="cursor:pointer;white-space:nowrap;">Evaluator <span
+                  <th onclick="toggleEvaluatorSort()" style="cursor:pointer;white-space:nowrap;width:1%;">Evaluator <span
                       id="evaluator-sort-icon">↕️</span></th>
-                  <th>Actions</th>
+                  <th style="text-align:center;width:1%;white-space:nowrap;">Feedback</th>
+                  <th style="width:1%;white-space:nowrap;">Actions</th>
                 </tr>
               </thead>
               <tbody id="call-tbody">
                 <tr>
-                  <td colspan="13" style="text-align:center;padding:30px;color:#999">No records yet.</td>
+                  <td colspan="14" style="text-align:center;padding:30px;color:#999">No records yet.</td>
                 </tr>
               </tbody>
             </table>
@@ -4375,16 +4376,13 @@
     function loadFeedbackForCurrentCall() {
       const callId = getCurrentCallId();
       if (callId && reportFeedbackMap.has(callId)) {
+        // Saved feedback exists for this call — load it (overwrite current text)
         const feedback = reportFeedbackMap.get(callId);
         document.querySelector('.feedback-summary').value = feedback.summary || '';
         document.querySelector('.feedback-positive').value = feedback.positive || '';
         document.querySelector('.feedback-ni').value = feedback.ni || '';
-      } else {
-        // Clear feedback fields if no saved feedback exists
-        document.querySelector('.feedback-summary').value = '';
-        document.querySelector('.feedback-positive').value = '';
-        document.querySelector('.feedback-ni').value = '';
       }
+      // If no saved feedback exists, keep whatever the user has already typed in the fields
     }
 
     function addFeedbackLoadListeners() {
@@ -4656,7 +4654,7 @@
         const hdr = document.createElement('div');
         hdr.className = 'section-header';
         if (sec.manualOnly) hdr.style.background = 'linear-gradient(90deg, #7d6608, #b7950b)';
-        hdr.innerHTML = `<span>${sec.title} ${sec.manualOnly ? '<span style="background:rgba(255,255,255,.25);padding:2px 8px;border-radius:4px;font-size:10px;margin-left:8px;vertical-align:middle;letter-spacing:0.5px;border:1px solid rgba(255,255,255,.4)">MANUAL RATING ONLY</span>' : ''}</span><span class="sec-count">${sec.items.length} items</span>`;
+        hdr.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${sec.title}<span class="edit-q-btn" style="cursor:pointer;opacity:0.55;font-size:13px;flex-shrink:0;" onclick="editChecklistHeader(${si})" title="Edit Category Header">✏️</span></span>${sec.manualOnly ? '<span style="background:rgba(255,255,255,.25);padding:2px 8px;border-radius:4px;font-size:10px;margin-left:8px;vertical-align:middle;letter-spacing:0.5px;border:1px solid rgba(255,255,255,.4)">MANUAL RATING ONLY</span>' : ''}</span><span class="sec-count">${sec.items.length} items</span>`;
         const card = document.createElement('div');
         card.className = 'checklist-card';
         if (sec.manualOnly) card.style.background = '#fffbef';
@@ -4745,17 +4743,56 @@
     }
 
     // ═══ FILE SELECTION ═══
-    let selectedTskOrderId = null;
+    let selectedTskOrderIds = [];
     let allTskFiles = [];
+    let showingArchived = false;
+
+    function toggleArchiveView() {
+      showingArchived = !showingArchived;
+      selectedTskOrderIds = [];
+      document.getElementById('tsk-form-selected').style.display = 'none';
+      renderFileListInForm(allTskFiles);
+    }
 
     function renderFileListInForm(files) {
       allTskFiles = files;
+      const archived = (appConfig && appConfig.archivedTskFiles) ? appConfig.archivedTskFiles : [];
+      let visibleFiles = [];
+      if (showingArchived) {
+          visibleFiles = files.filter(f => archived.includes(f.order_id));
+      } else {
+          visibleFiles = files.filter(f => !archived.includes(f.order_id));
+      }
+      
       const noFiles = document.getElementById('tsk-form-no-files'), label = document.getElementById('tsk-file-count-label'), list = document.getElementById('tsk-form-file-list'), searchContainer = document.getElementById('tsk-search-container');
-      if (!files.length) { noFiles.style.display = ''; label.style.display = 'none'; list.style.display = 'none'; searchContainer.style.display = 'none'; list.innerHTML = ''; return; }
-      noFiles.style.display = 'none'; label.style.display = 'block'; searchContainer.style.display = 'block'; label.textContent = `📁 ${files.length} files — click one to select, click again to deselect`; list.style.display = 'grid';
+      
+      const toggleViewBtn = `<button onclick="toggleArchiveView()" style="margin-left:10px;padding:4px 8px;background:#34495e;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;">${showingArchived ? '📂 View Inbox' : '🗑️ View Archived'}</button>`;
+      let actionButtons = '';
+      if (showingArchived) {
+          actionButtons = `<button onclick="restoreSelectedTskFiles()" style="margin-left:10px;padding:4px 8px;background:#27ae60;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;">♻️ Restore Selected</button><button onclick="unarchiveAllTskFiles()" style="margin-left:5px;padding:4px 8px;background:#7f8c8d;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;">♻️ Reset All</button>`;
+      } else {
+          actionButtons = `<button onclick="archiveSelectedTskFiles()" style="margin-left:10px;padding:4px 8px;background:#e74c3c;color:white;border:none;border-radius:4px;cursor:pointer;font-size:11px;">📦 Archive Selected</button>`;
+      }
+
+      if (!visibleFiles.length) { 
+        noFiles.style.display = ''; 
+        noFiles.innerHTML = `<div style="text-align:center;padding:20px;color:#6a9abf;font-size:13px;">${showingArchived ? 'No archived files.' : 'No files found.'}<br><br>${toggleViewBtn}</div>`;
+        label.style.display = 'none'; 
+        list.style.display = 'none'; 
+        searchContainer.style.display = 'none'; 
+        list.innerHTML = ''; 
+        return; 
+      }
+      
+      noFiles.style.display = 'none'; 
+      label.style.display = 'block'; 
+      searchContainer.style.display = 'block'; 
+      label.innerHTML = `📁 ${visibleFiles.length} ${showingArchived ? 'archived files' : 'files'} — click to select/deselect. ${toggleViewBtn} ${actionButtons}`; 
+      list.style.display = 'grid';
+      
       const searchValue = document.getElementById('tsk-search-input').value.toLowerCase();
-      const filteredFiles = filterFiles(files, searchValue);
-      list.innerHTML = filteredFiles.map(f => { const isSelected = selectedTskOrderId === f.order_id; const isLoaded = !!tskSummaries[f.order_id]; const borderColor = isSelected ? '#27ae60' : isLoaded ? '#1a6bb5' : '#2d5a82'; const bgColor = isSelected ? 'rgba(39,174,96,.22)' : isLoaded ? 'rgba(26,107,181,.1)' : 'rgba(255,255,255,.05)'; const arrow = isSelected ? '✅' : isLoaded ? '☑' : '→'; const safeId = f.order_id.replace(/[^a-zA-Z0-9_-]/g, '_'); const safeName = (f.name || '').replace(/\\/g, '').replace(/'/g, "'").replace(/"/g, '&quot;'); const safeDate = (f.created_at || '').replace(/'/g, "'"); return `<div class="tsk-form-file-card" id="tsk-form-card-${safeId}" style="border:1.5px solid ${borderColor};background:${bgColor};cursor:pointer;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;transition:all .15s;" onclick="toggleFileSelection('${f.order_id.replace(/'/g, "\\'")}','${safeName}','${safeDate}')"><div style="flex:1;min-width:0;overflow:hidden;"><div style="font-size:13px;font-weight:700;color:#d0eaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${f.name}</div>${f.created_at ? `<div style="font-size:11px;color:#6a9abf;margin-top:2px;">${f.created_at}</div>` : ''}</div><div style="font-size:16px;flex-shrink:0;" id="tsk-form-arrow-${safeId}">${arrow}</div></div>`; }).join('');
+      const filteredFiles = filterFiles(visibleFiles, searchValue);
+      list.innerHTML = filteredFiles.map(f => { const isSelected = selectedTskOrderIds.includes(f.order_id); const isLoaded = !!tskSummaries[f.order_id]; const borderColor = isSelected ? '#27ae60' : isLoaded ? '#1a6bb5' : '#2d5a82'; const bgColor = isSelected ? 'rgba(39,174,96,.22)' : isLoaded ? 'rgba(26,107,181,.1)' : 'rgba(255,255,255,.05)'; const arrow = isSelected ? '✅' : isLoaded ? '☑' : '→'; const safeId = f.order_id.replace(/[^a-zA-Z0-9_-]/g, '_'); const safeName = (f.name || '').replace(/\\/g, '').replace(/'/g, "'").replace(/\"/g, '&quot;'); const safeDate = (f.created_at || '').replace(/'/g, "'"); return `<div class="tsk-form-file-card" id="tsk-form-card-${safeId}" style="border:1.5px solid ${borderColor};background:${bgColor};cursor:pointer;border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:8px;transition:all .15s;" onclick="toggleFileSelection('${f.order_id.replace(/'/g, "\\'")}', '${safeName.replace(/'/g, "\\'")}', '${safeDate}')"><div style="flex:1;min-width:0;overflow:hidden;"><div style="font-size:13px;font-weight:700;color:#d0eaff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">📄 ${f.name}</div>${f.created_at ? `<div style="font-size:11px;color:#6a9abf;margin-top:2px;">${f.created_at}</div>` : ''}</div><div style="font-size:16px;flex-shrink:0;" id="tsk-form-arrow-${safeId}">${arrow}</div></div>`; }).join('');
     }
 
     function filterFiles(files, searchValue) {
@@ -4773,10 +4810,24 @@
     }
 
     async function toggleFileSelection(orderId, name, date) {
-      if (selectedTskOrderId === orderId) { selectedTskOrderId = null; document.getElementById('tsk-form-selected').style.display = 'none'; renderFileListInForm(allTskFiles); showToast('Deselected — click another file to select it', '#888'); return; }
-      selectedTskOrderId = orderId; renderFileListInForm(allTskFiles);
-      const safeId = orderId.replace(/[^a-zA-Z0-9_-]/g, '_'); const arrowEl = document.getElementById(`tsk-form-arrow-${safeId}`); if (arrowEl) arrowEl.innerHTML = '<span class="tsk-spinner"></span>';
-      document.getElementById('tsk-form-selected').style.display = 'block'; document.getElementById('tsk-form-selected-name').textContent = `⏳ Loading: ${name}...`;
+      const idx = selectedTskOrderIds.indexOf(orderId);
+      if (idx > -1) { 
+        selectedTskOrderIds.splice(idx, 1); 
+        renderFileListInForm(allTskFiles);
+      } else {
+        selectedTskOrderIds.push(orderId);
+        renderFileListInForm(allTskFiles);
+        const safeId = orderId.replace(/[^a-zA-Z0-9_-]/g, '_'); const arrowEl = document.getElementById(`tsk-form-arrow-${safeId}`); if (arrowEl) arrowEl.innerHTML = '<span class="tsk-spinner"></span>';
+      }
+      
+      if (selectedTskOrderIds.length > 0) {
+        document.getElementById('tsk-form-selected').style.display = 'block'; 
+        document.getElementById('tsk-form-selected-name').textContent = `⏳ Loading: ${name}...`;
+      } else {
+        document.getElementById('tsk-form-selected').style.display = 'none';
+        return;
+      }
+
       if (!tskSummaries[orderId]) {
         let summaryText = '';
         if (TSK_DEMO_SUMMARIES[orderId]) { await new Promise(r => setTimeout(r, 500)); summaryText = TSK_DEMO_SUMMARIES[orderId]; }
@@ -4786,21 +4837,73 @@
         const leadMatch = name.match(/(\d+)$/); const leadId = leadMatch ? leadMatch[1] : null;
         tskSummaries[orderId] = { fileName: name, fileDate: date, text: summaryText, leadId }; saveTskSummaries(); renderSummaries();
       }
-      document.getElementById('tsk-form-selected-name').textContent = `📄 ${name}`; renderFileListInForm(allTskFiles);
-      showToast(`✅ "${name}" selected — click ✨ Analyze to auto-fill checklist`, '#27ae60');
+      document.getElementById('tsk-form-selected-name').textContent = `📄 ${selectedTskOrderIds.length} files selected`; renderFileListInForm(allTskFiles);
+      showToast(`✅ ${selectedTskOrderIds.length} files selected`, '#27ae60');
     }
 
     function refreshTskFormFiles() { if (allTskFiles.length) { renderFileListInForm(allTskFiles); } else if (Object.keys(tskSummaries).length) { const files = Object.entries(tskSummaries).map(([id, s]) => ({ order_id: id, name: s.fileName, created_at: s.fileDate || '' })); renderFileListInForm(files); } }
 
+    async function archiveSelectedTskFiles() {
+      if (selectedTskOrderIds.length === 0) return;
+      if (!appConfig) { showToast('Error: Config not loaded', '#e74c3c'); return; }
+      let archived = appConfig.archivedTskFiles || [];
+      appConfig.archivedTskFiles = [...new Set([...archived, ...selectedTskOrderIds])];
+      selectedTskOrderIds = [];
+      document.getElementById('tsk-form-selected').style.display = 'none';
+      renderFileListInForm(allTskFiles);
+      try {
+          await fetch(getApiBase() + '/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appConfig)
+          });
+          showToast('📦 Files archived', '#e74c3c');
+      } catch (e) { showToast('⚠️ Archived locally (offline)', '#e67e22'); }
+    }
+    
+    async function unarchiveAllTskFiles() {
+      if (!appConfig) return;
+      appConfig.archivedTskFiles = [];
+      renderFileListInForm(allTskFiles);
+      try {
+          await fetch(getApiBase() + '/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appConfig)
+          });
+          showToast('♻️ Archive reset', '#27ae60');
+      } catch (e) { showToast('⚠️ Archive reset locally', '#e67e22'); }
+    }
+
+    async function restoreSelectedTskFiles() {
+      if (selectedTskOrderIds.length === 0) return;
+      if (!appConfig) { showToast('Error: Config not loaded', '#e74c3c'); return; }
+      let archived = appConfig.archivedTskFiles || [];
+      appConfig.archivedTskFiles = archived.filter(id => !selectedTskOrderIds.includes(id));
+      selectedTskOrderIds = [];
+      document.getElementById('tsk-form-selected').style.display = 'none';
+      renderFileListInForm(allTskFiles);
+      try {
+          await fetch(getApiBase() + '/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appConfig)
+          });
+          showToast('♻️ Files restored', '#27ae60');
+      } catch (e) { showToast('⚠️ Restored locally (offline)', '#e67e22'); }
+    }
+
     // ═══ ANALYSIS ═══
     async function runAnalysis() {
-      if (!selectedTskOrderId || !tskSummaries[selectedTskOrderId]) { showErrorResult('Please select a file from the list above first — click 📂 Browse Files or 🎭 Demo Files, then click a file card.'); return; }
+      if (selectedTskOrderIds.length === 0) { showErrorResult('Please select a file from the list above first — click 📂 Browse Files or 🎭 Demo Files, then click a file card.'); return; }
+      if (selectedTskOrderIds.length > 1) { showErrorResult('Please select ONLY ONE file for analysis. Bulk analysis is not supported.'); return; }
+      if (!tskSummaries[selectedTskOrderIds[0]]) { showErrorResult('Transcript not loaded yet.'); return; }
       await runRealAnalysis();
     }
     function showErrorResult(message) { const el = document.getElementById('ai-result'); el.className = 'ai-result-bar error'; el.innerHTML = `❌ ${message}`; document.getElementById('error-help').classList.add('show'); }
 
     async function runRealAnalysis() {
-      const s = tskSummaries[selectedTskOrderId]; const fullText = s.text || '';
+      const s = tskSummaries[selectedTskOrderIds[0]]; const fullText = s.text || '';
       const btn = document.getElementById('ai-btn'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Analyzing with Gemini 2.0 Flash…';
       const progressEl = document.getElementById('ai-progress'), resultEl = document.getElementById('ai-result'), helpEl = document.getElementById('error-help');
       progressEl.classList.add('show'); resultEl.className = 'ai-result-bar'; resultEl.textContent = ''; helpEl.classList.remove('show');
@@ -5772,7 +5875,7 @@
           if (el) el.textContent = id.includes('cnt') ? '0' : '—';
         });
         document.getElementById('agent-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:#999">No assessments yet.</td></tr>';
-        document.getElementById('call-tbody').innerHTML = '<tr><td colspan="12" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';
+        document.getElementById('call-tbody').innerHTML = '<tr><td colspan="14" style="text-align:center;padding:30px;color:#999">No records yet.</td></tr>';
         document.getElementById('call-pagination').innerHTML = '';
         initMultiSelect('trend-ms-wrap', 'trend-agents-trigger', 'trend-agents-dropdown');
         initMultiSelect('heatmap-ms-wrap', 'heatmap-agents-trigger', 'heatmap-agents-dropdown');
@@ -5854,7 +5957,14 @@
       <td style="color:#c0392b;font-weight:700">${r.nmCount}</td>
       <td style="color:#7d6608;font-weight:700">${r.niCount}</td>
       <td><span class="badge badge-${r.pct >= 80 ? 'high' : r.pct >= 60 ? 'mid' : 'low'}">${r.pct}%</span></td>
-      <td><span style="background:${evaluatorColor};color:white;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${evaluatorType}</span></td>
+      <td style="width:1%;white-space:nowrap;"><span style="background:${evaluatorColor};color:white;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;">${evaluatorType}</span></td>
+      <td style="text-align:center;width:1%;white-space:nowrap;">
+        <select onchange="saveFeedbackGiven('${r.id}', this.value)" style="padding:3px 7px;border-radius:5px;border:1.5px solid #cdd8e3;font-size:12px;font-weight:700;cursor:pointer;background:${r.feedbackGiven === 'Yes' ? '#eafaf1' : r.feedbackGiven === 'No' ? '#fdf2f2' : '#f8f9fa'};color:${r.feedbackGiven === 'Yes' ? '#1e8449' : r.feedbackGiven === 'No' ? '#c0392b' : '#888'};">
+          <option value="" ${!r.feedbackGiven ? 'selected' : ''}>— Select —</option>
+          <option value="Yes" ${r.feedbackGiven === 'Yes' ? 'selected' : ''}>✅ Yes</option>
+          <option value="No" ${r.feedbackGiven === 'No' ? 'selected' : ''}>❌ No</option>
+        </select>
+      </td>
       <td style="white-space:nowrap;">
         <button onclick="editCall('${r.id}')" class="btn-edit">Edit</button>
         <button onclick="showCallDetail('${r.id}')" style="background:#eaf0f7;color:#1a5276;border:1px solid #1a5276;padding:4px 10px;border-radius:5px;cursor:pointer;font-size:12px">View</button>
@@ -5867,6 +5977,22 @@
       initMultiSelect('heatmap-ms-wrap', 'heatmap-agents-trigger', 'heatmap-agents-dropdown');
       renderScoreChart(getTrendFiltered());
       renderHeatmap(getHeatmapFiltered());
+    }
+
+    async function saveFeedbackGiven(id, value) {
+      const r = records.find(x => String(x.id) === String(id));
+      if (!r) return;
+      r.feedbackGiven = value;
+      try {
+        await fetch(`${getApiBase()}/api/records/${r.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(r)
+        });
+        showToast(`💬 Feedback marked as "${value}" for Lead ${r.leadId || r.id}`, value === 'Yes' ? '#27ae60' : '#e74c3c');
+      } catch (e) {
+        showToast('⚠️ Saved locally — server sync failed', '#e67e22');
+      }
     }
     function downloadIndividualCallLogCSV() {
       const from = document.getElementById('d-from')?.value || '';
@@ -5891,7 +6017,7 @@
       const headers = [
         'Date', 'Agent', 'Lead ID', 'Customer', 'Call Type', 'Lead Status',
         'Sale Value Category', 'Move Value', 'Met Count', 'Not Met Count', 'Needs Improvement Count',
-        'Score %', 'Evaluator', 'Priority Based Monitoring Category'
+        'Score %', 'Evaluator', 'Priority Based Monitoring Category', 'Feedback'
       ];
 
       const esc = v => {
@@ -5915,7 +6041,8 @@
           esc(r.niCount || 0),
           esc(r.pct + '%'),
           esc(evaluatorType),
-          esc(r.monitoringCategory || '')
+          esc(r.monitoringCategory || ''),
+          esc(r.feedbackGiven || '')
         ].join(',');
       });
 
@@ -8369,7 +8496,7 @@
         'Conversion Probability', 'Total Parameters (Met+Not Met+Needs Improvement+NA)',
         'Total Applicable Parameters (Excludes NA)', 'Total - Met', 'Total - Not Met',
         'Total - Needs Improvement', 'Defect Rate (Not Met + Needs Improvement)',
-        'Adherence %', 'Grading', 'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
+        'Adherence %', 'Grading', 'Feedback Given', 'Call Summary', 'Feedback (Positive)', 'Feedback (Needs Improvement)'
       ];
 
       const esc = v => { const s = String(v == null ? '' : v); return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -8413,6 +8540,7 @@
           esc(defectRate),
           esc(r.pct + '%'),
           esc(grading),
+          esc(r.feedbackGiven || ''),
           esc(feedback.summary),
           esc(feedback.positive),
           esc(feedback.ni)
@@ -8441,6 +8569,7 @@
         esc(totDefectRate),
         esc(totalAdherence + '%'),
         esc(totGrading),
+        esc(''),
         esc(''),
         esc(''), esc('')
       ].join(',');
@@ -8762,6 +8891,7 @@
                   <th style="border: 1px solid #1d4ed8;">Defect Rate (Not Met + Needs Improvement)</th>
                   <th style="border: 1px solid #1d4ed8;">Adherence %</th>
                   <th style="border: 1px solid #1d4ed8;">Grading</th>
+                  <th style="border: 1px solid #1d4ed8;">Feedback Given</th>
                 </tr>
               </thead>
               <tbody>`;
@@ -8791,6 +8921,7 @@
           <td style="border: 1px solid #e2e8f0; text-align: center;">${defectRate}</td>
           <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 800; color: #1e3a8a;">${r.pct}%</td>
           <td style="border: 1px solid #e2e8f0; text-align: center;"><span style="${getGradingStyle(r.pct, g)}">${g}</span></td>
+          <td style="border: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: ${r.feedbackGiven === 'Yes' ? '#16a34a' : r.feedbackGiven === 'No' ? '#dc2626' : '#94a3b8'};">${r.feedbackGiven || '—'}</td>
         </tr>`;
         });
 
@@ -9254,7 +9385,7 @@
     // ═══ MODAL ═══
     const ratingLabel = r => r === 'met' ? '<span class="c-met">✅ Met</span>' : r === 'notmet' ? '<span class="c-not">❌ Not Met</span>' : r === 'ni' ? '<span class="c-ni">🔶 Needs Improvement</span>' : '<span class="c-skip">— Not Assessed</span>';
     function showManualAssessments() {
-      const manualRecords = records.filter(r => r.evaluator !== 'Aarti - AI');
+      const manualRecords = getFiltered(true).filter(r => r.evaluator !== 'Aarti - AI');
       if (manualRecords.length === 0) {
         openModal('📊 Manual Assessments', '<p style="color:#999;padding:20px;">No manual assessments found.</p>');
         return;
@@ -9294,7 +9425,7 @@
           </span>
         </td>
         <td style="padding: 10px; border: 1px solid #dce8f5; text-align: center;">
-          <button onclick="showCallDetail(${record.id})" style="background: #1a5276; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+          <button onclick="showCallDetail('${record.id}')" style="background: #1a5276; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 12px;">
             📋 Details
           </button>
         </td>
@@ -9312,23 +9443,72 @@
     }
 
     function showAgentDetail(name) {
-      const recs = records.filter(r => r.agent === name).sort((a, b) => b.date.localeCompare(a.date)); if (!recs.length) { openModal(`📋 ${name} — Details`, '<p style="color:#999;padding:20px;">No records found.</p>'); return; }
+      const recs = getFiltered(true).filter(r => r.agent === name).sort((a, b) => b.date.localeCompare(a.date)); if (!recs.length) { openModal(`📋 ${name} — Details`, '<p style="color:#999;padding:20px;">No records found for the current filter.</p>'); return; }
       const secMap = {}; recs.forEach(r => { if (!r.breakdown) return; r.breakdown.forEach(sec => { if (!secMap[sec.title]) secMap[sec.title] = { nm: 0, ni: 0, met: 0 }; secMap[sec.title].nm += sec.notmet || 0; secMap[sec.title].ni += sec.ni || 0; secMap[sec.title].met += sec.met || 0; }); });
-      const top3 = Object.entries(secMap).filter(([, v]) => v.nm > 0).sort((a, b) => b[1].nm - a[1].nm).slice(0, 3), medalColors = ['#c0392b', '#d35400', '#b7770d'], medalBg = ['#fdf2f2', '#fef5ec', '#fef9e7'], medalBorder = ['#f5b7b1', '#f5cba7', '#f9e79f'], medals = ['🥇', '🥈', '🥉'];
-      const top3Html = top3.length === 0 ? `<div style="text-align:center;padding:16px;color:#aaa;font-size:14px;font-style:italic;">No "Not Met" items recorded yet.</div>` : top3.map(([title, v], i) => `<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:${medalBg[i]};border:1.5px solid ${medalBorder[i]};margin-bottom:10px;"><span style="font-size:28px;flex-shrink:0;">${medals[i]}</span><div style="flex:1;"><div style="font-size:15px;font-weight:800;color:${medalColors[i]};margin-bottom:4px;">${escHtml(title)}</div><div style="display:flex;gap:16px;font-size:13px;flex-wrap:wrap;"><span style="color:#c0392b;font-weight:700;">❌ ${v.nm} Not Met</span><span style="color:#7d6608;font-weight:700;">🔶 ${v.ni} Needs Impr.</span><span style="color:#1e8449;font-weight:700;">✅ ${v.met} Met</span></div></div><div style="text-align:center;background:${medalBg[i]};border:2px solid ${medalColors[i]};border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:${medalColors[i]};flex-shrink:0;">${v.nm}</div></div>`).join('');
+      const top3 = Object.entries(secMap).filter(([, v]) => (v.nm + v.ni) > 0).sort((a, b) => (b[1].nm + b[1].ni) - (a[1].nm + a[1].ni)).slice(0, 3), medalColors = ['#c0392b', '#d35400', '#b7770d'], medalBg = ['#fdf2f2', '#fef5ec', '#fef9e7'], medalBorder = ['#f5b7b1', '#f5cba7', '#f9e79f'];
+      const top3Html = top3.length === 0 ? `<div style="text-align:center;padding:16px;color:#aaa;font-size:14px;font-style:italic;">No "Not Met" or "Needs Impr." items recorded yet.</div>` : top3.map(([title, v], i) => `<div style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-radius:10px;background:${medalBg[i]};border:1.5px solid ${medalBorder[i]};margin-bottom:10px;"><div style="flex:1;"><div style="font-size:15px;font-weight:800;color:${medalColors[i]};margin-bottom:4px;">${i+1}. ${escHtml(title)}</div><div style="display:flex;gap:16px;font-size:13px;flex-wrap:wrap;"><span style="color:#c0392b;font-weight:700;">❌ ${v.nm} Not Met</span><span style="color:#7d6608;font-weight:700;">🔶 ${v.ni} Needs Impr.</span><span style="color:#1e8449;font-weight:700;">✅ ${v.met} Met</span></div></div><div title="Combined Defect Score" style="text-align:center;background:${medalBg[i]};border:2px solid ${medalColors[i]};border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:${medalColors[i]};flex-shrink:0;">${v.nm + v.ni}</div></div>`).join('');
       const callsHtml = recs.map(r => `<div style="padding:10px 0;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:14px;flex-wrap:wrap;"><span style="font-size:13px;color:#888;min-width:88px;">📅 ${r.date}</span><span style="font-size:13px;color:#555;flex:1;">Lead: <strong>${r.leadId || 'N/A'}</strong>  ${r.callType ? '· ' + r.callType : ''}</span><span style="font-size:14px;font-weight:800;color:${pctColor(r.pct)};background:${r.pct >= 80 ? '#eafaf1' : r.pct >= 60 ? '#fef9e7' : '#fdf2f2'};padding:3px 12px;border-radius:20px;">${r.pct}% &nbsp; ✅${r.metCount} ❌${r.nmCount} 🔶${r.niCount}</span></div>`).join('');
-      openModal(`📋 ${name} — Performance Details`, `<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">🎯 Top 3 Categories with Most "Not Met"</div>${top3Html}<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">📞 Call History (${recs.length} call${recs.length !== 1 ? 's' : ''})</div>${callsHtml}`);
+      openModal(`📋 ${name} — Performance Details`, `<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">🎯 Top 3 Categories (Not Met + Needs Impr.)</div>${top3Html}<div style="font-size:13px;font-weight:800;color:#1a5276;text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px;padding-bottom:7px;border-bottom:2px solid #eaf0f7;">📞 Call History (${recs.length} call${recs.length !== 1 ? 's' : ''})</div>${callsHtml}`);
     }
     function showAgentStatDrill(name, type) {
-      const recs = records.filter(r => r.agent === name); if (!recs.length) { showToast('No records found for ' + name, '#888'); return; }
+      const recs = getFiltered(true).filter(r => r.agent === name); if (!recs.length) { showToast('No records found for ' + name, '#888'); return; }
       const cfg = { met: { label: 'Met', color: '#1e8449', bg: '#eafaf1', border: '#a9dfbf', icon: '✅' }, notmet: { label: 'Not Met', color: '#c0392b', bg: '#fdf2f2', border: '#f5b7b1', icon: '❌' }, ni: { label: 'Needs Improvement', color: '#7d6608', bg: '#fef9e7', border: '#f9e79f', icon: '🔶' } };
       const c = cfg[type], items = []; recs.forEach(r => { if (!r.breakdown) return; r.breakdown.forEach(sec => { sec.items.forEach(item => { const match = (type === 'met' && item.rating === 'met') || (type === 'notmet' && item.rating === 'notmet') || (type === 'ni' && item.rating === 'ni'); if (match) items.push(item.label); }); }); });
-      openModal(`${c.icon} ${name} — All "${c.label}" Items (${items.length})`, `<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;"><span style="font-size:36px;font-weight:900;color:${c.color}">${items.length}</span><div><div style="font-size:15px;font-weight:800;color:${c.color}">${c.icon} Total "${c.label}" items</div><div style="font-size:13px;color:#666;margin-top:2px;">Across all ${recs.length} monitored call${recs.length !== 1 ? 's' : ''} for <strong>${escHtml(name)}</strong></div></div></div>${items.length === 0 ? `<p style="color:#aaa;font-style:italic;text-align:center;padding:20px;">No items found.</p>` : `<ol style="margin:0;padding-left:22px;">${items.map(label => `<li style="padding:9px 4px;border-bottom:1px solid #f0f0f0;font-size:15px;color:#2c3e50;">${escHtml(label)}</li>`).join('')}</ol>`}`);
+      openModal(`${c.icon} ${name} — All "${c.label}" Items (${items.length})`, `<div style="background:${c.bg};border:1.5px solid ${c.border};border-radius:8px;padding:12px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;"><span style="font-size:36px;font-weight:900;color:${c.color}">${items.length}</span><div><div style="font-size:15px;font-weight:800;color:${c.color}">${c.icon} Total "${c.label}" items</div><div style="font-size:13px;color:#666;margin-top:2px;">Across ${recs.length} monitored call${recs.length !== 1 ? 's' : ''} for <strong>${escHtml(name)}</strong> (filtered view)</div></div></div>${items.length === 0 ? `<p style="color:#aaa;font-style:italic;text-align:center;padding:20px;">No items found.</p>` : `<ol style="margin:0;padding-left:22px;">${items.map(label => `<li style="padding:9px 4px;border-bottom:1px solid #f0f0f0;font-size:15px;color:#2c3e50;">${escHtml(label)}</li>`).join('')}</ol>`}`);
     }
     function showCallDetail(id) {
       const r = records.find(x => String(x.id) === String(id)); if (!r) return;
       const rows = [['Agent', r.agent], ['Date', r.date], ['Customer', r.customer || 'N/A'], ['Lead ID', r.leadId || 'N/A'], ['Call Type', r.callType || 'N/A'], ['Duration', r.duration || 'N/A'], ['✅ Met', r.metCount], ['❌ Not Met', r.nmCount], ['🔶 Needs Impr.', r.niCount], ['Final Score', `${r.metCount} / ${r.assessed} = ${r.pct}%`]];
-      openModal(`📋 Call Detail — ${r.agent}`, `<div class="msec-title">Call Summary</div>${rows.map(([k, v]) => `<div class="mrow"><span>${k}</span><span style="font-weight:${k === 'Final Score' ? 700 : 400}">${v}</span></div>`).join('')}${r.breakdown.map(sec => `<div class="msec-title">${sec.title} — ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni} / ${sec.assessed} assessed</div>${sec.items.map(item => `<div class="mrow"><span>${item.label}</span>${ratingLabel(item.rating)}</div>`).join('')}`).join('')}`);
+      const dlBtn = `<div style="text-align:right; margin-bottom: 12px;"><button onclick="downloadCallDetailWord('${r.id}')" style="background:#2980b9;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;">📥 Download Word</button></div>`;
+      openModal(`📋 Call Detail — ${r.agent}`, dlBtn + `<div class="msec-title">Call Summary</div>${rows.map(([k, v]) => `<div class="mrow"><span>${k}</span><span style="font-weight:${k === 'Final Score' ? 700 : 400}">${v}</span></div>`).join('')}${r.breakdown.map(sec => `<div class="msec-title">${sec.title} — ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni} / ${sec.assessed} assessed</div>${sec.items.map(item => `<div class="mrow"><span>${item.label}</span>${ratingLabel(item.rating)}</div>`).join('')}`).join('')}`);
+    }
+
+    function downloadCallDetailWord(id) {
+      const r = records.find(x => String(x.id) === String(id)); if (!r) return;
+      
+      const esc = v => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      let html = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+<head><meta charset='utf-8'><title>Call Detail</title></head>
+<body style="font-family: Arial, sans-serif;">
+  <h2 style="color:#2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 5px;">Call Summary &mdash; ${esc(r.agent)}</h2>
+  <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; margin-bottom: 20px;">
+    <tr><td style="width:30%; font-weight:bold; background:#f8f9fa;">Agent</td><td>${esc(r.agent)}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Date</td><td>${esc(r.date)}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Customer</td><td>${esc(r.customer || 'N/A')}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Lead ID</td><td>${esc(r.leadId || 'N/A')}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Call Type</td><td>${esc(r.callType || 'N/A')}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Duration</td><td>${esc(r.duration || 'N/A')}</td></tr>
+    <tr><td style="font-weight:bold; background:#f8f9fa;">Final Score</td><td>${r.metCount} / ${r.assessed} = ${r.pct}%</td></tr>
+  </table>`;
+
+      if (r.breakdown) {
+        r.breakdown.forEach(sec => {
+          html += `<h3 style="color:#2980b9; margin-top:20px;">${esc(sec.title)} &mdash; ✅${sec.met} ❌${sec.notmet} 🔶${sec.ni}</h3>
+          <table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse; width:100%; margin-bottom: 20px;">
+            <tr style="background:#ecf0f1;">
+              <th style="text-align:left;">Parameter</th>
+              <th style="width:20%; text-align:center;">Rating</th>
+            </tr>`;
+          sec.items.forEach(item => {
+            let ratingMark = item.rating === 'met' ? '<span style="color:#27ae60;font-weight:bold;">✅ Met</span>' : 
+                             item.rating === 'notmet' ? '<span style="color:#c0392b;font-weight:bold;">❌ Not Met</span>' : 
+                             item.rating === 'ni' ? '<span style="color:#d35400;font-weight:bold;">🔶 Needs Impr.</span>' : 
+                             '<span style="color:#7f8c8d;">— Not Assessed</span>';
+            html += `<tr><td>${esc(item.label)}</td><td style="text-align:center;">${ratingMark}</td></tr>`;
+          });
+          html += `</table>`;
+        });
+      }
+
+      html += `</body></html>`;
+
+      const blob = new Blob([html], { type: 'application/msword;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Call_Detail_${r.agent}_${r.leadId || r.id}.doc`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     }
     function openModal(title, body) { document.getElementById('modal-title').textContent = title; document.getElementById('modal-body').innerHTML = body; document.getElementById('modal').classList.add('open'); }
     function closeModal() {
@@ -9362,7 +9542,7 @@
       const escapedText = currentText.replace(/"/g, '&quot;');
       const body = `
         <div style="padding:8px 0 16px;">
-          <textarea id="edit-q-input" style="width:100%;min-height:90px;font-size:14px;padding:10px;border:2px solid #c5d5e8;border-radius:8px;resize:vertical;font-family:inherit;line-height:1.5;">${currentText}</textarea>
+          <textarea id="edit-q-input" style="width:100%;min-height:90px;font-size:14px;padding:10px;border:2px solid #c5d5e8;border-radius:8px;resize:vertical;font-family:inherit;line-height:1.5;">${escapedText}</textarea>
           <div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end;">
             <button onclick="closeModal()" style="padding:8px 20px;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;">Cancel</button>
             <button onclick="saveEditedQuestion(${si},${ii},${isPreMove})" style="padding:8px 22px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Save</button>
@@ -9400,6 +9580,50 @@
 
       // Re-render checklist (keeps ratings intact)
       if (typeof buildChecklist === 'function') buildChecklist();
+    }
+
+    async function editChecklistHeader(si) {
+      const isPreMove = (typeof currentChecklistMode !== 'undefined' && currentChecklistMode === 'premove');
+      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      const currentText = sections[si].title;
+      const escapedText = currentText.replace(/"/g, '&quot;');
+      const body = `
+        <div style="padding:8px 0 16px;">
+          <textarea id="edit-h-input" style="width:100%;min-height:60px;font-size:14px;padding:10px;border:2px solid #c5d5e8;border-radius:8px;resize:vertical;font-family:inherit;line-height:1.5;">${escapedText}</textarea>
+          <div style="display:flex;gap:10px;margin-top:12px;justify-content:flex-end;">
+            <button onclick="closeModal()" style="padding:8px 20px;border-radius:6px;border:1px solid #ccc;background:#f5f5f5;cursor:pointer;font-size:13px;">Cancel</button>
+            <button onclick="saveEditedHeader(${si},${isPreMove})" style="padding:8px 22px;border-radius:6px;border:none;background:#2563eb;color:#fff;font-weight:600;cursor:pointer;font-size:13px;">💾 Save</button>
+          </div>
+        </div>`;
+      openModal(`✏️ Edit Category Header`, body);
+      setTimeout(() => { const ta = document.getElementById('edit-h-input'); if (ta) { ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length); } }, 100);
+    }
+
+    async function saveEditedHeader(si, isPreMove) {
+      const ta = document.getElementById('edit-h-input');
+      if (!ta) return;
+      const newText = ta.value.trim();
+      if (!newText) { showToast('❌ Header cannot be empty', '#e74c3c'); return; }
+
+      const sections = isPreMove ? PRE_MOVE_SECTIONS : SECTIONS;
+      sections[si].title = newText;
+
+      closeModal();
+      if (typeof buildChecklist === 'function') buildChecklist();
+
+      if (typeof appConfig !== 'undefined' && appConfig) {
+        if (isPreMove) { appConfig.preMoveChecklistSections = PRE_MOVE_SECTIONS; }
+        else { appConfig.checklistSections = SECTIONS; }
+        try {
+          const r = await fetch(getApiBase() + '/api/config', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appConfig)
+          });
+          if (r.ok) { showToast('✅ Header saved', '#27ae60'); }
+          else { showToast('⚠️ Saved locally (server error)', '#e67e22'); }
+        } catch (e) { showToast('⚠️ Saved locally (offline)', '#e67e22'); }
+      }
     }
 
     // ═══ DEMO DATA ═══
@@ -9763,7 +9987,7 @@
         if (currentChecklistMode === 'premove') {
           hdr.style.background = 'linear-gradient(90deg,#6c3483,#8e44ad)';
         }
-        hdr.innerHTML = `<span>${sec.title}</span><span class="sec-count">${sec.items.length} items</span>`;
+        hdr.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${sec.title}<span class="edit-q-btn" style="cursor:pointer;opacity:0.55;font-size:13px;flex-shrink:0;" onclick="editChecklistHeader(${si})" title="Edit Category Header">✏️</span></span><span class="sec-count">${sec.items.length} items</span>`;
         const card = document.createElement('div');
         card.className = 'checklist-card';
         const colHdr = document.createElement('div');
